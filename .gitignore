@@ -1,0 +1,4 @@
+web/
+.preview/
+__pycache__/
+*.pyc

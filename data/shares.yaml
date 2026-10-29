@@ -1,0 +1,468 @@
+# 网盘分享站点数据源 —— 唯一真源，人工维护
+#
+# 字段说明：
+#   slug            主键，等于软件目录名，不要手改（改了就等于删旧增新）
+#   name / name_en  商品名（卡片主标题）与英文名（搜索用）
+#   exe_name        发行包/进程名，用户搜索时可能直接搜它
+#   version         对外版本号
+#   status          live=上架 / coming_soon=即将上架（灰态卡片） / hidden=完全不渲染
+#   share_url       网盘分享链接；留空则卡片显示「暂未开放下载」
+#   share_code      提取码/访问码，随链接一起展示并支持一键复制
+#   platform        网盘平台名，显示在按钮上
+#   category        分类标签，用于筛选栏
+#   summary         卡片上的一句话（建议 30~60 字）
+#   description     详情段落，建议直接取自用户手册的软件简介
+#   features        功能要点列表，参与搜索
+#   keywords        额外搜索词（用户可能的叫法、同义词）
+#   image           封面图路径，相对软件根目录；脚本会自动挑选真实界面截图
+#   artifact        发行包路径，相对软件根目录（你据此去建分享）
+#   size_mb         发行包体积（MB），仅用于分享前核对
+#   copy_source     简介抽取来源，人工改写后仍可保留作为出处
+#   discovered      脚本自动发现的值，仅供对照，不参与渲染
+#
+# 新增软件：把目录放进软件根目录，跑 `python tools/scan_jobs.py`，再填 share_url。
+# 生成站点：`python tools/build_site.py`，产物在 web/。
+
+site:site:site:
+  jobs_root: D:/Y_Hrx_Data/AI_WORK/AI_JOB
+  updated: '2026-10-29'
+shares:
+- slug: 000_PDF超级工具箱
+  name: PDF超级工具箱
+  name_en: PDFSuperToolbox
+  exe_name: PDFSuperToolbox
+  version: 3.1.0
+  status: live
+  category: 文档处理
+  share_url: https://pan.quark.cn/s/bf74be5b358b
+  share_code: ''
+  platform: 夸克网盘
+  summary: 合并、拆分、OCR、压缩、水印——装在自己电脑里的 PDF 工具箱
+  description: PDF超级工具箱是一款装在你自己电脑里的 PDF 处理工具：合并、拆分、页面编辑、图片互转、加密、水印、OCR、压缩、书签与元数据，12 个常用功能一个不缺，全部在本机完成。文件不上传、不联网，处理合同、报表、扫描件这类敏感文档更放心。
+  features:
+  - 合并 PDF：多个 PDF 按顺序合成一个文件，书签可保留
+  - 拆分 PDF：6 种拆分方式，还能拆完自动加密
+  - 页面编辑：提取、删除、旋转、重排页面，缩略图勾选即用
+  - 图片转 PDF：JPG/PNG 等图片合成 PDF，可选 OCR 文字层
+  - PDF 转图片：整本渲染为 PNG/JPG/TIFF，或提取文档内嵌原图
+  - 密码管理：加打开密码、移除自有文档口令、设置权限位
+  - 批量加解密：整个文件夹一次加密或解密，自动汇总结果
+  - 水印 / 页码：文字、图片水印与多种页码格式
+  keywords:
+  - 拆分
+  - 页面编辑
+  - 图片互转
+  - 加密
+  - 水印
+  - OCR
+  - 压缩
+  - 书签与元数据
+  - 不联网
+  - 处理合同
+  - 报表
+  - 书签可保留
+  aliases:
+  - PDF工具
+  - pdf合并
+  - pdf拆分
+  - '000'
+  image: 推广套件/images/01-主界面.png
+  image_kind: screenshot
+  artifact: dist/PDFSuperToolbox_v3.1.0.zip
+  artifact_dir: dist/PDFSuperToolbox
+  size_mb: 161.2
+  copy_source: 用户手册/PDF超级工具箱使用说明.md
+  updated: '2026-10-29'
+  discovered:
+    version: 3.1.0
+    artifact: dist/PDFSuperToolbox_v3.1.0.zip
+    image: 推广套件/images/01-主界面.png
+    project_dir: 000_PDF超级工具箱
+- slug: 001_证件照制作工具
+  name: 证照快做
+  name_en: IDPhotoKit
+  exe_name: idphotokit
+  version: 0.1.0
+  status: live
+  category: 证件证照
+  share_url: ''
+  share_code: ''
+  platform: ''
+  summary: 证照快做是一款在本地电脑上制作标准证件照的桌面工具。
+  description: 证照快做是一款在本地电脑上制作标准证件照的桌面工具。导入一张生活照，选好规格，软件自动完成抠图、换底和构图，按报名要求导出成品，还能自动拼版直接送印。 软件全程离线运行：照片只在你电脑的内存里处理，不上传、不联网、不保存原图；AI
+    抠图模型随软件包内置，没有网络也能用。全程无水印、无广告。
+  features:
+  - 照片导入：选择文件、拖拽、剪贴板粘贴三种方式
+  - 规格库：内置 25 项常用规格，覆盖一寸/二寸/身份证/护照等证件规格
+  - AI 抠图：本地人像分割，自动保留头发和肩部边缘；配合擦除/恢复画笔手动精修
+  - 背景换色：红/白/蓝/浅蓝/灰一键切换，支持自定义颜色、白蓝渐变、柔和投影
+  - 智能构图：按规格自动对齐人脸位置，提供头顶留白、眼平、下巴辅助线
+  - 美颜调整：磨皮、美白、亮度、对比度四项微调，一键应用自然档
+  - 按需导出：指定 DPI 和像素、目标体积自动压缩、自定义命名规则、导出前预估体积
+  - 质量自检：对清晰度、曝光、人脸占比给出参考提示
+  keywords:
+  - 选好规格
+  - 软件自动完成抠图
+  - 换底和构图
+  - 按报名要求导出成品
+  - 不上传
+  - 不联网
+  - 不保存原图
+  - 无广告
+  - JPG
+  - PNG
+  - BMP
+  - WEBP
+  aliases:
+  - 证件照
+  - 报名照
+  - 签证照
+  - 回执
+  - '001'
+  image: 推广套件/images/01-导入页.png
+  image_kind: screenshot
+  artifact: dist/idphotokit_v0.1.0.zip
+  artifact_dir: dist/idphotokit
+  size_mb: 119.1
+  copy_source: 用户手册/证照快做使用说明.md
+  updated: '2026-10-29'
+  discovered:
+    version: 0.1.0
+    artifact: dist/idphotokit_v0.1.0.zip
+    image: 推广套件/images/01-导入页.png
+    project_dir: 001_证件照制作工具
+- slug: 002_文件百宝箱
+  name: 文件百宝箱
+  name_en: BoxBatch
+  exe_name: BoxBatch
+  version: 0.9.1
+  status: live
+  category: 文件批量
+  share_url: ''
+  share_code: ''
+  platform: ''
+  summary: 纯本地、绿色免安装、全中文的 Windows 批量文件处理工具。
+  description: 纯本地、绿色免安装、全中文的 Windows 批量文件处理工具。 一个软件覆盖六件事： 安全承诺：所有删除走系统回收站；所有批量操作可撤销；图片默认输出到新目录；全程不联网、不上传。
+  features:
+  - 批量重命名
+  - 改扩展名
+  - 图片批量处理
+  - 文件名清单导出
+  - 重复文件查重
+  - 文件夹智能整理
+  keywords:
+  - 纯本地
+  - 绿色免安装
+  - 所有批量操作可撤销
+  - 图片默认输出到新目录
+  - 全程不联网
+  - 不上传
+  - 批量重命名
+  - 改扩展名
+  - 图片批量处理
+  - 文件名清单导出
+  - 重复文件查重
+  - 文件夹智能整理
+  aliases:
+  - 批量重命名
+  - 去重
+  - 整理文件夹
+  - '002'
+  image: 演示视频/images/01-主界面.png
+  image_kind: screenshot
+  artifact: dist/BoxBatch_v0.9.1_win_x64.zip
+  artifact_dir: dist/BoxBatch
+  size_mb: 54.7
+  copy_source: README.md
+  updated: '2026-10-29'
+  discovered:
+    version: 0.9.1
+    artifact: dist/BoxBatch_v0.9.1_win_x64.zip
+    image: 演示视频/images/01-主界面.png
+    project_dir: 002_文件百宝箱
+- slug: 003_音视频工具箱
+  name: 音视频工具箱
+  name_en: MediaToolbox
+  exe_name: MediaToolbox
+  version: 0.1.0
+  status: live
+  category: 音视频
+  share_url: ''
+  share_code: ''
+  platform: ''
+  summary: 绿色免安装、纯本地运行的 Windows 音视频处理小工具
+  description: 绿色免安装、纯本地运行的 Windows 音视频处理小工具：格式转换、视频压缩、视频裁剪、提取音频、批量截图、合并、转 GIF 七类高频操作封装成一键预设，自动调用显卡硬件加速。解压即用，可放
+    U 盘；不联网、不上传、无广告、无捆绑。
+  features:
+  - 格式转换
+  - 视频压缩
+  - 视频裁剪
+  - 提取音频
+  - 批量截图
+  - 视频合并
+  - 转 GIF
+  keywords:
+  - 格式转换
+  - 视频压缩
+  - 视频裁剪
+  - 提取音频
+  - 批量截图
+  - 合并
+  - 可放 U 盘
+  - 不联网
+  - 不上传
+  - 无广告
+  - 无捆绑
+  - mediatoolbox
+  aliases:
+  - 视频压缩
+  - 格式转换
+  - 提取音频
+  - 转GIF
+  - '003'
+  image: mediatoolbox-src/resources/icon/app.png
+  image_kind: icon
+  artifact: mediatoolbox-src/dist/MediaToolbox_v0.1.0.zip
+  artifact_dir: mediatoolbox-src/dist/MediaToolbox
+  size_mb: 223.3
+  copy_source: mediatoolbox-src/README.txt
+  updated: '2026-10-29'
+  discovered:
+    version: 0.1.0
+    artifact: mediatoolbox-src/dist/MediaToolbox_v0.1.0.zip
+    image: mediatoolbox-src/resources/icon/app.png
+    project_dir: mediatoolbox-src
+- slug: 004_表格加工厂
+  name: 表格加工厂
+  name_en: TableWorks
+  exe_name: TableWorks
+  version: 1.0.2
+  status: live
+  category: 表格数据
+  share_url: ''
+  share_code: ''
+  platform: ''
+  summary: 纯本地、免装 Office/WPS 的 Windows 桌面软件
+  description: 纯本地、免装 Office/WPS 的 Windows 桌面软件：用中文向导把多个 Excel/CSV 的合并、拆分、清洗、行列转换、筛选导出、多表关联、表格与文件联动、编码格式转换这
+    8 类高频批量数据活一键跑完，数据全程不出本机。
+  features:
+  - 多表合并
+  - 按条件拆分
+  - 数据清洗
+  - 行列转换
+  - 筛选导出
+  - 多表关联
+  - 表格与文件联动
+  - 编码格式转换
+  keywords:
+  - 纯本地
+  - 免装 Office
+  - 拆分
+  - 清洗
+  - 行列转换
+  - 筛选导出
+  - 多表关联
+  - 表格↔文件联动
+  - 数据全程不出本机
+  - TableWorks
+  - tableworks
+  aliases:
+  - Excel
+  - CSV
+  - 表格合并
+  - 数据清洗
+  - '004'
+  image: docs/布局间距验收/改后_主窗口.png
+  image_kind: screenshot
+  artifact: dist/TableWorks_v1.0.2.zip
+  artifact_dir: dist/TableWorks
+  size_mb: 122.3
+  copy_source: README.md
+  updated: '2026-10-29'
+  discovered:
+    version: 1.0.2
+    artifact: dist/TableWorks_v1.0.2.zip
+    image: docs/布局间距验收/改后_主窗口.png
+    project_dir: 004_表格加工厂
+- slug: 005_WinButler窗口管家
+  name: 窗口管家
+  name_en: WinButler
+  exe_name: WinZone
+  version: 1.0.0
+  status: live
+  category: 系统效率
+  share_url: ''
+  share_code: ''
+  platform: ''
+  summary: Windows 桌面窗口效率工具：置顶、分屏吸附、隐私速藏、剪贴板历史、快捷启动、取色、标尺、定时任务
+  description: Windows 桌面窗口效率工具：置顶、分屏吸附、隐私速藏、剪贴板历史、快捷启动、取色、标尺、定时任务、截图贴图，常驻系统托盘，纯本地运行。
+  features:
+  - 窗口置顶
+  - 分屏吸附
+  - 隐私速藏
+  - 剪贴板历史
+  - 快捷启动
+  - 取色
+  - 屏幕标尺
+  - 定时任务
+  - 截图贴图
+  keywords:
+  - 分屏吸附
+  - 隐私速藏
+  - 剪贴板历史
+  - 快捷启动
+  - 取色
+  - 标尺
+  - 定时任务
+  - 截图贴图
+  - 常驻系统托盘
+  - 纯本地运行
+  - WinButler
+  - winbutler
+  aliases:
+  - 窗口置顶
+  - 分屏
+  - 剪贴板
+  - WinZone
+  - '005'
+  image: ''
+  image_kind: ''
+  artifact: dist/WinZone_v1.0.0.zip
+  artifact_dir: dist/WinZone
+  size_mb: 71.9
+  copy_source: README.md
+  updated: '2026-10-29'
+  discovered:
+    version: 1.0.0
+    artifact: dist/WinZone_v1.0.0.zip
+    image: ''
+    project_dir: 005_WinButler窗口管家
+- slug: 006_图片去除水印工具
+  name: 图片去水印
+  name_en: WatermarkRemover
+  exe_name: 图片去水印
+  version: 1.29.1
+  status: live
+  category: 图片处理
+  share_url: ''
+  share_code: ''
+  platform: ''
+  summary: 本地 AI 图片修复：涂抹水印区域，一键修复成自然画面
+  description: 图片去水印是一款本地运行的图片修复工具：打开一张带水印的图片，用鼠标把水印涂出来，AI 会自动把涂抹的区域修复成自然的画面，最后另存为新图片。整个过程在你的电脑上完成，图片不会被上传到任何服务器。
+    典型场景：去掉照片上的文字水印、Logo、日期戳，或抹掉画面里不想要的小物件。
+  features:
+  - 一键去水印：涂抹水印区域，AI 自动修复成自然画面
+  - 批量去水印：整批图片位置相同的水印，涂一次蒙版全部套用；也支持逐张涂抹
+  - 快速预览：正式处理前先看修复效果，不满意可以继续调整
+  - 灵活涂抹：左键涂抹、右键擦除，笔刷大小和边缘柔和度都可调
+  - 画布缩放平移：滚轮缩放、中键拖动，小水印也能涂得精准
+  - 撤销与重做：涂错了随时回退，也可一键清空全部涂抹
+  - 多种格式：支持打开 png / jpg / webp / bmp / ico /…
+  - 自动命名：保存时自动加时间戳，不会覆盖你的原图
+  keywords:
+  - 用鼠标把水印涂出来
+  - Logo
+  - 日期戳
+  - 逐张涂抹
+  - 每张图各自的蒙版
+  - 不满意可以继续调整
+  - 右键擦除
+  - 中键拖动
+  - 小水印也能涂得精准
+  - 也可一键清空全部涂抹
+  - 打开 png
+  - jpg
+  aliases:
+  - 去水印
+  - 水印去除
+  - 抹除物体
+  - '006'
+  image: 用户手册/images/01-主界面.png
+  image_kind: screenshot
+  artifact: dist/图片去水印_v1.25.3.zip
+  artifact_dir: dist/图片去水印
+  size_mb: 492.5
+  copy_source: 用户手册/图片去水印使用说明.md
+  updated: '2026-10-29'
+  discovered:
+    version: 1.29.1
+    artifact: dist/图片去水印_v1.25.3.zip
+    image: 用户手册/images/01-主界面.png
+    project_dir: 006_图片去除水印工具
+- slug: 007_WIN文件去重工具
+  name: 重复文件清理大师
+  name_en: ''
+  exe_name: DupCleaner
+  version: 1.0.0
+  status: coming_soon
+  category: 文件批量
+  share_url: ''
+  share_code: ''
+  platform: ''
+  summary: 重复文件查找与清理工具（开发中）
+  description: 重复文件清理大师 DupCleaner 尚在开发中，界面与发行包都还没定稿。上架后会把分享链接更新到这里。
+  features: []
+  keywords: []
+  aliases:
+  - 重复文件
+  - 文件去重
+  - DupCleaner
+  - '007'
+  image: ''
+  image_kind: ''
+  artifact: ''
+  artifact_dir: ''
+  size_mb: 0.0
+  copy_source: ''
+  updated: '2026-10-29'
+  discovered:
+    version: 1.0.0
+    artifact: ''
+    image: ''
+    project_dir: 007_WIN文件去重工具
+- slug: 008_发票批量整理器
+  name: 发票批量整理器
+  name_en: InvoiceBatch
+  exe_name: 发票批量整理器
+  version: 0.1.0
+  status: coming_soon
+  category: 办公票据
+  share_url: ''
+  share_code: ''
+  platform: ''
+  summary: 纯本地、绿色免安装、全中文的 Windows 发票批量整理工具。
+  description: 纯本地、绿色免安装、全中文的 Windows 发票批量整理工具。 批量提取电子发票关键信息、生成台账并按规则归档副本： 安全承诺：全程不联网、不上传；原始发票文件只读不动；归档只产出副本。
+  features:
+  - 发票导入队列
+  - 双通道信息提取
+  - 台账表格与导出
+  - 批量重命名归档
+  keywords:
+  - 纯本地
+  - 绿色免安装
+  - 不上传
+  - 原始发票文件只读不动
+  - 归档只产出副本
+  - 发票导入队列
+  - 双通道信息提取
+  - 台账表格与导出
+  - 批量重命名归档
+  - InvoiceBatch
+  - invoicebatch
+  aliases:
+  - 电子发票
+  - 发票台账
+  - InvoiceBatch
+  - 008
+  image: resources/icon/app.png
+  image_kind: icon
+  artifact: ''
+  artifact_dir: ''
+  size_mb: 0.0
+  copy_source: README.md
+  updated: '2026-10-29'
+  discovered:
+    version: 0.1.0
+    artifact: ''
+    image: resources/icon/app.png
+    project_dir: 008_发票批量整理器
