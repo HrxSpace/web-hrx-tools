@@ -2,3 +2,4 @@ web/
 .preview/
 __pycache__/
 *.pyc
+.*.qoder.site

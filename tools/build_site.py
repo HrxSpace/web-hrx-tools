@@ -150,15 +150,16 @@ def card_html(entry: dict, index: int) -> str:
     </article>"""
 
 
-def json_payload(entries: list[dict], url_base: str) -> str:
+def json_payload(entries: list[dict]) -> str:
+    """内嵌给前端的数据。封面一律用相对路径：站点部署在域名根目录，
+    绝对地址会随域名变化而失效，只有 og:image 需要绝对 URL。"""
     keep = ("slug", "name", "name_en", "exe_name", "version", "status", "category", "summary",
             "description", "features", "keywords", "aliases", "share_code", "platform")
     rows = []
     for e in entries:
         row = {k: e.get(k) or ([] if k in ("features", "keywords", "aliases") else "") for k in keep}
         row["id"] = e["slug"]
-        asset = e.get("_asset") or ""
-        row["cover"] = (url_base + asset) if (url_base and asset) else asset
+        row["cover"] = e.get("_asset") or ""
         row["share_url"] = (e.get("share_url") or "").strip()
         row["updated"] = e.get("updated") or ""
         rows.append(row)
@@ -243,6 +244,8 @@ def build(args: argparse.Namespace) -> int:
     out.mkdir(parents=True, exist_ok=True)
     for stale in out.glob("*.html"):
         stale.unlink()
+    for stale in (out / "images").glob("*"):
+        stale.unlink()  # 下架条目的封面不该继续留在发布包里
 
     if args.no_images:
         for e in entries:
@@ -260,7 +263,7 @@ def build(args: argparse.Namespace) -> int:
         .replace("{{HEAD}}", head_extra(entries, site_url, desc))
         .replace("{{CHIPS}}", chips_html(entries))
         .replace("{{CARDS}}", "".join(card_html(e, i) for i, e in enumerate(entries)))
-        .replace("{{DATA}}", json_payload(entries, site_url))
+        .replace("{{DATA}}", json_payload(entries))
         .replace("{{COUNT}}", str(len(entries)))
         .replace("{{UPDATED}}", str(site.get("updated") or date.today()))
         .replace("{{MAINTAINER}}", "HRX")
@@ -278,7 +281,7 @@ def build(args: argparse.Namespace) -> int:
         encoding="utf-8",
     )
     if site_url:
-        urls = "\n".join(f"  <url><loc>{esc(site_url)}/</loc><lastmod>{esc(date.today())}</lastmod></url>")
+        urls = "\n".join([f"  <url><loc>{esc(site_url)}/</loc><lastmod>{esc(date.today())}</lastmod></url>"])
         (out / "sitemap.xml").write_text(
             f'<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n{urls}\n</urlset>\n',
             encoding="utf-8",
