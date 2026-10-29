@@ -8,7 +8,7 @@
 ```
 Z001_网盘站点/
 ├─ data/shares.yaml      唯一真源，人工维护（脚本只填空、不覆盖你写的内容）
-├─ site/                 前端源文件：template.html / style.css / app.js
+├─ site/                 前端源文件：template.html / style.css / app.js（assets/ 放二维码等固定素材）
 ├─ tools/scan_jobs.py    扫描软件目录 → 维护 shares.yaml + 体检报告
 ├─ tools/build_site.py   shares.yaml → 静态站点 web/
 └─ web/                  构建产物（发布目录，不要手改）
@@ -64,6 +64,7 @@ python -m http.server 4173 --bind 127.0.0.1 --directory web
 - 上架门槛：只有填了 `share_url` 的条目会渲染，其余留在数据文件里，页面上看不到。
 - 无后端、无外部请求：数据以 JSON 内嵌页面，卡片正文预渲染进 HTML，搜索引擎可收录。
 - 缺截图的条目用排版封面并标注「界面截图待补」，不放假图。
+- 公众号二维码：站头右上角、搜索无结果空态、页脚三处，都在非信息区，不遮挡搜索框/分类/卡片；素材在 `site/assets/qrcode_wc.png`，构建时复制为 `web/images/wechat-qr.png`（换码只需替换该文件）。
 
 ## 待办怎么看
 

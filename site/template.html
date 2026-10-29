@@ -13,12 +13,22 @@
 <a class="skip" href="#catalog">跳到软件列表</a>
 
 <header class="masthead">
-  <div class="brand">
-    <span class="mark" aria-hidden="true"></span>
-    <span class="wordmark">HRX 软件库</span>
-    <span class="tagline">本机运行 · 不上传 · 绿色免安装</span>
+  <div class="mast-main">
+    <div class="brand">
+      <span class="mark" aria-hidden="true"></span>
+      <span class="wordmark">HRX 软件库</span>
+      <span class="tagline">本机运行 · 不上传 · 绿色免安装</span>
+    </div>
+    <p class="brief">{{DESC}}</p>
   </div>
-  <p class="brief">{{DESC}}</p>
+  <figure class="contact">
+    <img class="qr" src="images/wechat-qr.png" alt="HRX 微信公众号二维码" width="258" height="258">
+    <figcaption>
+      <b>微信公众号 · HRX 软件库</b>
+      <span>想要哪个工具还没做？扫码提需求，也可以谈定制开发。</span>
+      <em class="scan-hint">长按二维码即可识别</em>
+    </figcaption>
+  </figure>
 </header>
 
 <section class="toolbar" aria-label="检索与筛选">
@@ -38,6 +48,13 @@
 <div class="empty" id="empty" hidden>
   <p class="empty-title">没有匹配的软件</p>
   <p class="empty-hint">试试这些词：<span id="suggest"></span></p>
+  <figure class="contact contact-inline">
+    <img class="qr" src="images/wechat-qr.png" alt="HRX 微信公众号二维码" width="258" height="258" loading="lazy">
+    <figcaption>
+      <b>没找到想要的工具？</b>
+      <span>扫码说说你的需求，可以定制开发；公众号也会第一时间推送新工具。</span>
+    </figcaption>
+  </figure>
 </div>
 
 <dialog id="detail" aria-labelledby="detail-name">
@@ -59,8 +76,17 @@
 </dialog>
 
 <footer class="foot">
-  <p>共 {{COUNT}} 款软件 · 数据更新于 {{UPDATED}} · 内容维护：{{MAINTAINER}}</p>
-  <p class="fine">所列工具均为个人开发的 Windows 桌面软件，免费获取、离线运行。只列出已经挂出下载链接的软件，其余做好后陆续上架。</p>
+  <div class="foot-text">
+    <p>共 {{COUNT}} 款软件 · 数据更新于 {{UPDATED}} · 内容维护：{{MAINTAINER}}</p>
+    <p class="fine">所列工具均为个人开发的 Windows 桌面软件，免费获取、离线运行。只列出已经挂出下载链接的软件，其余做好后陆续上架。</p>
+  </div>
+  <figure class="contact contact-foot">
+    <img class="qr" src="images/wechat-qr.png" alt="HRX 微信公众号二维码" width="258" height="258" loading="lazy">
+    <figcaption>
+      <b>微信公众号 · HRX 软件库</b>
+      <span>扫码关注更新，需要定制开发也可以扫码聊。</span>
+    </figcaption>
+  </figure>
 </footer>
 
 <script type="application/json" id="shares-data">{{DATA}}</script>

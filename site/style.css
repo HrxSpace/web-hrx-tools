@@ -36,12 +36,14 @@ h1, h2, h3, p { margin: 0; }
 
 /* 站头 */
 .masthead {
-  padding: 30px clamp(16px, 4vw, 44px) 18px;
+  display: flex; align-items: flex-start; flex-wrap: wrap; gap: clamp(16px, 3vw, 40px);
+  padding: 30px clamp(16px, 4vw, 44px) 20px;
   background:
     radial-gradient(1000px 300px at 12% -60%, #dce6ff 0%, rgba(220, 230, 255, 0) 70%),
     var(--surface);
   border-bottom: 1px solid var(--line);
 }
+.mast-main { flex: 1 1 460px; min-width: 0; }
 .brand { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
 .mark {
   width: 13px; height: 13px; border-radius: 4px; align-self: center;
@@ -53,6 +55,25 @@ h1, h2, h3, p { margin: 0; }
   background: var(--bg); border: 1px solid var(--line); border-radius: 999px; padding: 3px 10px;
 }
 .brief { margin-top: 10px; color: var(--ink-2); max-width: 72ch; }
+
+/* 公众号二维码：只放在站头/空态/页脚这些非信息区，不覆盖检索与卡片 */
+.contact {
+  flex: 0 1 auto; margin: 0; display: flex; align-items: center; gap: 13px;
+  max-width: 360px; padding: 12px 15px; text-align: left;
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+.contact .qr {
+  flex: none; width: 132px; height: 132px; display: block;
+  border: 1px solid var(--line); border-radius: 8px; background: #fff;
+}
+.contact figcaption { display: grid; gap: 4px; }
+.contact b { font-size: 13.5px; letter-spacing: .01em; }
+.contact span { font-size: 12.5px; line-height: 1.55; color: var(--ink-2); }
+.scan-hint { display: none; font-style: normal; font-size: 11.5px; line-height: 1.5; color: var(--muted); }
+.contact-inline { margin: 24px auto 0; max-width: 420px; border-style: dashed; border-color: #d8c48f; background: var(--amber-soft); }
+.contact-inline .qr { width: 108px; height: 108px; background: #fff; }
+.contact-inline b { color: var(--amber); }
 
 /* 检索条 */
 .toolbar {
@@ -170,15 +191,30 @@ dialog#detail::backdrop { background: rgba(18, 26, 40, .42); }
 
 .foot {
   margin-top: 26px; padding: 22px clamp(16px, 4vw, 44px) 40px;
+  display: flex; align-items: flex-start; gap: clamp(16px, 3vw, 40px); flex-wrap: wrap;
   border-top: 1px solid var(--line); color: var(--ink-2); font-size: 13px; background: var(--surface);
 }
+.foot-text { flex: 1 1 420px; min-width: 0; }
 .foot .fine { color: var(--muted); margin-top: 6px; max-width: 90ch; }
+.contact-foot { padding: 10px 13px; }
+.contact-foot .qr { width: 96px; height: 96px; }
 
+@media (max-width: 900px) {
+  .masthead { display: block; }
+  .contact { max-width: none; margin-top: 14px; }
+  .contact .qr { width: 96px; height: 96px; }
+  .masthead .scan-hint { display: block; }
+  .contact-inline { margin-top: 20px; max-width: none; }
+}
 @media (max-width: 620px) {
   .wordmark { font-size: 21px; }
   .tagline { display: none; }
   .catalog { grid-template-columns: 1fr; }
   .btn-copy { margin-left: 0; }
+  .contact { gap: 11px; padding: 10px 12px; }
+  .contact .qr, .contact-foot .qr { width: 72px; height: 72px; }
+  .contact b { font-size: 13px; }
+  .contact span { font-size: 12px; }
 }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }

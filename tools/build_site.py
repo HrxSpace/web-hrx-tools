@@ -54,6 +54,17 @@ def load_entries(path: Path) -> tuple[list[dict], dict]:
     return visible, doc.get("site") or {}
 
 
+def copy_brand_assets(src: Path, out: Path) -> None:
+    """公众号二维码不是条目封面，--no-images 时也要复制。"""
+    img_dir = out / "images"
+    img_dir.mkdir(parents=True, exist_ok=True)
+    qr_src = src / "assets" / "qrcode_wc.png"
+    if not qr_src.is_file():
+        print(f"警告：缺少二维码素材 {qr_src}，页面上的公众号二维码会显示为空白。")
+        return
+    (img_dir / "wechat-qr.png").write_bytes(qr_src.read_bytes())
+
+
 def make_images(entries: list[dict], jobs_root: Path, out: Path) -> None:
     try:
         from PIL import Image
@@ -251,6 +262,7 @@ def build(args: argparse.Namespace) -> int:
         make_images(entries, jobs_root, out)
 
     src = Path(args.src)
+    copy_brand_assets(src, out)
     site_url = (args.site_url or "").rstrip("/")
     desc = "本机能离线运行的 Windows 小工具目录：PDF、证件照、图片、音视频、表格、文件批量与系统效率工具，按名称或功能关键词搜索，附网盘分享链接与提取码。"
     template = (src / "template.html").read_text(encoding="utf-8")
