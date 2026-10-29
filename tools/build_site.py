@@ -96,7 +96,6 @@ def card_html(entry: dict, index: int) -> str:
     slug = entry["slug"]
     soon = entry.get("status") == "coming_soon"
     url = (entry.get("share_url") or "").strip()
-    code = (entry.get("share_code") or "").strip()
     feats = [f for f in (entry.get("features") or []) if f]
     chips = "".join(f"<li>{esc(chip_label(f))}</li>" for f in feats[:4])
     extra = f'<li class="more">+{len(feats) - 4}</li>' if len(feats) > 4 else ""
@@ -122,13 +121,11 @@ def card_html(entry: dict, index: int) -> str:
     if soon:
         cta = '<button class="btn" type="button" disabled>即将上架</button>'
     else:
-        label = "获取安装包" + (f"（{platform}）" if platform else "")
-        cta = f'<a class="btn" href="{esc(url)}" target="_blank" rel="noopener">{esc(label)}</a>'
-        copy_text = url + (f"  提取码：{code}" if code else "")
-        cta += f'<button class="btn ghost" type="button" data-copy="{esc(copy_text)}">复制链接</button>'
+        cta = f'<a class="btn" href="{esc(url)}" target="_blank" rel="noopener">获取安装包</a>'
     pills = "".join(
         f'<span class="pill">{esc(t)}</span>'
-        for t in [entry.get("version") and f"v{entry['version']}", entry.get("size_mb") and f"{entry['size_mb']} MB", entry.get("category")]
+        for t in [entry.get("version") and f"v{entry['version']}", entry.get("size_mb") and f"{entry['size_mb']} MB",
+                  entry.get("category"), platform]
         if t
     )
     return f"""

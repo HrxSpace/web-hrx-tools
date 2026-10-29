@@ -134,9 +134,7 @@
   });
   document.getElementById("catalog").addEventListener("click", (e) => {
     const more = e.target.closest("[data-more]");
-    if (more) return openDetail(more.dataset.more);
-    const cp = e.target.closest("[data-copy]");
-    if (cp) copy(cp.dataset.copy, cp);
+    if (more) openDetail(more.dataset.more);
   });
   document.getElementById("detail-close").onclick = () => dialog.close();
   dialog.addEventListener("click", (e) => { if (e.target === dialog) dialog.close(); });

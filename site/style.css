@@ -136,7 +136,7 @@ h1, h2, h3, p { margin: 0; }
 .btn {
   font: inherit; font-size: 14px; border-radius: 9px; padding: 9px 14px; cursor: pointer;
   border: 1px solid var(--brand); background: var(--brand); color: #fff; text-decoration: none;
-  display: inline-flex; align-items: center; gap: 6px;
+  display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;
 }
 .btn:hover { filter: brightness(1.07); }
 .btn.ghost { background: var(--surface); color: var(--brand); }
@@ -149,17 +149,17 @@ mark { background: #ffe9a8; color: inherit; border-radius: 3px; padding: 0 1px; 
 .empty { padding: 54px 20px 70px; text-align: center; color: var(--muted); }
 .empty-title { font-size: 17px; color: var(--ink-2); }
 .empty-hint button { font: inherit; font-size: 13px; color: var(--brand); background: var(--brand-soft); border: 0; border-radius: 6px; padding: 2px 8px; margin: 0 3px; cursor: pointer; }
-dialog.sheet {
+dialog#detail {
   width: min(660px, 92vw); border: 1px solid var(--line); border-radius: var(--radius);
   padding: 0; background: var(--surface); color: var(--ink); box-shadow: 0 24px 60px -20px rgba(20, 30, 50, .35);
 }
-dialog.sheet::backdrop { background: rgba(18, 26, 40, .42); }
+dialog#detail::backdrop { background: rgba(18, 26, 40, .42); }
 .sheet-head { display: flex; gap: 12px; align-items: flex-start; padding: 18px 20px 12px; border-bottom: 1px solid var(--line); }
 .sheet-head h2 { font-size: 19px; }
 .sheet-head p { font-family: var(--mono); font-size: 12px; color: var(--muted); margin-top: 3px; }
 .close { margin-left: auto; width: 30px; height: 30px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--ink-2); cursor: pointer; }
-.sheet img#detail-cover { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; display: block; border-bottom: 1px solid var(--line); }
-.sheet > article { display: grid; gap: 12px; }
+#detail-cover { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; display: block; border-bottom: 1px solid var(--line); }
+.sheet { display: grid; gap: 12px; }
 .sheet p#detail-desc { padding: 14px 20px 0; color: var(--ink-2); }
 .sheet ul#detail-features { padding: 0 20px; margin: 0; display: grid; gap: 5px; }
 .sheet ul#detail-features li { list-style: none; padding-left: 16px; position: relative; font-size: 14px; }
