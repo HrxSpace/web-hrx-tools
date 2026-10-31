@@ -25,7 +25,7 @@
 
 site:site:site:
   jobs_root: D:/Y_Hrx_Data/AI_WORK/AI_JOB
-  updated: '2026-10-29'
+  updated: '2026-10-31'
 shares:
 - slug: 000_PDF超级工具箱
   name: PDF超级工具箱
@@ -466,3 +466,69 @@ shares:
     artifact: ''
     image: resources/icon/app.png
     project_dir: 008_发票批量整理器
+- slug: 009_AI缓存清道夫
+  name: AI缓存清道夫
+  name_en: AICacheSweeper
+  exe_name: AI缓存清道夫
+  version: 0.3.2
+  status: live
+  category: 系统清理
+  downloads:
+  - platform: 夸克网盘
+    url: https://pan.quark.cn/s/c665452e6c83
+    code: ''
+  - platform: UC网盘
+    url: https://drive.uc.cn/s/d4ef13b9ee074?public=1
+    code: ''
+  share_url: ''
+  share_code: ''
+  platform: ''
+  summary: AI缓存清道夫是一款专门清理 AI 编程终端和包管理器残留的 Windows 桌面工具。
+  description: AI缓存清道夫是一款专门清理 AI 编程终端和包管理器残留的 Windows 桌面工具。它会把 Claude Code、Codex、Cursor、ZCode、Kimi、豆包、Qoder、TRAE
+    等 AI 工具留下的缓存、日志、会话历史、配置和更新包列成一张清单，按安全等级分类，让你先看清再决定删什么。 它适合经常使用 AI 编程工具、C 盘空间越来越紧张，但又担心“删错文件”的人。软件坚持三条原则：只清理本机、只读文件名/大小/修改时间（不打开文件内容）、不联网。
+  features:
+  - 扫描 AI 终端残留：自动找出用户目录和 AppData 里的 AI 工具缓存
+  - 四级安全分级：把每个条目标成 S（可放心清理）、A（需要你确认）
+  - 清理前先试算：列出本次要删多少项、大概能回收多少、哪些会先归档
+  - 直接删除并明确提示：删除不经过系统回收站，每次都会弹出三条固定警示
+  - 归档与还原：会话历史和配置在删除前会先复制到归档区
+  - 清理记录：每次清理都留下一条记录，写清估算回收、实际释放
+  - 瘦身建议：只读提示哪些终端很久没用、哪个文件特别大、哪些缓存占用高。
+  - SKILL/AGENT 盘点：把技能、命令、插件、规范文件列清楚，只看不动。
+  keywords:
+  - AI 缓存
+  - AI 编程工具
+  - 缓存清理
+  - C盘瘦身
+  - 磁盘清理
+  - 安全分级
+  - 归档还原
+  - Skill 盘点
+  - 不联网
+  - Codex
+  - Cursor
+  - ZCode
+  - Kimi
+  - 豆包
+  - Qoder
+  - 日志
+  - 会话历史
+  - 按安全等级分类
+  - C 盘空间越来越紧张
+  - 只读文件名
+  - 大小
+  aliases:
+  - AI缓存清理
+  - 缓存清理
+  - 清理C盘
+  - AI工具缓存
+  - Claude Code 缓存
+  - AICacheSweeper
+  - '009'
+  image: 推广套件/images/01-主界面空态.png
+  image_kind: screenshot
+  artifact: dist/AI缓存清道夫_v0.3.2.zip
+  artifact_dir: dist/AI缓存清道夫
+  size_mb: 46.2
+  copy_source: 用户手册/AI缓存清道夫使用说明.md
+  updated: '2026-10-31'
