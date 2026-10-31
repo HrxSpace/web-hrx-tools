@@ -27,6 +27,7 @@ DEFAULT_DATA = SITE_ROOT / "data" / "shares.yaml"
 DEFAULT_OUT = SITE_ROOT / "web"
 DEFAULT_SRC = SITE_ROOT / "site"
 MAX_WIDTH = 1280
+MAX_FULL_WIDTH = 1920
 SOFT_LIMIT_MB = 45
 
 CATEGORY_NOTE = {
@@ -45,11 +46,54 @@ def esc(value: object) -> str:
     return html.escape(str(value if value is not None else ""), quote=True)
 
 
+def entry_links(entry: dict) -> list[dict]:
+    """归一化下载渠道：downloads 数组优先，否则回退到 share_url 三件套。"""
+    raw = entry.get("downloads")
+    if isinstance(raw, dict):
+        raw = [raw]
+    links = []
+    for item in raw or []:
+        if not isinstance(item, dict):
+            continue
+        url = str(item.get("url") or "").strip()
+        if not url:
+            continue
+        links.append(
+            {
+                "platform": str(item.get("platform") or "").strip(),
+                "url": url,
+                "code": str(item.get("code") or "").strip(),
+                "note": str(item.get("note") or "").strip(),
+            }
+        )
+    if links:
+        return links
+    url = str(entry.get("share_url") or "").strip()
+    if not url:
+        return []
+    return [
+        {
+            "platform": str(entry.get("platform") or "").strip(),
+            "url": url,
+            "code": str(entry.get("share_code") or "").strip(),
+            "note": "",
+        }
+    ]
+
+
 def load_entries(path: Path) -> tuple[list[dict], dict]:
     doc = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
     shares = [e for e in (doc.get("shares") or []) if isinstance(e, dict)]
     # 只有挂了网盘链接的条目才上架；没链接的留在数据里当待办，不占页面
-    visible = [e for e in shares if e.get("status") != "hidden" and (e.get("share_url") or "").strip()]
+    visible = []
+    for e in shares:
+        if e.get("status") == "hidden":
+            continue
+        links = entry_links(e)
+        if not links:
+            continue
+        e["_links"] = links
+        visible.append(e)
     visible.sort(key=lambda e: (e.get("status") == "coming_soon", str(e.get("slug"))))
     return visible, doc.get("site") or {}
 
@@ -76,6 +120,7 @@ def make_images(entries: list[dict], jobs_root: Path, out: Path) -> None:
     for entry in entries:
         rel = entry.get("image") or ""
         src = (jobs_root / entry["slug"] / rel) if rel else None
+        entry["_asset_full"] = ""
         if not src or not src.is_file():
             entry["_asset"] = ""
             continue
@@ -87,12 +132,19 @@ def make_images(entries: list[dict], jobs_root: Path, out: Path) -> None:
             entry["_asset"] = f"images/{dst.name}"
             continue
         dst = img_dir / f"{stem}-cover.webp"
+        dst_full = img_dir / f"{stem}-full.webp"
         with Image.open(src) as im:
-            im = im.convert("RGB")
-            if im.width > MAX_WIDTH:
-                im = im.resize((MAX_WIDTH, round(im.height * MAX_WIDTH / im.width)), Image.LANCZOS)
-            im.save(dst, "WEBP", quality=78, method=6)
+            base = im.convert("RGB")
+            full = base if base.width <= MAX_FULL_WIDTH else base.resize(
+                (MAX_FULL_WIDTH, round(base.height * MAX_FULL_WIDTH / base.width)), Image.LANCZOS
+            )
+            card = base if base.width <= MAX_WIDTH else base.resize(
+                (MAX_WIDTH, round(base.height * MAX_WIDTH / base.width)), Image.LANCZOS
+            )
+            full.save(dst_full, "WEBP", quality=82, method=6)
+            card.save(dst, "WEBP", quality=78, method=6)
         entry["_asset"] = f"images/{dst.name}"
+        entry["_asset_full"] = f"images/{dst_full.name}"
 
 
 def chip_label(feature: str) -> str:
@@ -106,7 +158,6 @@ def chip_label(feature: str) -> str:
 def card_html(entry: dict, index: int) -> str:
     slug = entry["slug"]
     soon = entry.get("status") == "coming_soon"
-    url = (entry.get("share_url") or "").strip()
     feats = [f for f in (entry.get("features") or []) if f]
     chips = "".join(f"<li>{esc(chip_label(f))}</li>" for f in feats[:4])
     extra = f'<li class="more">+{len(feats) - 4}</li>' if len(feats) > 4 else ""
@@ -129,14 +180,22 @@ def card_html(entry: dict, index: int) -> str:
             f'<span>{esc(entry.get("name_en") or "")}</span><span>界面截图待补</span></div>'
         )
     platform = (entry.get("platform") or "").strip()
+    links = entry.get("_links") or []
+    primary = links[0] if links else None
+    platform = primary["platform"] if primary else platform
+    platform_label = platform + (f" +{len(links) - 1}" if len(links) > 1 else "")
+    primary_code = primary["code"] if primary else ""
     if soon:
         cta = '<button class="btn" type="button" disabled>即将上架</button>'
+    elif primary:
+        code_attr = f' data-code="{esc(primary_code)}"' if primary_code else ""
+        cta = f'<a class="btn" href="{esc(primary["url"])}" target="_blank" rel="noopener"{code_attr}>获取安装包</a>'
     else:
-        cta = f'<a class="btn" href="{esc(url)}" target="_blank" rel="noopener">获取安装包</a>'
+        cta = '<button class="btn" type="button" disabled>暂未开放下载</button>'
     pills = "".join(
         f'<span class="pill">{esc(t)}</span>'
         for t in [entry.get("version") and f"v{entry['version']}", entry.get("size_mb") and f"{entry['size_mb']} MB",
-                  entry.get("category"), platform]
+                  entry.get("category"), platform_label, primary_code and f"提取码 {primary_code}"]
         if t
     )
     return f"""
@@ -161,14 +220,15 @@ def card_html(entry: dict, index: int) -> str:
 def json_payload(entries: list[dict]) -> str:
     """内嵌给前端的数据。封面一律用相对路径：站点部署在域名根目录，
     绝对地址会随域名变化而失效，只有 og:image 需要绝对 URL。"""
-    keep = ("slug", "name", "name_en", "exe_name", "version", "status", "category", "summary",
-            "description", "features", "keywords", "aliases", "share_code", "platform")
+    keep = ("slug", "name", "name_en", "exe_name", "version", "size_mb", "status", "category", "summary",
+            "description", "features", "keywords", "aliases")
     rows = []
     for e in entries:
         row = {k: e.get(k) or ([] if k in ("features", "keywords", "aliases") else "") for k in keep}
         row["id"] = e["slug"]
         row["cover"] = e.get("_asset") or ""
-        row["share_url"] = (e.get("share_url") or "").strip()
+        row["cover_full"] = e.get("_asset_full") or ""
+        row["links"] = e.get("_links") or []
         row["updated"] = e.get("updated") or ""
         rows.append(row)
     return json.dumps(rows, ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/")
@@ -242,13 +302,13 @@ def build(args: argparse.Namespace) -> int:
         return 2
     entries, site = load_entries(data_path)
     all_rows = [e for e in ((yaml.safe_load(data_path.read_text(encoding="utf-8")) or {}).get("shares") or [])]
-    backlog = [e.get("name") or e.get("slug") or "?" for e in all_rows if e.get("status") != "hidden" and not (e.get("share_url") or "").strip()]
+    backlog = [e.get("name") or e.get("slug") or "?" for e in all_rows if e.get("status") != "hidden" and not entry_links(e)]
     if not entries:
         print("没有可上架的条目：所有条目都还没挂网盘链接。")
         print(f"待挂链接 {len(backlog)} 条，填好 data/shares.yaml 的 share_url 后重新构建。")
         return 0
     jobs_root = Path(site.get("jobs_root") or SITE_ROOT.parent)
-    out = Path(args.out)
+    out = Path(args.out).resolve()
     out.mkdir(parents=True, exist_ok=True)
     for stale in out.glob("*.html"):
         stale.unlink()
@@ -258,6 +318,7 @@ def build(args: argparse.Namespace) -> int:
     if args.no_images:
         for e in entries:
             e["_asset"] = ""
+            e["_asset_full"] = ""
     else:
         make_images(entries, jobs_root, out)
 

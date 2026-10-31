@@ -6,9 +6,14 @@
 #   exe_name        发行包/进程名，用户搜索时可能直接搜它
 #   version         对外版本号
 #   status          live=上架 / coming_soon=即将上架（灰态卡片） / hidden=完全不渲染
-#   share_url       网盘分享链接；留空则卡片显示「暂未开放下载」
-#   share_code      提取码/访问码，随链接一起展示并支持一键复制
-#   platform        网盘平台名，显示在按钮上
+#   downloads       多网盘渠道列表，填了优先于下面的三件套（提取码建议加引号）：
+#                     - platform: 夸克网盘
+#                       url: https://pan.quark.cn/s/xxxx
+#                       code: '1A2B'        # 可留空
+#                       note: 无需登录        # 可留空
+#   share_url       单渠道快捷写法：网盘分享链接；留空则不下发到页面
+#   share_code      单渠道快捷写法：提取码/访问码，随链接展示并支持复制
+#   platform        单渠道快捷写法：网盘平台名
 #   category        分类标签，用于筛选栏
 #   summary         卡片上的一句话（建议 30~60 字）
 #   description     详情段落，建议直接取自用户手册的软件简介
@@ -20,10 +25,10 @@
 #   copy_source     简介抽取来源，人工改写后仍可保留作为出处
 #   discovered      脚本自动发现的值，仅供对照，不参与渲染
 #
-# 新增软件：把目录放进软件根目录，跑 `python tools/scan_jobs.py`，再填 share_url。
+# 新增软件：把目录放进软件根目录，跑 `python tools/scan_jobs.py`，再填链接。
 # 生成站点：`python tools/build_site.py`，产物在 web/。
 
-site:site:site:
+site:
   jobs_root: D:/Y_Hrx_Data/AI_WORK/AI_JOB
   updated: '2026-10-31'
 shares:
@@ -34,9 +39,13 @@ shares:
   version: 3.1.0
   status: live
   category: 文档处理
-  share_url: https://pan.quark.cn/s/bf74be5b358b
-  share_code: ''
-  platform: 夸克网盘
+  downloads:
+  - platform: 夸克网盘
+    url: https://pan.quark.cn/s/bf74be5b358b
+    code: ''
+  - platform: UC网盘
+    url: https://drive.uc.cn/s/4316096f0e924?public=1
+    code: ''
   summary: 合并、拆分、OCR、压缩、水印——装在自己电脑里的 PDF 工具箱
   description: PDF超级工具箱是一款装在你自己电脑里的 PDF 处理工具：合并、拆分、页面编辑、图片互转、加密、水印、OCR、压缩、书签与元数据，12 个常用功能一个不缺，全部在本机完成。文件不上传、不联网，处理合同、报表、扫描件这类敏感文档更放心。
   features:
@@ -74,8 +83,8 @@ shares:
   copy_source: 用户手册/PDF超级工具箱使用说明.md
   updated: '2026-10-29'
   discovered:
-    version: 3.1.0
-    artifact: dist/PDFSuperToolbox_v3.1.0.zip
+    version: 3.1.2
+    artifact: dist/PDF超级工具箱_v3.1.2.zip
     image: 推广套件/images/01-主界面.png
     project_dir: 000_PDF超级工具箱
 - slug: 001_证件照制作工具
@@ -85,9 +94,13 @@ shares:
   version: 0.1.0
   status: live
   category: 证件证照
-  share_url: ''
-  share_code: ''
-  platform: ''
+  downloads:
+  - platform: 夸克网盘
+    url: https://pan.quark.cn/s/e845c890b95f
+    code: ''
+  - platform: UC网盘
+    url: https://drive.uc.cn/s/e1acf58f27344?public=1
+    code: ''
   summary: 证照快做是一款在本地电脑上制作标准证件照的桌面工具。
   description: 证照快做是一款在本地电脑上制作标准证件照的桌面工具。导入一张生活照，选好规格，软件自动完成抠图、换底和构图，按报名要求导出成品，还能自动拼版直接送印。 软件全程离线运行：照片只在你电脑的内存里处理，不上传、不联网、不保存原图；AI
     抠图模型随软件包内置，没有网络也能用。全程无水印、无广告。
@@ -127,8 +140,8 @@ shares:
   copy_source: 用户手册/证照快做使用说明.md
   updated: '2026-10-29'
   discovered:
-    version: 0.1.0
-    artifact: dist/idphotokit_v0.1.0.zip
+    version: 0.1.5
+    artifact: dist/证照快做_v0.1.4.zip
     image: 推广套件/images/01-导入页.png
     project_dir: 001_证件照制作工具
 - slug: 002_文件百宝箱
@@ -176,7 +189,7 @@ shares:
   copy_source: README.md
   updated: '2026-10-29'
   discovered:
-    version: 0.9.1
+    version: 0.9.6
     artifact: dist/BoxBatch_v0.9.1_win_x64.zip
     image: 演示视频/images/01-主界面.png
     project_dir: 002_文件百宝箱
@@ -228,7 +241,7 @@ shares:
   copy_source: mediatoolbox-src/README.txt
   updated: '2026-10-29'
   discovered:
-    version: 0.1.0
+    version: 0.1.4
     artifact: mediatoolbox-src/dist/MediaToolbox_v0.1.0.zip
     image: mediatoolbox-src/resources/icon/app.png
     project_dir: mediatoolbox-src
@@ -280,7 +293,7 @@ shares:
   copy_source: README.md
   updated: '2026-10-29'
   discovered:
-    version: 1.0.2
+    version: 1.0.6
     artifact: dist/TableWorks_v1.0.2.zip
     image: docs/布局间距验收/改后_主窗口.png
     project_dir: 004_表格加工厂
@@ -289,7 +302,7 @@ shares:
   name_en: WinButler
   exe_name: WinZone
   version: 1.0.0
-  status: live
+  status: hidden
   category: 系统效率
   share_url: ''
   share_code: ''
@@ -337,6 +350,39 @@ shares:
     artifact: dist/WinZone_v1.0.0.zip
     image: ''
     project_dir: 005_WinButler窗口管家
+- slug: 005_Win窗口管家
+  name: 窗口管家
+  name_en: Chuangkouguanjia
+  exe_name: 窗口管家
+  version: 1.0.3
+  status: live
+  category: ''
+  share_url: ''
+  share_code: ''
+  platform: ''
+  summary: Windows 桌面窗口效率工具：置顶、分屏吸附、隐私速藏、剪贴板历史、快捷启动、取色、标尺、定时任务
+  description: Windows 桌面窗口效率工具：置顶、分屏吸附、隐私速藏、剪贴板历史、快捷启动、取色、标尺、定时任务、截图贴图，常驻系统托盘，纯本地运行。
+  features: []
+  keywords:
+  - 分屏吸附
+  - 隐私速藏
+  - 剪贴板历史
+  - 快捷启动
+  - 取色
+  - 标尺
+  - 定时任务
+  - 截图贴图
+  - 常驻系统托盘
+  - 纯本地运行
+  - chuangkouguanjia
+  aliases: []
+  image: ''
+  image_kind: ''
+  artifact: dist/窗口管家_v1.0.0.zip
+  artifact_dir: dist/窗口管家
+  size_mb: 72.2
+  copy_source: README.md
+  updated: '2026-10-31'
 - slug: 006_图片去除水印工具
   name: 图片去水印
   name_en: WatermarkRemover
@@ -385,7 +431,7 @@ shares:
   copy_source: 用户手册/图片去水印使用说明.md
   updated: '2026-10-29'
   discovered:
-    version: 1.29.1
+    version: 1.29.5
     artifact: dist/图片去水印_v1.25.3.zip
     image: 用户手册/images/01-主界面.png
     project_dir: 006_图片去除水印工具
@@ -408,17 +454,17 @@ shares:
   - 文件去重
   - DupCleaner
   - '007'
-  image: ''
-  image_kind: ''
-  artifact: ''
-  artifact_dir: ''
+  image: resources/icon/app.png
+  image_kind: icon
+  artifact: dist/重复文件清理大师_v1.6.1.zip
+  artifact_dir: dist/重复文件清理大师
   size_mb: 0.0
   copy_source: ''
   updated: '2026-10-29'
   discovered:
-    version: 1.0.0
-    artifact: ''
-    image: ''
+    version: 1.6.1
+    artifact: dist/重复文件清理大师_v1.6.1.zip
+    image: resources/icon/app.png
     project_dir: 007_WIN文件去重工具
 - slug: 008_发票批量整理器
   name: 发票批量整理器
@@ -462,7 +508,7 @@ shares:
   copy_source: README.md
   updated: '2026-10-29'
   discovered:
-    version: 0.1.0
+    version: 0.1.3
     artifact: ''
     image: resources/icon/app.png
     project_dir: 008_发票批量整理器

@@ -36,9 +36,14 @@ HEADER = """\
 #   exe_name        发行包/进程名，用户搜索时可能直接搜它
 #   version         对外版本号
 #   status          live=上架 / coming_soon=即将上架（灰态卡片） / hidden=完全不渲染
-#   share_url       网盘分享链接；留空则卡片显示「暂未开放下载」
-#   share_code      提取码/访问码，随链接一起展示并支持一键复制
-#   platform        网盘平台名，显示在按钮上
+#   downloads       多网盘渠道列表，填了优先于下面的三件套（提取码建议加引号）：
+#                     - platform: 夸克网盘
+#                       url: https://pan.quark.cn/s/xxxx
+#                       code: '1A2B'        # 可留空
+#                       note: 无需登录        # 可留空
+#   share_url       单渠道快捷写法：网盘分享链接；留空则不下发到页面
+#   share_code      单渠道快捷写法：提取码/访问码，随链接展示并支持复制
+#   platform        单渠道快捷写法：网盘平台名
 #   category        分类标签，用于筛选栏
 #   summary         卡片上的一句话（建议 30~60 字）
 #   description     详情段落，建议直接取自用户手册的软件简介
@@ -50,7 +55,7 @@ HEADER = """\
 #   copy_source     简介抽取来源，人工改写后仍可保留作为出处
 #   discovered      脚本自动发现的值，仅供对照，不参与渲染
 #
-# 新增软件：把目录放进软件根目录，跑 `python tools/scan_jobs.py`，再填 share_url。
+# 新增软件：把目录放进软件根目录，跑 `python tools/scan_jobs.py`，再填链接。
 # 生成站点：`python tools/build_site.py`，产物在 web/。
 
 """
@@ -513,6 +518,16 @@ def merge(existing: list[dict], founds: list[Found], force: bool = False) -> tup
     return sorted(result, key=lambda e: e.get("slug", "")), notes
 
 
+def entry_links(entry: dict) -> list[dict]:
+    raw = entry.get("downloads")
+    if isinstance(raw, dict):
+        raw = [raw]
+    links = [i for i in raw or [] if isinstance(i, dict) and str(i.get("url") or "").strip()]
+    if not links and str(entry.get("share_url") or "").strip():
+        links = [{"url": entry["share_url"]}]
+    return links
+
+
 def report(founds: list[Found], entries: list[dict], notes: list[str], jobs_root: Path) -> None:
     by_slug = {e.get("slug"): e for e in entries if isinstance(e, dict)}
     pairs = [(f, by_slug.get(f.slug) or {}) for f in founds]
@@ -522,12 +537,13 @@ def report(founds: list[Found], entries: list[dict], notes: list[str], jobs_root
     for found, entry in pairs:
         pkg = f"{found.size_mb:.0f}MB" if found.artifact else ("onedir" if found.artifact_dir else "无")
         img = found.image_kind or "无"
-        link = "已填" if entry.get("share_url") else "待建"
+        links = entry_links(entry)
+        link = f"已填（{len(links)} 渠道）" if links else "待建"
         print(f"{found.slug:<26}{found.name:<16}{found.version or '-':<9}{pkg:<10}{img:<12}{link}")
     print("-" * 100)
     for found, entry in pairs:
         gaps = list(found.warnings)
-        if not entry.get("share_url"):
+        if not entry_links(entry):
             gaps.append("缺分享链接")
         if not entry.get("category"):
             gaps.append("缺分类")

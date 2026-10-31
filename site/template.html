@@ -60,19 +60,40 @@
 <dialog id="detail" aria-labelledby="detail-name">
   <article class="sheet">
     <header class="sheet-head">
-      <div>
+      <div class="sheet-title">
         <h2 id="detail-name"></h2>
         <p id="detail-sub"></p>
+        <div class="sheet-meta" id="detail-meta"></div>
       </div>
       <button class="close" type="button" id="detail-close" aria-label="关闭详情">✕</button>
     </header>
-    <img id="detail-cover" alt="" hidden>
-    <p id="detail-desc"></p>
-    <ul id="detail-features"></ul>
-    <div class="sheet-meta" id="detail-meta"></div>
-    <div class="sheet-cta" id="detail-cta"></div>
-    <p class="note">下载后解压即用；软件全部在你自己的电脑上运行，不需要联网。</p>
+    <div class="sheet-body">
+      <button class="sheet-cover" type="button" id="detail-cover-btn" hidden aria-label="放大查看软件界面截图">
+        <img id="detail-cover" alt="">
+        <span class="zoom-tag" aria-hidden="true">点击放大</span>
+      </button>
+      <p id="detail-desc"></p>
+      <section class="dl" aria-labelledby="dl-title">
+        <div class="dl-head">
+          <h3 id="dl-title">下载渠道</h3>
+          <span class="dl-count" id="detail-dl-count"></span>
+        </div>
+        <div class="dl-list" id="detail-links"></div>
+        <p class="dl-tip" id="detail-dl-tip">下载后解压即用；软件全部在你自己的电脑上运行，不需要联网。</p>
+      </section>
+      <section class="feats-block" id="detail-feats-block" aria-labelledby="feats-title">
+        <h3 id="feats-title">功能要点</h3>
+        <ul id="detail-features"></ul>
+      </section>
+    </div>
   </article>
+  <div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
+</dialog>
+
+<dialog id="lightbox" aria-label="界面截图放大预览">
+  <button class="lb-close" type="button" id="lightbox-close" aria-label="关闭预览">✕</button>
+  <img id="lightbox-img" alt="">
+  <p class="lb-hint">点击空白处或按 Esc 关闭</p>
 </dialog>
 
 <footer class="foot">
@@ -88,6 +109,8 @@
     </figcaption>
   </figure>
 </footer>
+
+<div class="toast" id="page-toast" role="status" aria-live="polite" aria-atomic="true"></div>
 
 <script type="application/json" id="shares-data">{{DATA}}</script>
 <script src="app.js"></script>
