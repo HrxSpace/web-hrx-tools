@@ -3,6 +3,12 @@
 适用站点：`https://hrx-tools-g1ldzszv60x.qoder.zone/`（Qoder Sites 静态托管）
 数据源：`data/shares.yaml` → 构建器：`tools/build_site.py` → 产物：`web/`
 
+> **2026-10-31 决策记录**：不购买域名、不做 ICP 备案，站点继续托管在 Qoder Sites（域名/HTTPS/托管由平台代管）。
+> 因此国内引擎（百度/搜狗/360/神马）**放弃**，主攻 **Google + Bing/IndexNow + Yandex + AI 引擎**——这几条路都不需要备案。
+> 同日已落地「零风险基建」：卡片锚点与 `#slug` 深链、JSON-LD 补 `downloadUrl`/`fileSize`/`dateModified`/`featureList`/`WebSite` 实体、
+> `robots.txt` 三组显式放行、`llms.txt` 生成、首页唯一 `<h1>`、sitemap `lastmod` 取真实变更日、`og:site_name`/`og:locale`/twitter 字段、
+> `meta robots` 与 `theme-color`。**多页面化（P0）尚未做**，仍是全站 1 个可索引 URL。
+
 ---
 
 ## 一、现状体检

@@ -230,7 +230,7 @@
     document.getElementById("detail-feats-block").hidden = !feats.length;
     toastEl.classList.remove("show");
     pageToastEl.classList.remove("show");
-    dialog.showModal();
+    if (!dialog.open) dialog.showModal();
     sheetBody.scrollTop = 0;
   }
 
@@ -249,7 +249,10 @@
   });
   document.getElementById("catalog").addEventListener("click", (e) => {
     const more = e.target.closest("[data-more]");
-    if (more) openDetail(more.dataset.more);
+    if (!more) return;
+    e.preventDefault(); // 详情面板就是定位结果，别让浏览器再滚一次锚点
+    openDetail(more.dataset.more);
+    history.replaceState(null, "", `#${more.dataset.more}`);
   });
   document.addEventListener("click", (e) => {
     const link = e.target.closest("a[data-code]");
@@ -276,5 +279,17 @@
     }
   });
 
+  // 带 #slug 进来（别人转发的地址、结构化数据里声明的 url）时直接展开对应详情
+  const hashId = () => {
+    const id = decodeURIComponent(location.hash.slice(1));
+    return byId.has(id) ? id : "";
+  };
+  window.addEventListener("hashchange", () => {
+    const id = hashId();
+    if (id) openDetail(id);
+  });
+
   apply();
+  const deep = hashId();
+  if (deep) openDetail(deep);
 })();

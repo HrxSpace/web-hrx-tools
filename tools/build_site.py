@@ -41,6 +41,21 @@ CATEGORY_NOTE = {
     "办公票据": "发票与票据台账",
 }
 
+BRAND = "HRX 软件库"
+PAGE_TITLE = "HRX 软件库 - 本地工具下载目录"
+PAGE_DESC = (
+    "本机能离线运行的 Windows 小工具目录：PDF、证件照、图片、音视频、表格、文件批量与系统效率工具，"
+    "按名称或功能关键词搜索，附网盘分享链接与提取码。"
+)
+
+# robots 里显式点名放行：默认组虽然是全放行，但共享域名上的通用规则容易被上游改写，
+# 而且 AI 爬虫和搜索引擎分开声明，将来要收紧训练类抓取时不会连带影响收录。
+ROBOTS_GROUPS = [
+    ("搜索引擎", ["Googlebot", "Bingbot", "Baiduspider", "Sogou web spider", "360Spider", "YisouSpider", "YandexBot", "Applebot"]),
+    ("AI 检索类：回答中带来源链接，能带来回访", ["OAI-SearchBot", "ChatGPT-User", "Claude-SearchBot", "PerplexityBot", "DuckAssistBot"]),
+    ("AI 训练类：决定内容进不进模型长期记忆", ["GPTBot", "ClaudeBot", "anthropic-ai", "Google-Extended", "Bytespider", "CCBot", "Amazonbot"]),
+]
+
 
 def esc(value: object) -> str:
     return html.escape(str(value if value is not None else ""), quote=True)
@@ -199,7 +214,7 @@ def card_html(entry: dict, index: int) -> str:
         if t
     )
     return f"""
-    <article class="card" data-id="{esc(slug)}">
+    <article class="card" id="{esc(slug)}" data-id="{esc(slug)}">
       {cover}
       <div class="card-body">
         <div class="title-row">
@@ -211,7 +226,7 @@ def card_html(entry: dict, index: int) -> str:
         <ul class="feats">{chips}{extra}</ul>
         <div class="card-foot">
           {cta}
-          <button class="btn ghost btn-copy" type="button" data-more="{esc(slug)}">详情</button>
+          <a class="btn ghost btn-copy" href="#{esc(slug)}" data-more="{esc(slug)}">详情</a>
         </div>
       </div>
     </article>"""
@@ -234,50 +249,151 @@ def json_payload(entries: list[dict]) -> str:
     return json.dumps(rows, ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/")
 
 
+def app_item(entry: dict, site_url: str) -> dict:
+    """单款软件的结构化实体。片段地址目前就是该条目的可寻址位置，
+    等详情页拆成独立 URL 后只改 url 一行。"""
+    links = entry.get("_links") or []
+    item = {
+        "@type": "SoftwareApplication",
+        "name": entry.get("name"),
+        "alternateName": entry.get("name_en") or entry.get("exe_name") or "",
+        "operatingSystem": "Windows 10 / Windows 11 64 位",
+        "applicationCategory": "UtilitiesApplication",
+        "description": entry.get("summary") or entry.get("description") or "",
+        "softwareVersion": entry.get("version") or "",
+        "featureList": [f for f in (entry.get("features") or []) if f],
+        "offers": {"@type": "Offer", "price": "0", "priceCurrency": "CNY"},
+        "url": f"{site_url}/#{entry['slug']}" if site_url else "",
+    }
+    if entry.get("size_mb"):
+        item["fileSize"] = f"{entry['size_mb']} MB"
+    if entry.get("updated"):
+        item["dateModified"] = entry["updated"]
+    if entry.get("status") != "coming_soon" and links:
+        item["downloadUrl"] = links[0]["url"]
+    cover = entry.get("_asset_full") or entry.get("_asset") or ""
+    if cover and site_url:
+        item["image"] = f"{site_url}/{cover}"
+    return item
+
+
+def json_ld(entries: list[dict], site_url: str, desc: str) -> str:
+    doc = {
+        "@context": "https://schema.org",
+        "@graph": [
+            {
+                "@type": "WebSite",
+                "@id": f"{site_url}/#website",
+                "url": f"{site_url}/",
+                "name": BRAND,
+                "description": desc,
+                "inLanguage": "zh-CN",
+                "publisher": {"@type": "Person", "@id": f"{site_url}/#author", "name": "HRX"},
+            },
+            {
+                "@type": "ItemList",
+                "name": PAGE_TITLE,
+                "numberOfItems": len(entries),
+                "itemListElement": [
+                    {"@type": "ListItem", "position": i + 1, "item": app_item(e, site_url)}
+                    for i, e in enumerate(entries)
+                ],
+            },
+        ],
+    }
+    return json.dumps(doc, ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/")
+
+
 def head_extra(entries: list[dict], site_url: str, desc: str) -> str:
-    if not site_url:
-        return ""
-    first_cover = next((e["_asset"] for e in entries if e.get("_asset") and e.get("image_kind") == "screenshot"), "")
-    og = f'<meta property="og:image" content="{esc(site_url + "/" + first_cover)}">\n' if first_cover else ""
-    ld = json.dumps(
-        {
-            "@context": "https://schema.org",
-            "@type": "ItemList",
-            "name": "HRX 软件库 - 本地工具下载目录",
-            "itemListElement": [
-                {
-                    "@type": "ListItem",
-                    "position": i + 1,
-                    "item": {
-                        "@type": "SoftwareApplication",
-                        "name": e.get("name"),
-                        "alternateName": e.get("name_en") or e.get("exe_name") or "",
-                        "operatingSystem": "Windows",
-                        "applicationCategory": "UtilitiesApplication",
-                        "description": e.get("summary") or e.get("description") or "",
-                        "softwareVersion": e.get("version") or "",
-                        "offers": {"@type": "Offer", "price": "0", "priceCurrency": "CNY"},
-                        "url": f"{site_url}/#{e['slug']}",
-                    },
-                }
-                for i, e in enumerate(entries)
-            ],
-        },
-        ensure_ascii=False,
-    ).replace("</", "<\\/")
-    canonical = "\n".join(
-        [
+    lines = [
+        '<meta property="og:site_name" content="HRX 软件库">',
+        '<meta property="og:locale" content="zh_CN">',
+    ]
+    if site_url:
+        first_cover = next((e["_asset"] for e in entries if e.get("_asset") and e.get("image_kind") == "screenshot"), "")
+        lines += [
             f'<link rel="canonical" href="{esc(site_url)}/">',
-            f'<meta property="og:type" content="website">',
-            f'<meta property="og:title" content="HRX 软件库 - 本地工具下载目录">',
+            '<meta property="og:type" content="website">',
+            f'<meta property="og:title" content="{esc(PAGE_TITLE)}">',
             f'<meta property="og:description" content="{esc(desc)}">',
             f'<meta property="og:url" content="{esc(site_url)}/">',
-            og,
-            f'<meta name="twitter:card" content="summary_large_image">',
-            f'<script type="application/ld+json">{ld}</script>',
         ]
-    )
-    return canonical
+        if first_cover:
+            lines.append(f'<meta property="og:image" content="{esc(site_url + "/" + first_cover)}">')
+        lines += [
+            '<meta name="twitter:card" content="summary_large_image">',
+            f'<meta name="twitter:title" content="{esc(PAGE_TITLE)}">',
+            f'<meta name="twitter:description" content="{esc(desc)}">',
+            f'<script type="application/ld+json">{json_ld(entries, site_url, desc)}</script>',
+        ]
+    return "\n".join(lines)
+
+
+def llms_txt(entries: list[dict], site_url: str, updated: str) -> str:
+    """面向 AI 引擎的纯文本目录：逐条写清是什么、什么版本、能干什么、去哪下载。"""
+    base = site_url or ""
+    out = [
+        f"# {BRAND}",
+        "",
+        "> 本机运行的 Windows 免费桌面小工具目录。绿色免安装、不需要联网、文件不上传，"
+        "PDF 合并拆分、证件照、去水印、文件去重等常用办公操作全部在自己电脑上完成。",
+        f"> 个人开发者 HRX 维护，共 {len(entries)} 款软件，数据更新于 {updated}。",
+        "",
+        "## 站点",
+        f"- [全部软件目录]({base}/): 卡片式目录，按名称、英文名、功能关键词检索；"
+        "「详情」给出完整功能清单与全部下载渠道",
+        "",
+        "## 软件",
+    ]
+    for e in entries:
+        links = e.get("_links") or []
+        plats = "、".join(l["platform"] for l in links if l["platform"]) or "网盘"
+        codes = "；".join(f"{l['platform']} 提取码 {l['code']}" for l in links if l["code"])
+        facts = " · ".join(
+            t for t in [
+                e.get("category") or "",
+                f"v{e['version']}" if e.get("version") else "",
+                f"{e['size_mb']} MB" if e.get("size_mb") else "",
+                f"下载渠道：{plats}" + (f"（{codes}）" if codes else ""),
+            ] if t
+        )
+        feats = "；".join(f for f in (e.get("features") or [])[:4] if f)
+        alias = "、".join(a for a in (e.get("aliases") or [])[:5] if a)
+        row = f"- [{e.get('name')}]({base}/#{e['slug']}): {e.get('summary') or ''}（{facts}）"
+        if feats:
+            row += f" 功能：{feats}。"
+        if alias:
+            row += f" 也叫 {alias}。"
+        if e.get("name_en"):
+            row += f" 英文名 {e['name_en']}。"
+        out.append(row)
+    cats = [c for c in dict.fromkeys(e.get("category") for e in entries) if c]
+    out += [
+        "",
+        "## 分类",
+        *(f"- {c}：{CATEGORY_NOTE[c]}" if c in CATEGORY_NOTE else f"- {c}" for c in cats),
+        "",
+        "## 说明",
+        "- 全部软件免费获取，无内购、无广告、不收集使用数据。",
+        "- 系统要求：Windows 10 / Windows 11 64 位；解压即用，不需要装运行库。",
+        "- 下载经夸克网盘、UC 网盘等渠道分发，提取码在页面上直接展示并可一键复制。",
+        "- 分享失效或想要还没做出的工具：微信公众号「HRX 软件库」可提需求，也接受定制开发。",
+        "",
+    ]
+    return "\n".join(out)
+
+
+def robots_txt(site_url: str) -> str:
+    """默认组已全放行，显式点名是为了：上游若改共享域通用规则，本站的收录与 AI 抓取组仍在；
+    且训练类与检索类分开声明，将来收紧训练抓取不会连带把收录一起关掉。"""
+    lines = ["# 全站开放抓取：无后台、无接口、无用户数据，页面内容即全部内容。", "User-agent: *", "Allow: /", ""]
+    for label, agents in ROBOTS_GROUPS:
+        lines.append(f"# {label}")
+        for ua in agents:
+            lines += [f"User-agent: {ua}", "Allow: /", ""]
+    if site_url:
+        lines.append(f"Sitemap: {site_url}/sitemap.xml")
+    return "\n".join(lines).strip() + "\n"
 
 
 def chips_html(entries: list[dict]) -> str:
@@ -325,17 +441,18 @@ def build(args: argparse.Namespace) -> int:
     src = Path(args.src)
     copy_brand_assets(src, out)
     site_url = (args.site_url or "").rstrip("/")
-    desc = "本机能离线运行的 Windows 小工具目录：PDF、证件照、图片、音视频、表格、文件批量与系统效率工具，按名称或功能关键词搜索，附网盘分享链接与提取码。"
+    desc = PAGE_DESC
+    updated = str(site.get("updated") or date.today())
     template = (src / "template.html").read_text(encoding="utf-8")
     page = (
-        template.replace("{{TITLE}}", "HRX 软件库 - 本地工具下载目录")
+        template.replace("{{TITLE}}", PAGE_TITLE)
         .replace("{{DESC}}", esc(desc))
         .replace("{{HEAD}}", head_extra(entries, site_url, desc))
         .replace("{{CHIPS}}", chips_html(entries))
         .replace("{{CARDS}}", "".join(card_html(e, i) for i, e in enumerate(entries)))
         .replace("{{DATA}}", json_payload(entries))
         .replace("{{COUNT}}", str(len(entries)))
-        .replace("{{UPDATED}}", str(site.get("updated") or date.today()))
+        .replace("{{UPDATED}}", updated)
         .replace("{{MAINTAINER}}", "HRX")
     )
     (out / "index.html").write_text(page, encoding="utf-8")
@@ -346,16 +463,19 @@ def build(args: argparse.Namespace) -> int:
         '<path d="M18 20h9l7 12 7-12h9v24h-8V33l-6 10h-4l-6-10v11h-8z" fill="#fff"/></svg>\n',
         encoding="utf-8",
     )
-    (out / "robots.txt").write_text(
-        f"User-agent: *\nAllow: /\n{(f'Sitemap: {site_url}/sitemap.xml') if site_url else ''}\n".strip() + "\n",
-        encoding="utf-8",
-    )
+    (out / "robots.txt").write_text(robots_txt(site_url), encoding="utf-8")
+    (out / "llms.txt").write_text(llms_txt(entries, site_url, updated), encoding="utf-8")
     if site_url:
-        urls = "\n".join([f"  <url><loc>{esc(site_url)}/</loc><lastmod>{esc(date.today())}</lastmod></url>"])
+        # 条目各自带 updated，lastmod 取全站最近一次真实内容变更；
+        # 一律写成构建日会让抓取器把整站的更新信号当成噪声。
+        lastmod = max([str(e["updated"]) for e in entries if e.get("updated")] + [updated])
+        urls = "\n".join([f"  <url><loc>{esc(site_url)}/</loc><lastmod>{esc(lastmod)}</lastmod></url>"])
         (out / "sitemap.xml").write_text(
             f'<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n{urls}\n</urlset>\n',
             encoding="utf-8",
         )
+    elif (out / "sitemap.xml").is_file():
+        (out / "sitemap.xml").unlink()  # 不带域名构建时，别把旧域名的 sitemap 留在发布包里
 
     total = sum(f.stat().st_size for f in out.rglob("*") if f.is_file()) / 1048576
     no_cover = [e["name"] for e in entries if e.get("image_kind") != "screenshot"]
