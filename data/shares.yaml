@@ -30,7 +30,7 @@
 
 site:
   jobs_root: D:/Y_Hrx_Data/AI_WORK/AI_JOB
-  updated: '2026-10-31'
+  updated: '2026-11-01'
 shares:
 - slug: 000_PDF超级工具箱
   name: PDF超级工具箱
@@ -387,9 +387,16 @@ shares:
   name: 图片去水印
   name_en: WatermarkRemover
   exe_name: 图片去水印
-  version: 1.29.1
+  version: 1.29.6
   status: live
   category: 图片处理
+  downloads:
+  - platform: 夸克网盘
+    url: https://pan.quark.cn/s/165cd872ae53
+    code: ''
+  - platform: UC网盘
+    url: https://drive.uc.cn/s/dd4ebdb5991d4?public=1
+    code: ''
   share_url: ''
   share_code: ''
   platform: ''
@@ -425,15 +432,15 @@ shares:
   - '006'
   image: 用户手册/images/01-主界面.png
   image_kind: screenshot
-  artifact: dist/图片去水印_v1.25.3.zip
+  artifact: dist/图片去水印_v1.29.6.zip
   artifact_dir: dist/图片去水印
-  size_mb: 492.5
+  size_mb: 489.9
   copy_source: 用户手册/图片去水印使用说明.md
-  updated: '2026-10-29'
+  updated: '2026-11-01'
   discovered:
-    version: 1.29.5
-    artifact: dist/图片去水印_v1.25.3.zip
-    image: 用户手册/images/01-主界面.png
+    version: 1.29.7
+    artifact: dist/图片去水印_v1.29.6.zip
+    image: 推广套件/images/01-主界面.png
     project_dir: 006_图片去除水印工具
 - slug: 007_WIN文件去重工具
   name: 重复文件清理大师
