@@ -29,7 +29,6 @@
 # 生成站点：`python tools/build_site.py`，产物在 web/。
 
 site:
-  jobs_root: D:/Y_Hrx_Data/AI_WORK/AI_JOB
   updated: '2026-11-01'
 shares:
 - slug: 000_PDF超级工具箱

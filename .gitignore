@@ -3,3 +3,5 @@ web/
 __pycache__/
 *.pyc
 .*.qoder.site
+# 本机路径例外：只在目录结构与默认布局不同才需要，不进版本库
+data/paths.local.yaml

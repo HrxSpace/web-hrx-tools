@@ -4,10 +4,11 @@
 用法：
     python tools/scan_jobs.py              # 扫描并写回 shares.yaml（只补空字段，不覆盖人工内容）
     python tools/scan_jobs.py --check      # 只体检，不写文件
-    python tools/scan_jobs.py --root PATH  # 指定软件根目录（默认取本站点同级目录）
+    python tools/scan_jobs.py --root PATH  # 临时指定软件根目录（默认读 data/paths.yaml）
 
 条目以目录名（如 000_PDF超级工具箱）为唯一主键。人工维护的字段一旦填写就不再被脚本改动，
 脚本只负责发现新软件、填空缺字段，并把漂移（版本变化/发行包更换/缺链接/缺封面）报告出来。
+软件根目录不写进数据文件：那属于机器环境，跨机器会失效，统一由 tools/paths.py 解析。
 """
 
 from __future__ import annotations
@@ -22,8 +23,9 @@ from pathlib import Path
 
 import yaml
 
+import paths as path_config
+
 SITE_ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_JOBS_ROOT = SITE_ROOT.parent
 DEFAULT_OUT = SITE_ROOT / "data" / "shares.yaml"
 NUM_DIR = re.compile(r"^\d{3}_")
 
@@ -55,7 +57,8 @@ HEADER = """\
 #   copy_source     简介抽取来源，人工改写后仍可保留作为出处
 #   discovered      脚本自动发现的值，仅供对照，不参与渲染
 #
-# 新增软件：把目录放进软件根目录，跑 `python tools/scan_jobs.py`，再填链接。
+# 软件根目录不在本文件里：改 data/paths.yaml（相对站点工程），或 python tools/paths.py set。
+# 新增软件：把目录放进 AI_SOFT，跑 `python tools/scan_jobs.py`，再填链接。
 # 生成站点：`python tools/build_site.py`，产物在 web/。
 
 """
@@ -481,7 +484,13 @@ def to_entry(found: Found) -> dict:
     }
 
 
-def merge(existing: list[dict], founds: list[Found], force: bool = False) -> tuple[list[dict], list[str]]:
+def merge(
+    existing: list[dict],
+    founds: list[Found],
+    force: bool = False,
+    legacy_slugs: set[str] | None = None,
+) -> tuple[list[dict], list[str]]:
+    legacy_slugs = legacy_slugs or set()
     by_slug = {e.get("slug"): e for e in existing if isinstance(e, dict)}
     notes: list[str] = []
     order = [e.get("slug") for e in existing if e.get("slug")] + [f.slug for f in founds if f.slug not in by_slug]
@@ -512,9 +521,14 @@ def merge(existing: list[dict], founds: list[Found], force: bool = False) -> tup
         result.append(entry)
     for slug in order:
         if slug and not any(r.get("slug") == slug for r in result):
-            by_slug[slug]["status"] = "hidden"
-            notes.append(f"目录消失，置为 hidden：{slug}")
-            result.append(by_slug[slug])
+            entry = by_slug[slug]
+            if slug in legacy_slugs:
+                # 目录还留在旧位置，只是没迁进软件根目录，不能当成下架
+                notes.append(f"仍在旧位置、未迁入软件根目录，保持原状态：{slug}")
+            else:
+                entry["status"] = "hidden"
+                notes.append(f"目录消失，置为 hidden：{slug}")
+            result.append(entry)
     return sorted(result, key=lambda e: e.get("slug", "")), notes
 
 
@@ -560,7 +574,7 @@ def report(founds: list[Found], entries: list[dict], notes: list[str], jobs_root
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="扫描软件目录并维护 shares.yaml")
-    parser.add_argument("--root", type=Path, default=DEFAULT_JOBS_ROOT, help="软件根目录")
+    parser.add_argument("--root", type=Path, default=None, help="软件根目录（默认取 data/paths.yaml 的 jobs_root）")
     parser.add_argument("--out", type=Path, default=DEFAULT_OUT, help="数据文件路径")
     parser.add_argument("--check", action="store_true", help="只体检不写文件")
     parser.add_argument("--force", action="store_true", help=f"重新生成自动字段 {', '.join(AUTO_KEYS)}（人工字段保留）")
@@ -569,9 +583,12 @@ def main() -> int:
     if sys.stdout.encoding and sys.stdout.encoding.lower() not in ("utf-8", "utf8"):
         sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
-    jobs_root = args.root.resolve()
+    root = path_config.resolve_roots({"jobs_root": str(args.root)} if args.root else None)["jobs_root"]
+    jobs_root = root.path
     if not jobs_root.is_dir():
         print(f"软件根目录不存在：{jobs_root}")
+        print(f"  取值 {root.value}（来源：{root.source}）；改 data/paths.yaml 或用 --root 指定。")
+        print("  查看全部取值来源：python tools/paths.py show")
         return 2
     projects = sorted(p for p in jobs_root.iterdir() if p.is_dir() and NUM_DIR.match(p.name))
     if not projects:
@@ -584,9 +601,16 @@ def main() -> int:
         loaded = yaml.safe_load(read_text(args.out)) or {}
         existing = loaded.get("shares") or []
 
-    entries, notes = merge(existing, founds, force=args.force)
+    # 站点同级目录是迁移前的老位置：那里的工程只是还没搬进软件根目录，不是下架，不能置 hidden
+    legacy_base = path_config.SITE_ROOT.parent
+    legacy_slugs = (
+        {p.name for p in legacy_base.iterdir() if p.is_dir() and NUM_DIR.match(p.name)} - {f.slug for f in founds}
+        if legacy_base.is_dir()
+        else set()
+    )
+    entries, notes = merge(existing, founds, force=args.force, legacy_slugs=legacy_slugs)
     payload = {
-        "site": {"jobs_root": str(jobs_root).replace("\\", "/"), "updated": str(date.today())},
+        "site": {"updated": str(date.today())},
         "shares": entries,
     }
     if args.check:
@@ -595,6 +619,10 @@ def main() -> int:
         args.out.parent.mkdir(parents=True, exist_ok=True)
         args.out.write_text(HEADER + yaml.safe_dump(payload, allow_unicode=True, sort_keys=False, width=100), encoding="utf-8")
     report(founds, entries, notes, jobs_root)
+    if legacy_slugs:
+        print(f"\n警告：{len(legacy_slugs)} 个编号工程仍在站点同级目录、未迁入软件根目录，本次扫描看不到它们：")
+        for slug in sorted(legacy_slugs):
+            print(f"    {(legacy_base / slug).as_posix()} → 建议移入 {jobs_root.as_posix()}/{slug}")
     print(f"\n条目 {len(entries)} 条" + ("（--check 未写文件）" if args.check else f"，已写入 {args.out.relative_to(SITE_ROOT).as_posix()}"))
     return 0
 
