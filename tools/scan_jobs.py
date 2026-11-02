@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import argparse
 import io
+import os
 import re
 import sys
 from dataclasses import dataclass, field
@@ -78,6 +79,11 @@ COPY_SOURCES = (
 INTRO_HEADINGS = r"(软件简介|一句话定位|产品简介|^简介|功能简介)"
 # 目录名可信度：推广/手册目录是成品截图，docs 下多是开发验收图
 IMAGE_DIRS = ("推广套件", "用户手册", "推广文章", "演示视频")
+# 封面遍历剪枝：这些是依赖/打包/缓存产物目录，点开头目录（.git 等）另按前缀跳过。
+# dist/ 不剪——发行包里的 resources/icon 与随包截图仍可能是唯一命中，与旧的 ** glob 行为一致。
+SKIP_DIRS = frozenset({"__pycache__", "node_modules", "venv", "build", "site-packages"})
+MAX_WALK_DEPTH = 10
+ICON_STEMS = ("app", "icon", "app_icon", "application")
 META_LINE = re.compile(
     r"^(技术栈|版本|平台|网络|操作系统|主程序|主窗口标题|配置与日志目录|源码|依赖|作者|安装|运行|打包|环境)"
 )
@@ -369,23 +375,55 @@ def pick_keywords(description: str, bullets: list[str], identity: dict[str, str]
 
 
 def pick_image(project: Path, base: Path) -> tuple[str, str]:
-    """优先真实界面截图（按目录可信度打分），退到应用图标。"""
+    """优先真实界面截图（按目录可信度打分），退到应用图标。
+
+    候选靠一次自顶向下的遍历收集：按模式各跑一遍 `Path.glob("**/…/*.png")` 会把整棵
+    工程树重爬 8 次（含 .git 与 PyInstaller 的 build/），实测占掉整个扫描 94% 的耗时。
+    """
     try:
         from PIL import Image
     except ImportError:
         Image = None
 
-    scored: list[tuple[float, Path]] = []
-    for rank, sub in enumerate(IMAGE_DIRS):
-        for path in project.glob(f"**/{sub}/images/*.png"):
-            if path.stat().st_size < 15_000 or NOISE_NAME.search(path.stem):
+    ranks = {name: i for i, name in enumerate(IMAGE_DIRS)}
+    base_rel = base.relative_to(project)
+    base_parts = base_rel.parts
+    scored: list[tuple[float, str]] = []
+    icons: list[str] = []
+
+    for dirpath, dirnames, filenames in os.walk(project):
+        here = Path(dirpath)
+        rel_dir = here.relative_to(project)
+        parts = rel_dir.parts
+        dirnames[:] = sorted(
+            d for d in dirnames
+            if d not in SKIP_DIRS and not d.startswith(".")
+            and not d.endswith(".egg-info") and len(parts) + 1 <= MAX_WALK_DEPTH
+        )
+        for fname in filenames:
+            if not fname.lower().endswith(".png"):
                 continue
-            bonus = -6 if re.search(r"(主界面|主窗口)", path.stem) else 0.0
-            bonus += -2 if path.stem.startswith("01") else 0.0
-            scored.append((rank * 20 + bonus, path))
-    for path in project.glob("**/docs/**/*.png"):
-        if re.search(r"(主界面|主窗口)", path.stem) and not NOISE_NAME.search(path.stem):
-            scored.append((90.0, path))
+            path = here / fname
+            rel = (rel_dir / fname).as_posix()
+            stem = path.stem
+            # ① 可信目录下的 images：推广套件/用户手册/推广文章/演示视频
+            if here.name == "images" and len(parts) >= 2 and parts[-2] in ranks:
+                try:
+                    if path.stat().st_size < 15_000 or NOISE_NAME.search(stem):
+                        continue
+                except OSError:
+                    continue
+                bonus = -6 if re.search(r"(主界面|主窗口)", stem) else 0.0
+                bonus += -2 if stem.startswith("01") else 0.0
+                scored.append((ranks[parts[-2]] * 20 + bonus, rel))
+            # ② docs 下的验收图：只认名字里带主界面/主窗口的，权重最低
+            if "docs" in parts and re.search(r"(主界面|主窗口)", stem) and not NOISE_NAME.search(stem):
+                scored.append((90.0, rel))
+            # ③ 应用图标兜底：只在 base 之下找，与旧的 base.glob 覆盖范围一致
+            if (not base_parts or parts[: len(base_parts)] == base_parts) and len(parts) >= 2 \
+                    and here.name.startswith("icon") and parts[-2] == "resources" \
+                    and stem.lower() in ICON_STEMS:
+                icons.append(rel)
 
     def ok(path: Path, min_w: int) -> bool:
         if Image is None:
@@ -397,16 +435,13 @@ def pick_image(project: Path, base: Path) -> tuple[str, str]:
             return False
         return w >= min_w and (h == 0 or w / h >= 1.05)
 
-    for _, path in sorted(scored, key=lambda c: (c[0], c[1].as_posix())):
-        if ok(path, 900):
-            return path.relative_to(project).as_posix(), "screenshot"
+    for _, rel in sorted(scored, key=lambda c: (c[0], c[1])):
+        if ok(project / rel, 900):
+            return rel, "screenshot"
 
-    icons = [p for pat in ("**/resources/icon*/*.png", "**/resources/icons/*.png") for p in base.glob(pat)]
-    icons += [base / "app.png", base / "icon.png"]
-    for path in icons:
-        stem = path.stem.lower()
-        if stem in ("app", "icon", "app_icon", "application") and path.is_file():
-            return path.relative_to(project).as_posix(), "icon"
+    for rel in sorted(icons) + [(base_rel / "app.png").as_posix(), (base_rel / "icon.png").as_posix()]:
+        if (project / rel).is_file():
+            return rel, "icon"
     return "", ""
 
 
