@@ -31,7 +31,14 @@ docs:
 - slug: W000_WorkBuddy实战文档系列
   name: WorkBuddy实战文档系列
   status: live
-  category: ''
+  category: 教程资料
+  downloads:
+  - platform: 夸克网盘
+    url: https://pan.quark.cn/s/be726abf2308
+    code: ''
+  - platform: UC网盘
+    url: https://drive.uc.cn/s/0b328d557b8f4?public=1
+    code: ''
   share_url: ''
   share_code: ''
   platform: ''
