@@ -1,0 +1,68 @@
+# 文档站点数据源 —— 唯一真源，人工维护（渲染在站点的「文档资料」区块）
+#
+# 字段说明：
+#   slug            主键，等于文档工程目录名，不要手改（改了就等于删旧增新）
+#   name            显示名（脚本按正文目录名填，可改成对外品牌名）
+#   status          live=上架 / coming_soon=即将上架（灰态卡片） / hidden=完全不渲染
+#   downloads       多网盘渠道列表，第一个为主渠道；填了它就忽略下面的三件套（提取码建议加引号）
+#   share_url       单渠道快捷写法：网盘分享链接；没有任何渠道的条目不会出现在页面上
+#   share_code      单渠道快捷写法：提取码
+#   platform        单渠道快捷写法：网盘平台名
+#   category        分类标签，用于筛选栏
+#   summary         卡片上的一句话（建议 30~60 字）
+#   description     详情段落
+#   features        篇章要点，参与搜索
+#   chapters        正文篇数（脚本按 docs/*.md 计数）
+#   keywords        搜索关键词，参与搜索
+#   aliases         用户可能的叫法，参与搜索
+#   image           封面图，相对本文档工程目录
+#   image_kind      poster=宣传海报 / screenshot=正文插图
+#   artifact        发布包路径，相对本文档工程目录（你据此去建分享）
+#   size_mb         发布包体积
+#   copy_source     简介抽取来源
+#
+# 文档根目录不在本文件里：改 data/paths.yaml 的 docs_root，或 python tools/paths.py set。
+# 新增文档：把 Wxxx_ 目录放进文档根目录，跑 `python tools/scan_docs.py`，再填链接。
+# 生成站点：`python tools/build_site.py`，产物在 web/。
+
+site:
+  updated: '2026-11-02'
+docs:
+- slug: W000_WorkBuddy实战文档系列
+  name: WorkBuddy实战文档系列
+  status: live
+  category: ''
+  share_url: ''
+  share_code: ''
+  platform: ''
+  summary: 一套面向零基础新手的 WorkBuddy 实战教程：成体系、带官方界面截图、可直接照做。
+  description: 一套面向零基础新手的 WorkBuddy 实战教程：成体系、带官方界面截图、可直接照做。 内容基于 WorkBuddy 官方能力体系做教程化重组，仅供学习参考。
+  features:
+  - 大纲与目录（总览 + 阅读路径）
+  - 卷零 · 10 分钟快速上手（新手一站式入口）
+  - 卷一 · 认识 WorkBuddy（五大核心概念）
+  - 卷二 · 安装与环境配置（权限模式 / 安全边界）
+  - 卷三 · 任务与上下文（下指令 / 记忆 / 文件边界）
+  - 卷四 · SKILL 精通（技能原理 / 安装 / 自定义）
+  - 卷五 · 提示词工程（50 条可抄用模板）
+  - 卷六 · 高效实战技巧（10 个小技巧 + 自动化）
+  chapters: 10
+  keywords:
+  - 带官方界面截图
+  - 仅供学习参考
+  - 大纲与目录（总览
+  - 阅读路径
+  - 安全边界
+  - 记忆
+  - 文件边界
+  - 安装
+  - 自定义
+  - 自动化
+  - WorkBuddy实战文档系列
+  aliases: []
+  image: WorkBuddy实战文档系列/posters/知乎封面-1200x800.png
+  image_kind: poster
+  artifact: WorkBuddy实战文档系列-发布版.zip
+  size_mb: 1.6
+  copy_source: WorkBuddy实战文档系列/README.md
+  updated: '2026-11-02'

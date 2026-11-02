@@ -8,6 +8,9 @@
 
 卡片正文会预渲染进 index.html（搜索引擎可抓取），同一份数据以 JSON 内嵌供前端检索，
 因此站点不依赖任何后端接口，也不额外发起网络请求。
+
+封面与发行包所在的根目录由 tools/paths.py 解析（相对本站点工程），数据文件里不存绝对路径：
+那种路径一换机器就失效，而且失效后构建不报错，只是悄悄产出一个没有封面的站点。
 """
 
 from __future__ import annotations
@@ -22,8 +25,11 @@ from pathlib import Path
 
 import yaml
 
+import paths as path_config
+
 SITE_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_DATA = SITE_ROOT / "data" / "shares.yaml"
+DEFAULT_DOCS = SITE_ROOT / "data" / "docs.yaml"
 DEFAULT_OUT = SITE_ROOT / "web"
 DEFAULT_SRC = SITE_ROOT / "site"
 MAX_WIDTH = 1280
@@ -47,6 +53,7 @@ PAGE_DESC = (
     "本机能离线运行的 Windows 小工具目录：PDF、证件照、图片、音视频、表格、文件批量与系统效率工具，"
     "按名称或功能关键词搜索，附网盘分享链接与提取码。"
 )
+PAGE_DESC_WITH_DOCS = PAGE_DESC + "同站另附成套实战文档资料，解压后离线阅读。"
 
 # robots 里显式点名放行：默认组虽然是全放行，但共享域名上的通用规则容易被上游改写，
 # 而且 AI 爬虫和搜索引擎分开声明，将来要收紧训练类抓取时不会连带影响收录。
@@ -96,18 +103,20 @@ def entry_links(entry: dict) -> list[dict]:
     ]
 
 
-def load_entries(path: Path) -> tuple[list[dict], dict]:
+def load_entries(path: Path, kind: str = "software") -> tuple[list[dict], dict]:
     doc = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
-    shares = [e for e in (doc.get("shares") or []) if isinstance(e, dict)]
+    rows = doc.get("shares") if kind == "software" else doc.get("docs")
+    entries = [e for e in (rows or []) if isinstance(e, dict)]
     # 只有挂了网盘链接的条目才上架；没链接的留在数据里当待办，不占页面
     visible = []
-    for e in shares:
+    for e in entries:
         if e.get("status") == "hidden":
             continue
         links = entry_links(e)
         if not links:
             continue
         e["_links"] = links
+        e["kind"] = kind
         visible.append(e)
     visible.sort(key=lambda e: (e.get("status") == "coming_soon", str(e.get("slug"))))
     return visible, doc.get("site") or {}
@@ -124,20 +133,27 @@ def copy_brand_assets(src: Path, out: Path) -> None:
     (img_dir / "wechat-qr.png").write_bytes(qr_src.read_bytes())
 
 
-def make_images(entries: list[dict], jobs_root: Path, out: Path) -> None:
+def make_images(entries: list[dict], root: Path, out: Path) -> int:
+    """按 root/条目目录/条目里的相对路径 取封面，返回「声明了封面却没取到」的条数。
+
+    这种失配不会报错，只会让卡片静默退化成排版封面，所以必须数出来打印给人看。
+    """
     try:
         from PIL import Image
     except ImportError:
         print("提示：未安装 Pillow，跳过封面处理（卡片将使用排版封面）。")
-        return
+        return 0
     img_dir = out / "images"
     img_dir.mkdir(parents=True, exist_ok=True)
+    misses = 0
     for entry in entries:
         rel = entry.get("image") or ""
-        src = (jobs_root / entry["slug"] / rel) if rel else None
+        src = (root / entry["slug"] / rel) if rel else None
         entry["_asset_full"] = ""
         if not src or not src.is_file():
             entry["_asset"] = ""
+            if rel:
+                misses += 1
             continue
         stem = re.sub(r"[^a-z0-9]+", "", entry["slug"].lower()) or f"e{entries.index(entry)}"
         if entry.get("image_kind") == "icon":
@@ -160,6 +176,15 @@ def make_images(entries: list[dict], jobs_root: Path, out: Path) -> None:
             card.save(dst, "WEBP", quality=78, method=6)
         entry["_asset"] = f"images/{dst.name}"
         entry["_asset_full"] = f"images/{dst_full.name}"
+    return misses
+
+
+def display_path(path: Path) -> str:
+    """试构建常把产物写到仓库外的临时目录，相对路径显示不了就退回绝对路径。"""
+    try:
+        return path.relative_to(SITE_ROOT).as_posix()
+    except ValueError:
+        return path.as_posix()
 
 
 def chip_label(feature: str) -> str:
@@ -172,27 +197,30 @@ def chip_label(feature: str) -> str:
 
 def card_html(entry: dict, index: int) -> str:
     slug = entry["slug"]
+    docs = entry.get("kind") == "docs"
     soon = entry.get("status") == "coming_soon"
     feats = [f for f in (entry.get("features") or []) if f]
     chips = "".join(f"<li>{esc(chip_label(f))}</li>" for f in feats[:4])
     extra = f'<li class="more">+{len(feats) - 4}</li>' if len(feats) > 4 else ""
+    cover_note = "封面待补" if docs else "界面截图待补"
     if entry.get("_asset"):
         if entry.get("image_kind") == "icon":
             cover = (
                 f'<div class="cover cover-typeset"><img src="{esc(entry["_asset"])}" alt="" loading="lazy">'
                 f'<span>{esc(entry.get("name_en") or entry.get("exe_name") or "")}</span>'
-                f'<span>界面截图待补</span></div>'
+                f'<span>{cover_note}</span></div>'
             )
         else:
+            alt = f'{esc(entry["name"])} 封面' if docs else f'{esc(entry["name"])} 软件界面截图'
             cover = (
-                f'<div class="cover"><img src="{esc(entry["_asset"])}" alt="{esc(entry["name"])} 软件界面截图" loading="lazy">'
+                f'<div class="cover"><img src="{esc(entry["_asset"])}" alt="{alt}" loading="lazy">'
                 + (f'<span class="ribbon soon">即将上架</span>' if soon else "")
                 + "</div>"
             )
     else:
         cover = (
             f'<div class="cover cover-typeset"><span class="big">{esc(entry["name"])}</span>'
-            f'<span>{esc(entry.get("name_en") or "")}</span><span>界面截图待补</span></div>'
+            f'<span>{esc(entry.get("name_en") or "")}</span><span>{cover_note}</span></div>'
         )
     platform = (entry.get("platform") or "").strip()
     links = entry.get("_links") or []
@@ -200,21 +228,25 @@ def card_html(entry: dict, index: int) -> str:
     platform = primary["platform"] if primary else platform
     platform_label = platform + (f" +{len(links) - 1}" if len(links) > 1 else "")
     primary_code = primary["code"] if primary else ""
+    cta_label = "获取资料" if docs else "获取安装包"
     if soon:
         cta = '<button class="btn" type="button" disabled>即将上架</button>'
     elif primary:
         code_attr = f' data-code="{esc(primary_code)}"' if primary_code else ""
-        cta = f'<a class="btn" href="{esc(primary["url"])}" target="_blank" rel="noopener"{code_attr}>获取安装包</a>'
+        cta = f'<a class="btn" href="{esc(primary["url"])}" target="_blank" rel="noopener"{code_attr}>{cta_label}</a>'
     else:
         cta = '<button class="btn" type="button" disabled>暂未开放下载</button>'
-    pills = "".join(
-        f'<span class="pill">{esc(t)}</span>'
-        for t in [entry.get("version") and f"v{entry['version']}", entry.get("size_mb") and f"{entry['size_mb']} MB",
-                  entry.get("category"), platform_label, primary_code and f"提取码 {primary_code}"]
-        if t
-    )
+    facts = [
+        entry.get("chapters") and f"共 {entry['chapters']} 篇" if docs else entry.get("version") and f"v{entry['version']}",
+        entry.get("size_mb") and f"{entry['size_mb']} MB",
+        entry.get("category"),
+        platform_label,
+        primary_code and f"提取码 {primary_code}",
+    ]
+    pills = "".join(f'<span class="pill">{esc(t)}</span>' for t in facts if t)
+    group_label = "资料" if docs else "软件"
     return f"""
-    <article class="card" id="{esc(slug)}" data-id="{esc(slug)}">
+    <article class="card" id="{esc(slug)}" data-id="{esc(slug)}" data-group="{group_label}">
       {cover}
       <div class="card-body">
         <div class="title-row">
@@ -236,11 +268,12 @@ def json_payload(entries: list[dict]) -> str:
     """内嵌给前端的数据。封面一律用相对路径：站点部署在域名根目录，
     绝对地址会随域名变化而失效，只有 og:image 需要绝对 URL。"""
     keep = ("slug", "name", "name_en", "exe_name", "version", "size_mb", "status", "category", "summary",
-            "description", "features", "keywords", "aliases")
+            "description", "features", "keywords", "aliases", "chapters")
     rows = []
     for e in entries:
         row = {k: e.get(k) or ([] if k in ("features", "keywords", "aliases") else "") for k in keep}
         row["id"] = e["slug"]
+        row["kind"] = e.get("kind") or "software"
         row["cover"] = e.get("_asset") or ""
         row["cover_full"] = e.get("_asset_full") or ""
         row["links"] = e.get("_links") or []
@@ -250,21 +283,27 @@ def json_payload(entries: list[dict]) -> str:
 
 
 def app_item(entry: dict, site_url: str) -> dict:
-    """单款软件的结构化实体。片段地址目前就是该条目的可寻址位置，
+    """单条内容的结构化实体。片段地址目前就是该条目的可寻址位置，
     等详情页拆成独立 URL 后只改 url 一行。"""
     links = entry.get("_links") or []
+    docs = entry.get("kind") == "docs"
     item = {
-        "@type": "SoftwareApplication",
+        "@type": "CreativeWork" if docs else "SoftwareApplication",
         "name": entry.get("name"),
         "alternateName": entry.get("name_en") or entry.get("exe_name") or "",
-        "operatingSystem": "Windows 10 / Windows 11 64 位",
-        "applicationCategory": "UtilitiesApplication",
         "description": entry.get("summary") or entry.get("description") or "",
-        "softwareVersion": entry.get("version") or "",
         "featureList": [f for f in (entry.get("features") or []) if f],
         "offers": {"@type": "Offer", "price": "0", "priceCurrency": "CNY"},
         "url": f"{site_url}/#{entry['slug']}" if site_url else "",
     }
+    if docs:
+        item["inLanguage"] = "zh-CN"
+        if entry.get("chapters"):
+            item["numberOfItems"] = entry["chapters"]
+    else:
+        item["operatingSystem"] = "Windows 10 / Windows 11 64 位"
+        item["applicationCategory"] = "UtilitiesApplication"
+        item["softwareVersion"] = entry.get("version") or ""
     if entry.get("size_mb"):
         item["fileSize"] = f"{entry['size_mb']} MB"
     if entry.get("updated"):
@@ -310,7 +349,10 @@ def head_extra(entries: list[dict], site_url: str, desc: str) -> str:
         '<meta property="og:locale" content="zh_CN">',
     ]
     if site_url:
+        # og:image 优先真实界面截图；文档条目只有海报，也不该让分享卡空着图
         first_cover = next((e["_asset"] for e in entries if e.get("_asset") and e.get("image_kind") == "screenshot"), "")
+        if not first_cover:
+            first_cover = next((e["_asset"] for e in entries if e.get("_asset")), "")
         lines += [
             f'<link rel="canonical" href="{esc(site_url)}/">',
             '<meta property="og:type" content="website">',
@@ -329,15 +371,43 @@ def head_extra(entries: list[dict], site_url: str, desc: str) -> str:
     return "\n".join(lines)
 
 
-def llms_txt(entries: list[dict], site_url: str, updated: str) -> str:
+def llms_row(e: dict, base: str) -> str:
+    links = e.get("_links") or []
+    plats = "、".join(l["platform"] for l in links if l["platform"]) or "网盘"
+    codes = "；".join(f"{l['platform']} 提取码 {l['code']}" for l in links if l["code"])
+    facts = " · ".join(
+        t for t in [
+            e.get("category") or "",
+            f"共 {e['chapters']} 篇" if e.get("chapters") else "",
+            f"v{e['version']}" if e.get("version") else "",
+            f"{e['size_mb']} MB" if e.get("size_mb") else "",
+            f"下载渠道：{plats}" + (f"（{codes}）" if codes else ""),
+        ] if t
+    )
+    feats = "；".join(f for f in (e.get("features") or [])[:4] if f)
+    alias = "、".join(a for a in (e.get("aliases") or [])[:5] if a)
+    row = f"- [{e.get('name')}]({base}/#{e['slug']}): {e.get('summary') or ''}（{facts}）"
+    if feats:
+        row += f" {'篇章：' if e.get('kind') == 'docs' else '功能：'}{feats}。"
+    if alias:
+        row += f" 也叫 {alias}。"
+    if e.get("name_en"):
+        row += f" 英文名 {e['name_en']}。"
+    return row
+
+
+def llms_txt(entries: list[dict], docs: list[dict], site_url: str, updated: str) -> str:
     """面向 AI 引擎的纯文本目录：逐条写清是什么、什么版本、能干什么、去哪下载。"""
     base = site_url or ""
     out = [
         f"# {BRAND}",
         "",
         "> 本机运行的 Windows 免费桌面小工具目录。绿色免安装、不需要联网、文件不上传，"
-        "PDF 合并拆分、证件照、去水印、文件去重等常用办公操作全部在自己电脑上完成。",
-        f"> 个人开发者 HRX 维护，共 {len(entries)} 款软件，数据更新于 {updated}。",
+        "PDF 合并拆分、证件照、去水印、文件去重等常用办公操作全部在自己电脑上完成。"
+        + ("另附成套的实战文档资料，离线可读。" if docs else ""),
+        f"> 个人开发者 HRX 维护，共 {len(entries)} 款软件"
+        + (f"、{len(docs)} 份文档资料" if docs else "")
+        + f"，数据更新于 {updated}。",
         "",
         "## 站点",
         f"- [全部软件目录]({base}/): 卡片式目录，按名称、英文名、功能关键词检索；"
@@ -345,29 +415,10 @@ def llms_txt(entries: list[dict], site_url: str, updated: str) -> str:
         "",
         "## 软件",
     ]
-    for e in entries:
-        links = e.get("_links") or []
-        plats = "、".join(l["platform"] for l in links if l["platform"]) or "网盘"
-        codes = "；".join(f"{l['platform']} 提取码 {l['code']}" for l in links if l["code"])
-        facts = " · ".join(
-            t for t in [
-                e.get("category") or "",
-                f"v{e['version']}" if e.get("version") else "",
-                f"{e['size_mb']} MB" if e.get("size_mb") else "",
-                f"下载渠道：{plats}" + (f"（{codes}）" if codes else ""),
-            ] if t
-        )
-        feats = "；".join(f for f in (e.get("features") or [])[:4] if f)
-        alias = "、".join(a for a in (e.get("aliases") or [])[:5] if a)
-        row = f"- [{e.get('name')}]({base}/#{e['slug']}): {e.get('summary') or ''}（{facts}）"
-        if feats:
-            row += f" 功能：{feats}。"
-        if alias:
-            row += f" 也叫 {alias}。"
-        if e.get("name_en"):
-            row += f" 英文名 {e['name_en']}。"
-        out.append(row)
-    cats = [c for c in dict.fromkeys(e.get("category") for e in entries) if c]
+    out += [llms_row(e, base) for e in entries]
+    if docs:
+        out += ["", "## 文档资料"] + [llms_row(e, base) for e in docs]
+    cats = [c for c in dict.fromkeys(e.get("category") for e in entries + docs) if c]
     out += [
         "",
         "## 分类",
@@ -411,19 +462,67 @@ def chips_html(entries: list[dict]) -> str:
     return "".join(parts)
 
 
+def resolve_roots(args: argparse.Namespace) -> dict[str, path_config.Root]:
+    overrides = {k: str(v) for k, v in (("jobs_root", args.jobs_root), ("docs_root", args.docs_root)) if v}
+    return path_config.resolve_roots(overrides or None)
+
+
+def root_missing_error(root: path_config.Root, label: str) -> int:
+    """换机器后最常见的一课：路径不对就明确失败，别产出一个没有封面的站点。"""
+    print(f"{label}根目录不存在：{root.path.as_posix()}")
+    print(f"  取值 {root.value}（来源：{root.source}）")
+    print("  修法：改 data/paths.yaml，或 python tools/paths.py set --local 指定本机位置，或构建时加 --jobs-root/--docs-root。")
+    print("  查看全部取值来源：python tools/paths.py show")
+    return 2
+
+
+def docs_block_html(docs: list[dict]) -> str:
+    """文档区块：没有可上架的条目时整段不出现，免得留下一个空标题。"""
+    if not docs:
+        return ""
+    cards = "".join(card_html(e, i) for i, e in enumerate(docs))
+    return (
+        '\n<section class="group" id="library" aria-labelledby="library-title">\n'
+        '  <div class="group-head">\n'
+        '    <h2 class="group-title" id="library-title">文档资料</h2>\n'
+        "    <p class=\"group-note\">成套教程与速查文档，解压后离线阅读，不需要联网。</p>\n"
+        "  </div>\n"
+        f'  <div class="catalog">{cards}\n  </div>\n'
+        "</section>"
+    )
+
+
 def build(args: argparse.Namespace) -> int:
     data_path = Path(args.data)
     if not data_path.is_file():
         print(f"找不到数据文件：{data_path}\n先跑 python tools/scan_jobs.py 生成。")
         return 2
     entries, site = load_entries(data_path)
+    docs_path = Path(args.docs_data)
+    docs: list[dict] = []
+    docs_site: dict = {}
+    if docs_path.is_file():
+        docs, docs_site = load_entries(docs_path, kind="docs")
     all_rows = [e for e in ((yaml.safe_load(data_path.read_text(encoding="utf-8")) or {}).get("shares") or [])]
-    backlog = [e.get("name") or e.get("slug") or "?" for e in all_rows if e.get("status") != "hidden" and not entry_links(e)]
-    if not entries:
+    all_docs = [e for e in ((yaml.safe_load(docs_path.read_text(encoding="utf-8")) or {}).get("docs") or [])] if docs_path.is_file() else []
+    backlog = [
+        e.get("name") or e.get("slug") or "?"
+        for e in all_rows + all_docs
+        if e.get("status") != "hidden" and not entry_links(e)
+    ]
+    combined = entries + docs
+    if not combined:
         print("没有可上架的条目：所有条目都还没挂网盘链接。")
-        print(f"待挂链接 {len(backlog)} 条，填好 data/shares.yaml 的 share_url 后重新构建。")
+        print(f"待挂链接 {len(backlog)} 条，填好数据文件里的 share_url 后重新构建。")
         return 0
-    jobs_root = Path(site.get("jobs_root") or SITE_ROOT.parent)
+    roots = resolve_roots(args)
+    jobs_root = roots["jobs_root"].path
+    docs_root = roots["docs_root"].path
+    if not args.no_images:
+        if any(e.get("image") for e in entries) and not roots["jobs_root"].exists:
+            return root_missing_error(roots["jobs_root"], "软件")
+        if any(e.get("image") for e in docs) and not roots["docs_root"].exists:
+            return root_missing_error(roots["docs_root"], "文档")
     out = Path(args.out).resolve()
     out.mkdir(parents=True, exist_ok=True)
     for stale in out.glob("*.html"):
@@ -431,27 +530,30 @@ def build(args: argparse.Namespace) -> int:
     for stale in (out / "images").glob("*"):
         stale.unlink()  # 下架条目的封面不该继续留在发布包里
 
+    misses = 0
     if args.no_images:
-        for e in entries:
+        for e in combined:
             e["_asset"] = ""
             e["_asset_full"] = ""
     else:
-        make_images(entries, jobs_root, out)
+        misses = make_images(entries, jobs_root, out) + make_images(docs, docs_root, out)
 
     src = Path(args.src)
     copy_brand_assets(src, out)
     site_url = (args.site_url or "").rstrip("/")
-    desc = PAGE_DESC
-    updated = str(site.get("updated") or date.today())
+    desc = PAGE_DESC_WITH_DOCS if docs else PAGE_DESC
+    updated = str(site.get("updated") or docs_site.get("updated") or date.today())
+    count_line = f"共 {len(entries)} 款软件" + (f" · {len(docs)} 份资料" if docs else "")
     template = (src / "template.html").read_text(encoding="utf-8")
     page = (
         template.replace("{{TITLE}}", PAGE_TITLE)
         .replace("{{DESC}}", esc(desc))
-        .replace("{{HEAD}}", head_extra(entries, site_url, desc))
-        .replace("{{CHIPS}}", chips_html(entries))
+        .replace("{{HEAD}}", head_extra(combined, site_url, desc))
+        .replace("{{CHIPS}}", chips_html(combined))
         .replace("{{CARDS}}", "".join(card_html(e, i) for i, e in enumerate(entries)))
-        .replace("{{DATA}}", json_payload(entries))
-        .replace("{{COUNT}}", str(len(entries)))
+        .replace("{{DOCS_BLOCK}}", docs_block_html(docs))
+        .replace("{{DATA}}", json_payload(combined))
+        .replace("{{COUNT}}", count_line)
         .replace("{{UPDATED}}", updated)
         .replace("{{MAINTAINER}}", "HRX")
     )
@@ -464,11 +566,11 @@ def build(args: argparse.Namespace) -> int:
         encoding="utf-8",
     )
     (out / "robots.txt").write_text(robots_txt(site_url), encoding="utf-8")
-    (out / "llms.txt").write_text(llms_txt(entries, site_url, updated), encoding="utf-8")
+    (out / "llms.txt").write_text(llms_txt(entries, docs, site_url, updated), encoding="utf-8")
     if site_url:
         # 条目各自带 updated，lastmod 取全站最近一次真实内容变更；
         # 一律写成构建日会让抓取器把整站的更新信号当成噪声。
-        lastmod = max([str(e["updated"]) for e in entries if e.get("updated")] + [updated])
+        lastmod = max([str(e["updated"]) for e in combined if e.get("updated")] + [updated])
         urls = "\n".join([f"  <url><loc>{esc(site_url)}/</loc><lastmod>{esc(lastmod)}</lastmod></url>"])
         (out / "sitemap.xml").write_text(
             f'<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n{urls}\n</urlset>\n',
@@ -479,11 +581,24 @@ def build(args: argparse.Namespace) -> int:
 
     total = sum(f.stat().st_size for f in out.rglob("*") if f.is_file()) / 1048576
     no_cover = [e["name"] for e in entries if e.get("image_kind") != "screenshot"]
-    print(f"已上架 {len(entries)} 条 → {out.relative_to(SITE_ROOT).as_posix()}/  （{total:.2f} MB）")
+    no_doc_cover = [e["name"] for e in docs if not e.get("image")]
+    print(
+        f"已上架 {len(entries)} 款软件"
+        + (f" + {len(docs)} 份资料" if docs else "")
+        + f" → {display_path(out)}/  （{total:.2f} MB）"
+    )
+    if entries:
+        print(f"软件根目录：{jobs_root.as_posix()}（来源：{roots['jobs_root'].source}）")
+    if docs:
+        print(f"文档根目录：{docs_root.as_posix()}（来源：{roots['docs_root'].source}）")
+    if misses:
+        print(f"警告：{misses} 条声明了封面却没取到文件，卡片会退化成排版封面——请核对 image 相对路径与根目录配置。")
     if backlog:
         print(f"未挂链接、暂不显示 {len(backlog)} 条：" + "、".join(backlog))
     if no_cover:
         print("缺真实界面截图：" + "、".join(no_cover))
+    if no_doc_cover:
+        print("文档缺封面图：" + "、".join(no_doc_cover))
     if total > SOFT_LIMIT_MB:
         print(f"警告：产物 {total:.1f} MB 接近发布上限，请下调封面尺寸或质量。")
     return 0
@@ -492,8 +607,11 @@ def build(args: argparse.Namespace) -> int:
 def main() -> int:
     p = argparse.ArgumentParser(description="构建静态站点")
     p.add_argument("--data", default=str(DEFAULT_DATA))
+    p.add_argument("--docs-data", default=str(DEFAULT_DOCS), help="文档数据文件（不存在则站点不含文档区块）")
     p.add_argument("--out", default=str(DEFAULT_OUT))
     p.add_argument("--src", default=str(DEFAULT_SRC))
+    p.add_argument("--jobs-root", type=Path, default=None, help="软件根目录（默认取 data/paths.yaml 的 jobs_root）")
+    p.add_argument("--docs-root", type=Path, default=None, help="文档根目录（默认取 data/paths.yaml 的 docs_root）")
     p.add_argument("--site-url", default="", help="正式发布域名，用于 canonical/og/sitemap")
     p.add_argument("--no-images", action="store_true", help="跳过封面压缩")
     args = p.parse_args()

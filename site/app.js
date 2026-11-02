@@ -20,6 +20,9 @@
   let toastTimer = 0;
 
   const norm = (s) => (s || "").toLowerCase().replace(/\s+/g, "");
+  const hasDocs = DATA.some((d) => d.kind === "docs");
+  const softCount = DATA.filter((d) => d.kind !== "docs").length;
+  const docCount = DATA.length - softCount;
   const haystack = (d) =>
     norm([d.name, d.name_en, d.exe_name, d.category, d.summary, d.description, d.features, d.keywords, d.aliases].flat().join(" "));
 
@@ -63,8 +66,12 @@
     }
     clearBtn.hidden = !input.value;
     statusEl.textContent = words.length || cat && cat !== "全部"
-      ? `匹配 ${shown} / ${cards.length} 款` + (words.length ? `：${words.join(" + ")}` : "")
-      : `共 ${cards.length} 款软件`;
+      ? `匹配 ${shown} / ${cards.length} 项` + (words.length ? `：${words.join(" + ")}` : "")
+      : hasDocs ? `共 ${softCount} 款软件 · ${docCount} 份资料` : `共 ${cards.length} 款软件`;
+    // 筛完空掉的区块只剩一个标题会像页面坏了，整段收起
+    for (const group of document.querySelectorAll("section.group")) {
+      group.hidden = !group.querySelectorAll(".card:not([hidden])").length;
+    }
     emptyEl.hidden = shown !== 0;
     if (!shown) renderSuggest();
   }
@@ -196,9 +203,10 @@
         textContent: "暂未开放下载",
       }));
     }
+    const docs = d.kind === "docs";
     tipEl.textContent = links.some((link) => link.code)
-      ? "点提取码可以单独复制；打开链接时也会自动复制。下载后解压即用，软件全程在本机运行。"
-      : "下载后解压即用；软件全部在你自己的电脑上运行，不需要联网。";
+      ? "点提取码可以单独复制；打开链接时也会自动复制。" + (docs ? "解压后即可离线阅读，全程在你自己的电脑上打开。" : "下载后解压即用，软件全程在本机运行。")
+      : docs ? "解压后即可离线阅读；资料全程在你自己的电脑上打开，不需要联网。" : "下载后解压即用；软件全部在你自己的电脑上运行，不需要联网。";
   }
 
   function openDetail(id) {
@@ -209,13 +217,18 @@
       [d.name_en, d.exe_name && d.exe_name !== d.name_en ? d.exe_name : "", d.category].filter(Boolean).join(" · ");
     const meta = document.getElementById("detail-meta");
     meta.textContent = "";
-    for (const t of [d.version ? `v${d.version}` : "", d.size_mb ? `${d.size_mb} MB` : "", d.updated ? `更新 ${d.updated}` : ""]) {
+    for (const t of [
+      d.chapters ? `共 ${d.chapters} 篇` : "",
+      d.version ? `v${d.version}` : "",
+      d.size_mb ? `${d.size_mb} MB` : "",
+      d.updated ? `更新 ${d.updated}` : "",
+    ]) {
       if (t) meta.append(Object.assign(document.createElement("span"), { className: "pill", textContent: t }));
     }
     const full = d.cover_full;
     if (full) {
       coverImg.src = full;
-      coverImg.alt = `${d.name} 界面截图`;
+      coverImg.alt = `${d.name} ${d.kind === "docs" ? "封面" : "界面截图"}`;
       coverBtn.hidden = false;
     } else {
       coverImg.removeAttribute("src");
@@ -224,6 +237,7 @@
     document.getElementById("detail-desc").textContent = d.description || d.summary;
     renderDownloads(d);
     const feats = d.features || [];
+    document.getElementById("feats-title").textContent = d.kind === "docs" ? "篇章清单" : "功能要点";
     const list = document.getElementById("detail-features");
     list.textContent = "";
     feats.forEach((f) => list.append(Object.assign(document.createElement("li"), { textContent: f })));
@@ -247,7 +261,8 @@
     chipBox.querySelectorAll(".chip").forEach((c) => c.setAttribute("aria-pressed", String(c === chip)));
     apply();
   });
-  document.getElementById("catalog").addEventListener("click", (e) => {
+  // 详情按钮在软件列表和文档区块里都有，监听挂在文档上而不是某个列表里
+  document.addEventListener("click", (e) => {
     const more = e.target.closest("[data-more]");
     if (!more) return;
     e.preventDefault(); // 详情面板就是定位结果，别让浏览器再滚一次锚点

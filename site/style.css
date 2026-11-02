@@ -121,6 +121,13 @@ h1, h2, h3, p { margin: 0; }
   grid-template-columns: repeat(auto-fill, minmax(304px, 1fr));
   max-width: 1560px; margin: 0 auto;
 }
+/* 文档区块：与软件卡架同宽同距，筛空时整段收起 */
+.group { max-width: 1560px; margin: 0 auto; }
+.group[hidden] { display: none; }
+.group-head { padding: 30px clamp(16px, 4vw, 44px) 0; }
+.group-title { margin: 0 0 6px; font-size: 20px; letter-spacing: -.2px; }
+.group-note { margin: 0; font-size: 13px; color: var(--muted); }
+.group .catalog { padding-top: 16px; }
 .card {
   display: flex; flex-direction: column; background: var(--surface);
   border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden;
