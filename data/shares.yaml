@@ -25,11 +25,12 @@
 #   copy_source     简介抽取来源，人工改写后仍可保留作为出处
 #   discovered      脚本自动发现的值，仅供对照，不参与渲染
 #
-# 新增软件：把目录放进软件根目录，跑 `python tools/scan_jobs.py`，再填链接。
+# 软件根目录不在本文件里：改 data/paths.yaml（相对站点工程），或 python tools/paths.py set。
+# 新增软件：把目录放进 AI_SOFT，跑 `python tools/scan_jobs.py`，再填链接。
 # 生成站点：`python tools/build_site.py`，产物在 web/。
 
 site:
-  updated: '2026-11-01'
+  updated: '2026-11-02'
 shares:
 - slug: 000_PDF超级工具箱
   name: PDF超级工具箱
@@ -83,7 +84,7 @@ shares:
   updated: '2026-10-29'
   discovered:
     version: 3.1.2
-    artifact: dist/PDF超级工具箱_v3.1.2.zip
+    artifact: ''
     image: 推广套件/images/01-主界面.png
     project_dir: 000_PDF超级工具箱
 - slug: 001_证件照制作工具
@@ -140,7 +141,7 @@ shares:
   updated: '2026-10-29'
   discovered:
     version: 0.1.5
-    artifact: dist/证照快做_v0.1.4.zip
+    artifact: ''
     image: 推广套件/images/01-导入页.png
     project_dir: 001_证件照制作工具
 - slug: 002_文件百宝箱
@@ -188,9 +189,9 @@ shares:
   copy_source: README.md
   updated: '2026-10-29'
   discovered:
-    version: 0.9.6
-    artifact: dist/BoxBatch_v0.9.1_win_x64.zip
-    image: 演示视频/images/01-主界面.png
+    version: 0.9.10
+    artifact: dist/文件百宝箱_v0.9.3_win_x64.zip
+    image: docs/主题验收截图/01_主界面_批量重命名.png
     project_dir: 002_文件百宝箱
 - slug: 003_音视频工具箱
   name: 音视频工具箱
@@ -241,7 +242,7 @@ shares:
   updated: '2026-10-29'
   discovered:
     version: 0.1.4
-    artifact: mediatoolbox-src/dist/MediaToolbox_v0.1.0.zip
+    artifact: ''
     image: mediatoolbox-src/resources/icon/app.png
     project_dir: mediatoolbox-src
 - slug: 004_表格加工厂
@@ -293,7 +294,7 @@ shares:
   updated: '2026-10-29'
   discovered:
     version: 1.0.6
-    artifact: dist/TableWorks_v1.0.2.zip
+    artifact: ''
     image: docs/布局间距验收/改后_主窗口.png
     project_dir: 004_表格加工厂
 - slug: 005_WinButler窗口管家
@@ -382,6 +383,11 @@ shares:
   size_mb: 72.2
   copy_source: README.md
   updated: '2026-10-31'
+  discovered:
+    version: 1.0.3
+    artifact: ''
+    image: ''
+    project_dir: 005_Win窗口管家
 - slug: 006_图片去除水印工具
   name: 图片去水印
   name_en: WatermarkRemover
@@ -438,7 +444,7 @@ shares:
   updated: '2026-11-01'
   discovered:
     version: 1.29.7
-    artifact: dist/图片去水印_v1.29.6.zip
+    artifact: ''
     image: 推广套件/images/01-主界面.png
     project_dir: 006_图片去除水印工具
 - slug: 007_WIN文件去重工具
@@ -469,7 +475,7 @@ shares:
   updated: '2026-10-29'
   discovered:
     version: 1.6.1
-    artifact: dist/重复文件清理大师_v1.6.1.zip
+    artifact: dist/重复文件清理大师_v1.2.1.zip
     image: resources/icon/app.png
     project_dir: 007_WIN文件去重工具
 - slug: 008_发票批量整理器
@@ -508,14 +514,14 @@ shares:
   - 008
   image: resources/icon/app.png
   image_kind: icon
-  artifact: ''
-  artifact_dir: ''
+  artifact: dist/发票批量整理器_v0.1.0.zip
+  artifact_dir: dist/发票批量整理器
   size_mb: 0.0
   copy_source: README.md
   updated: '2026-10-29'
   discovered:
-    version: 0.1.3
-    artifact: ''
+    version: 0.1.4
+    artifact: dist/发票批量整理器_v0.1.0.zip
     image: resources/icon/app.png
     project_dir: 008_发票批量整理器
 - slug: 009_AI缓存清道夫
@@ -576,7 +582,7 @@ shares:
   - AI工具缓存
   - Claude Code 缓存
   - AICacheSweeper
-  - '009'
+  - 009
   image: 推广套件/images/01-主界面空态.png
   image_kind: screenshot
   artifact: dist/AI缓存清道夫_v0.3.2.zip
@@ -584,3 +590,8 @@ shares:
   size_mb: 46.2
   copy_source: 用户手册/AI缓存清道夫使用说明.md
   updated: '2026-10-31'
+  discovered:
+    version: 0.3.2
+    artifact: dist/AI缓存清道夫_v0.1.3.zip
+    image: 推广套件/images/01-主界面空态.png
+    project_dir: 009_AI缓存清道夫
