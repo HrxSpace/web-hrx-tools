@@ -84,7 +84,7 @@ shares:
   updated: '2026-10-29'
   discovered:
     version: 3.1.2
-    artifact: ''
+    artifact: dist/PDF超级工具箱_v3.1.2.zip
     image: 推广套件/images/01-主界面.png
     project_dir: 000_PDF超级工具箱
 - slug: 001_证件照制作工具
@@ -141,7 +141,7 @@ shares:
   updated: '2026-10-29'
   discovered:
     version: 0.1.5
-    artifact: ''
+    artifact: dist/证照快做_v0.1.4.zip
     image: 推广套件/images/01-导入页.png
     project_dir: 001_证件照制作工具
 - slug: 002_文件百宝箱
@@ -190,8 +190,8 @@ shares:
   updated: '2026-10-29'
   discovered:
     version: 0.9.10
-    artifact: dist/文件百宝箱_v0.9.3_win_x64.zip
-    image: docs/主题验收截图/01_主界面_批量重命名.png
+    artifact: dist/BoxBatch_v0.9.1_win_x64.zip
+    image: 演示视频/images/01-主界面.png
     project_dir: 002_文件百宝箱
 - slug: 003_音视频工具箱
   name: 音视频工具箱
@@ -242,7 +242,7 @@ shares:
   updated: '2026-10-29'
   discovered:
     version: 0.1.4
-    artifact: ''
+    artifact: mediatoolbox-src/dist/MediaToolbox_v0.1.0.zip
     image: mediatoolbox-src/resources/icon/app.png
     project_dir: mediatoolbox-src
 - slug: 004_表格加工厂
@@ -294,7 +294,7 @@ shares:
   updated: '2026-10-29'
   discovered:
     version: 1.0.6
-    artifact: ''
+    artifact: dist/TableWorks_v1.0.2.zip
     image: docs/布局间距验收/改后_主窗口.png
     project_dir: 004_表格加工厂
 - slug: 005_WinButler窗口管家
@@ -385,7 +385,7 @@ shares:
   updated: '2026-10-31'
   discovered:
     version: 1.0.3
-    artifact: ''
+    artifact: dist/窗口管家_v1.0.0.zip
     image: ''
     project_dir: 005_Win窗口管家
 - slug: 006_图片去除水印工具
@@ -444,7 +444,7 @@ shares:
   updated: '2026-11-01'
   discovered:
     version: 1.29.7
-    artifact: ''
+    artifact: dist/图片去水印_v1.29.6.zip
     image: 推广套件/images/01-主界面.png
     project_dir: 006_图片去除水印工具
 - slug: 007_WIN文件去重工具
@@ -475,7 +475,7 @@ shares:
   updated: '2026-10-29'
   discovered:
     version: 1.6.1
-    artifact: dist/重复文件清理大师_v1.2.1.zip
+    artifact: dist/重复文件清理大师_v1.6.1.zip
     image: resources/icon/app.png
     project_dir: 007_WIN文件去重工具
 - slug: 008_发票批量整理器
@@ -521,7 +521,7 @@ shares:
   updated: '2026-10-29'
   discovered:
     version: 0.1.4
-    artifact: dist/发票批量整理器_v0.1.0.zip
+    artifact: ''
     image: resources/icon/app.png
     project_dir: 008_发票批量整理器
 - slug: 009_AI缓存清道夫
@@ -592,6 +592,41 @@ shares:
   updated: '2026-10-31'
   discovered:
     version: 0.3.2
-    artifact: dist/AI缓存清道夫_v0.1.3.zip
+    artifact: dist/AI缓存清道夫_v0.3.2.zip
     image: 推广套件/images/01-主界面空态.png
     project_dir: 009_AI缓存清道夫
+- slug: 010_头像工坊
+  name: 头像工坊
+  name_en: AvatarForge
+  exe_name: ''
+  version: 0.2.0
+  status: coming_soon
+  category: ''
+  share_url: ''
+  share_code: ''
+  platform: ''
+  summary: 纯本地离线的照片转风格头像工具。
+  description: 纯本地离线的照片转风格头像工具。导入一张照片，自动定位人脸构图、抠图换底， 套用油画 / 动漫 / 素描 / 经典滤镜风格，导出圆形或方形的多尺寸头像。 照片全程只在本机内存中处理，不上传、不联网、不保存原图。
+    全部推理模型随软件 分发在 resources/models/，运行期间零下载、零外发。
+  features: []
+  keywords:
+  - 自动定位人脸构图
+  - 抠图换底
+  - 套用油画
+  - 动漫
+  - 素描
+  - 经典滤镜风格
+  - 不上传
+  - 不联网
+  - models
+  - 运行期间零下载
+  - 零外发
+  - AvatarForge
+  aliases: []
+  image: resources/icon/app.png
+  image_kind: icon
+  artifact: ''
+  artifact_dir: ''
+  size_mb: 0.0
+  copy_source: README.md
+  updated: '2026-11-02'

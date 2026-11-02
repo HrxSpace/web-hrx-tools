@@ -67,7 +67,7 @@ docs:
   - 自动化
   - WorkBuddy实战文档系列
   aliases: []
-  image: WorkBuddy实战文档系列/posters/知乎封面-1200x800.png
+  image: posters/知乎封面-1200x800.png
   image_kind: poster
   artifact: WorkBuddy实战文档系列-发布版.zip
   size_mb: 1.6
