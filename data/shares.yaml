@@ -30,7 +30,7 @@
 # 生成站点：`python tools/build_site.py`，产物在 web/。
 
 site:
-  updated: '2026-11-02'
+  updated: '2026-11-03'
 shares:
 - slug: 000_PDF超级工具箱
   name: PDF超级工具箱
@@ -630,3 +630,8 @@ shares:
   size_mb: 0.0
   copy_source: README.md
   updated: '2026-11-02'
+  discovered:
+    version: 0.2.1
+    artifact: ''
+    image: resources/icon/app.png
+    project_dir: 010_头像工坊

@@ -26,7 +26,7 @@
 # 生成站点：`python tools/build_site.py`，产物在 web/。
 
 site:
-  updated: '2026-11-02'
+  updated: '2026-11-03'
 docs:
 - slug: W000_WorkBuddy实战文档系列
   name: WorkBuddy实战文档系列
