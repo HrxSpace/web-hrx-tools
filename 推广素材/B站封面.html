@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 1146px; height: 717px; overflow: hidden; }
+  body {
+    position: relative;
+    background: #f6f8fc;
+    font-family: "Noto Sans SC", "Microsoft YaHei UI", "Microsoft YaHei", sans-serif;
+    color: #101828;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* 背景 */
+  .bg-glow-a {
+    position: absolute; inset: 0;
+    background: radial-gradient(620px 420px at 86% 6%, rgba(31,79,216,.13), rgba(31,79,216,0) 70%);
+  }
+  .bg-glow-b {
+    position: absolute; inset: 0;
+    background: radial-gradient(520px 360px at 4% 104%, rgba(255,200,60,.20), rgba(255,200,60,0) 70%);
+  }
+  .bg-grid {
+    position: absolute; inset: 0;
+    background-image: radial-gradient(#d5deee 1px, transparent 1px);
+    background-size: 22px 22px;
+    opacity: .55;
+    mask-image: linear-gradient(105deg, #000 0%, rgba(0,0,0,.55) 45%, rgba(0,0,0,.12) 85%);
+  }
+
+  /* 左侧文案 */
+  .left { position: absolute; left: 56px; top: 52px; width: 452px; }
+  .brand { display: flex; align-items: center; gap: 11px; }
+  .mark {
+    width: 32px; height: 32px; border-radius: 9px; background: #1f4fd8;
+    display: grid; place-items: center; color: #fff;
+    font-size: 16px; font-weight: 900; letter-spacing: 0;
+    box-shadow: 0 6px 14px -6px rgba(31,79,216,.65);
+  }
+  .wordmark { font-size: 21px; font-weight: 900; letter-spacing: .5px; }
+  .brand-note { font-size: 12.5px; color: #6b7688; letter-spacing: .2px; }
+  .brand-div { width: 1px; height: 16px; background: #d3dae7; }
+
+  h1 {
+    margin-top: 42px;
+    font-size: 60px;
+    line-height: 1.27;
+    font-weight: 900;
+    letter-spacing: -1px;
+    color: #0d1424;
+  }
+  h1 .hl {
+    background: linear-gradient(transparent 62%, #ffd84d 62%, #ffd84d 91%, transparent 91%);
+    padding: 0 6px; margin: 0 -6px; border-radius: 4px;
+  }
+  h1 .win { font-family: "Segoe UI", "Noto Sans SC", sans-serif; letter-spacing: -1.5px; }
+
+  .sub {
+    margin-top: 24px;
+    font-size: 20px; font-weight: 500;
+    color: #3c4759; letter-spacing: .3px;
+  }
+  .sub i { font-style: normal; color: #1f4fd8; font-weight: 900; margin: 0 9px; }
+
+  .tags { margin-top: 20px; display: flex; gap: 8px; flex-wrap: wrap; }
+  .tag {
+    font-size: 13px; font-weight: 500; color: #344054;
+    background: #fff; border: 1px solid #dfe6f2; border-radius: 999px;
+    padding: 5px 12px;
+    box-shadow: 0 1px 2px rgba(20,30,50,.04);
+  }
+  .tag.first { color: #1f4fd8; border-color: #c3d2f7; background: #eef3ff; }
+
+  .hint {
+    margin-top: 16px;
+    font-size: 13px; color: #7a8698;
+    font-family: "Cascadia Mono", Consolas, monospace;
+    letter-spacing: .2px;
+  }
+  .hint b { color: #475467; font-weight: 600; }
+
+  .addr {
+    margin-top: 30px;
+    display: inline-flex; align-items: center; gap: 9px;
+    background: #101828; color: #fff;
+    font-size: 15px; font-weight: 700; letter-spacing: .3px;
+    padding: 11px 18px 11px 15px; border-radius: 11px;
+    box-shadow: 0 12px 26px -14px rgba(16,24,40,.7);
+  }
+  .addr svg { flex: none; }
+
+  /* 窗口 */
+  .win-card {
+    position: absolute;
+    background: #fff;
+    border: 1px solid #dbe3ef;
+    border-radius: 13px;
+    overflow: hidden;
+  }
+  .browser {
+    left: 522px; top: 84px; width: 612px; height: 428px;
+    transform: rotate(-1.4deg);
+    box-shadow: 0 34px 70px -26px rgba(19,36,70,.42), 0 2px 6px rgba(19,36,70,.06);
+  }
+  .chrome {
+    height: 34px; display: flex; align-items: center; gap: 7px;
+    padding: 0 12px; background: #eef2f8; border-bottom: 1px solid #e0e7f1;
+  }
+  .dot { width: 8px; height: 8px; border-radius: 50%; }
+  .d1 { background: #ff5f57; } .d2 { background: #febc2e; } .d3 { background: #28c840; }
+  .url {
+    flex: 1; margin-left: 8px;
+    height: 20px; border-radius: 6px; background: #fff; border: 1px solid #e2e8f2;
+    display: flex; align-items: center; gap: 5px; padding: 0 9px;
+    font-family: "Cascadia Mono", Consolas, monospace;
+    font-size: 9.5px; color: #6b7688; letter-spacing: -.1px;
+  }
+  .url span { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+  .browser img, .app img { display: block; width: 100%; }
+
+  .app {
+    left: 594px; top: 424px; width: 524px;
+    transform: rotate(1.5deg);
+    border-radius: 11px;
+    box-shadow: 0 32px 64px -24px rgba(19,36,70,.5), 0 2px 6px rgba(19,36,70,.08);
+  }
+  .app img { height: 295px; object-fit: cover; object-position: top left; }
+
+  .badge {
+    position: absolute; left: 960px; top: 386px;
+    transform: rotate(6deg);
+    background: #1f4fd8; color: #fff;
+    font-size: 13px; font-weight: 800; letter-spacing: .5px;
+    padding: 7px 13px; border-radius: 999px;
+    box-shadow: 0 12px 24px -10px rgba(31,79,216,.8);
+    z-index: 5;
+  }
+</style>
+</head>
+<body>
+  <div class="bg-glow-a"></div>
+  <div class="bg-glow-b"></div>
+  <div class="bg-grid"></div>
+
+  <div class="left">
+    <div class="brand">
+      <span class="mark">H</span>
+      <span class="wordmark">HRX 软件库</span>
+      <span class="brand-div"></span>
+      <span class="brand-note">个人开发 · 持续更新</span>
+    </div>
+
+    <h1>我把 <span class="win">Windows</span><br>小工具都放进了<br><span class="hl">一个网站</span>里</h1>
+
+    <p class="sub">免费下载<i>·</i>本机运行<i>·</i>不上传</p>
+
+    <div class="tags">
+      <span class="tag first">PDF 处理</span>
+      <span class="tag">证件照</span>
+      <span class="tag">文件批量</span>
+      <span class="tag">音视频</span>
+      <span class="tag">表格</span>
+    </div>
+
+    <p class="hint">搜 <b>「PDF 合并」</b> <b>「抠图」</b> <b>「批量重命名」</b></p>
+
+    <span class="addr">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+      地址在简介和置顶评论
+    </span>
+  </div>
+
+  <div class="win-card browser">
+    <div class="chrome">
+      <span class="dot d1"></span><span class="dot d2"></span><span class="dot d3"></span>
+      <div class="url">
+        <svg width="9" height="10" viewBox="0 0 24 24" fill="none" stroke="#8a94a6" stroke-width="2.6"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+        <span>hrx-tools-g1ldzszv60x.qoder.site</span>
+      </div>
+    </div>
+    <img src="_site-clean.png" alt="">
+  </div>
+
+  <div class="win-card app">
+    <img src="../web/images/000pdf-full.webp" alt="">
+  </div>
+
+  <div class="badge">12 个功能 · 一个不缺</div>
+</body>
+</html>
