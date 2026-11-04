@@ -58,6 +58,11 @@ HEADER = """\
 #   copy_source     简介抽取来源，人工改写后仍可保留作为出处
 #   discovered      脚本自动发现的值，仅供对照，不参与渲染
 #
+# 站点级配置在本文件顶部的 site: 段（扫描脚本只回写 updated，其余键原样保留）：
+#   name            站点品牌名，页面标题、<h1>、og:site_name、llms.txt 全部取它——改名只动这里
+#   url             正式发布域名，canonical/og/sitemap/JSON-LD 全部拼它。
+#                   缺了构建会直接失败，不再静默产出一个没有收录信号的裸页（本地预览请显式加 --offline）
+#
 # 软件根目录不在本文件里：改 data/paths.yaml（相对站点工程），或 python tools/paths.py set。
 # 新增软件：把目录放进 AI_SOFT，跑 `python tools/scan_jobs.py`，再填链接。
 # 生成站点：`python tools/build_site.py`，产物在 web/。
@@ -632,9 +637,13 @@ def main() -> int:
 
     founds = [scan(p) for p in projects]
     existing = []
+    existing_site: dict = {}
     if args.out.is_file():
         loaded = yaml.safe_load(read_text(args.out)) or {}
         existing = loaded.get("shares") or []
+        # 站点名与域名住在 site: 段里，构建器只读不写；重写整段会把它们抹掉，
+        # 而抹掉之后的构建仍然"成功"，只是 canonical/sitemap/JSON-LD 全没了。
+        existing_site = {k: v for k, v in (loaded.get("site") or {}).items() if k != "updated"}
 
     # 站点同级目录是迁移前的老位置：那里的工程只是还没搬进软件根目录，不是下架，不能置 hidden
     legacy_base = path_config.SITE_ROOT.parent
@@ -645,7 +654,7 @@ def main() -> int:
     )
     entries, notes = merge(existing, founds, force=args.force, legacy_slugs=legacy_slugs)
     payload = {
-        "site": {"updated": str(date.today())},
+        "site": {**existing_site, "updated": str(date.today())},
         "shares": entries,
     }
     if args.check:
@@ -658,7 +667,7 @@ def main() -> int:
         print(f"\n警告：{len(legacy_slugs)} 个编号工程仍在站点同级目录、未迁入软件根目录，本次扫描看不到它们：")
         for slug in sorted(legacy_slugs):
             print(f"    {(legacy_base / slug).as_posix()} → 建议移入 {jobs_root.as_posix()}/{slug}")
-    print(f"\n条目 {len(entries)} 条" + ("（--check 未写文件）" if args.check else f"，已写入 {args.out.relative_to(SITE_ROOT).as_posix()}"))
+    print(f"\n条目 {len(entries)} 条" + ("（--check 未写文件）" if args.check else f"，已写入 {path_config.display_path(args.out)}"))
     return 0
 
 

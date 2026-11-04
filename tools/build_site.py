@@ -2,8 +2,9 @@
 """把 data/shares.yaml 构建成可发布的静态站点（web/）。
 
 用法：
-    python tools/build_site.py                     # 构建到 web/
-    python tools/build_site.py --site-url https://xxx.qoder.site   # 带上正式域名（补 canonical/og/sitemap）
+    python tools/build_site.py                     # 构建到 web/（站点名与域名取 data/shares.yaml 的 site: 段）
+    python tools/build_site.py --offline           # 本地预览：不产 canonical/og/JSON-LD/sitemap，这种产物别发布
+    python tools/build_site.py --site-url https://新域名   # 换域名时临时覆盖配置，canonical/sitemap 跟着走
     python tools/build_site.py --no-images         # 跳过图片压缩，纯改文案时更快
 
 卡片正文会预渲染进 index.html（搜索引擎可抓取），同一份数据以 JSON 内嵌供前端检索，
@@ -47,13 +48,19 @@ CATEGORY_NOTE = {
     "办公票据": "发票与票据台账",
 }
 
-BRAND = "HRX 软件库"
-PAGE_TITLE = "HRX 软件库 - 本地工具下载目录"
+# 站点名与正式发布域名只存在 data/shares.yaml 的 site: 段。写死在这里时，改名要动 5 个地方，
+# 而域名靠命令行传、忘传就把 canonical/og/JSON-LD/sitemap 整段静默丢掉——两个都是已经踩过的坑。
 PAGE_DESC = (
     "本机能离线运行的 Windows 小工具目录：PDF、证件照、图片、音视频、表格、文件批量与系统效率工具，"
     "按名称或功能关键词搜索，附网盘分享链接与提取码。"
 )
 PAGE_DESC_WITH_DOCS = PAGE_DESC + "同站另附成套实战文档资料，解压后离线阅读。"
+
+
+def page_title(brand: str, has_docs: bool) -> str:
+    """首页标题只回答「这个站是什么」。功能长尾词（PDF 拆分、OCR）由详情页承接，堆在这里反而稀释。"""
+    tail = "Windows 离线小工具与实战资料" if has_docs else "Windows 离线小工具"
+    return f"{brand} - {tail}（免安装·不上传）"
 
 # robots 里显式点名放行：默认组虽然是全放行，但共享域名上的通用规则容易被上游改写，
 # 而且 AI 爬虫和搜索引擎分开声明，将来要收紧训练类抓取时不会连带影响收录。
@@ -122,6 +129,26 @@ def load_entries(path: Path, kind: str = "software") -> tuple[list[dict], dict]:
     return visible, doc.get("site") or {}
 
 
+def resolve_site(site: dict, args: argparse.Namespace) -> tuple[str, str, int]:
+    """站点品牌与正式发布域名。缺配置直接失败并说清改哪里：
+    这两种情况过去都会让构建「成功」，只是产出一个没名字或没收录信号的裸页。"""
+    brand = str(site.get("name") or "").strip()
+    if not brand:
+        print("site.name 缺失：品牌名是页面标题、<h1>、og:site_name 与 llms.txt 首行的唯一来源。")
+        print("  修法：在 data/shares.yaml 顶部的 site: 段补一行 name: HRX 资源库")
+        return "", "", 2
+    if args.offline:
+        # 本地预览故意不写线上域名：这种产物会被 seo_check 判不通过，正好挡住"预览包误发布"。
+        return brand, "", 0
+    site_url = str(args.site_url or site.get("url") or "").strip().rstrip("/")
+    if not site_url:
+        print("site.url 未配置且没加 --offline：canonical、og、JSON-LD、sitemap 全都不会产出，这样的产物不要发布。")
+        print("  正式发布：在 data/shares.yaml 的 site: 段补一行 url: https://你的域名")
+        print("  本地预览：python tools/build_site.py --offline")
+        return brand, "", 2
+    return brand, site_url, 0
+
+
 def copy_brand_assets(src: Path, out: Path) -> None:
     """公众号二维码不是条目封面，--no-images 时也要复制。"""
     img_dir = out / "images"
@@ -177,14 +204,6 @@ def make_images(entries: list[dict], root: Path, out: Path) -> int:
         entry["_asset"] = f"images/{dst.name}"
         entry["_asset_full"] = f"images/{dst_full.name}"
     return misses
-
-
-def display_path(path: Path) -> str:
-    """试构建常把产物写到仓库外的临时目录，相对路径显示不了就退回绝对路径。"""
-    try:
-        return path.relative_to(SITE_ROOT).as_posix()
-    except ValueError:
-        return path.as_posix()
 
 
 def chip_label(feature: str) -> str:
@@ -316,7 +335,7 @@ def app_item(entry: dict, site_url: str) -> dict:
     return item
 
 
-def json_ld(entries: list[dict], site_url: str, desc: str) -> str:
+def json_ld(entries: list[dict], site_url: str, desc: str, brand: str, title: str) -> str:
     doc = {
         "@context": "https://schema.org",
         "@graph": [
@@ -324,14 +343,14 @@ def json_ld(entries: list[dict], site_url: str, desc: str) -> str:
                 "@type": "WebSite",
                 "@id": f"{site_url}/#website",
                 "url": f"{site_url}/",
-                "name": BRAND,
+                "name": brand,
                 "description": desc,
                 "inLanguage": "zh-CN",
                 "publisher": {"@type": "Person", "@id": f"{site_url}/#author", "name": "HRX"},
             },
             {
                 "@type": "ItemList",
-                "name": PAGE_TITLE,
+                "name": title,
                 "numberOfItems": len(entries),
                 "itemListElement": [
                     {"@type": "ListItem", "position": i + 1, "item": app_item(e, site_url)}
@@ -343,9 +362,9 @@ def json_ld(entries: list[dict], site_url: str, desc: str) -> str:
     return json.dumps(doc, ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/")
 
 
-def head_extra(entries: list[dict], site_url: str, desc: str) -> str:
+def head_extra(entries: list[dict], site_url: str, desc: str, brand: str, title: str) -> str:
     lines = [
-        '<meta property="og:site_name" content="HRX 软件库">',
+        f'<meta property="og:site_name" content="{esc(brand)}">',
         '<meta property="og:locale" content="zh_CN">',
     ]
     if site_url:
@@ -356,7 +375,7 @@ def head_extra(entries: list[dict], site_url: str, desc: str) -> str:
         lines += [
             f'<link rel="canonical" href="{esc(site_url)}/">',
             '<meta property="og:type" content="website">',
-            f'<meta property="og:title" content="{esc(PAGE_TITLE)}">',
+            f'<meta property="og:title" content="{esc(title)}">',
             f'<meta property="og:description" content="{esc(desc)}">',
             f'<meta property="og:url" content="{esc(site_url)}/">',
         ]
@@ -364,9 +383,9 @@ def head_extra(entries: list[dict], site_url: str, desc: str) -> str:
             lines.append(f'<meta property="og:image" content="{esc(site_url + "/" + first_cover)}">')
         lines += [
             '<meta name="twitter:card" content="summary_large_image">',
-            f'<meta name="twitter:title" content="{esc(PAGE_TITLE)}">',
+            f'<meta name="twitter:title" content="{esc(title)}">',
             f'<meta name="twitter:description" content="{esc(desc)}">',
-            f'<script type="application/ld+json">{json_ld(entries, site_url, desc)}</script>',
+            f'<script type="application/ld+json">{json_ld(entries, site_url, desc, brand, title)}</script>',
         ]
     return "\n".join(lines)
 
@@ -396,11 +415,11 @@ def llms_row(e: dict, base: str) -> str:
     return row
 
 
-def llms_txt(entries: list[dict], docs: list[dict], site_url: str, updated: str) -> str:
+def llms_txt(entries: list[dict], docs: list[dict], site_url: str, updated: str, brand: str) -> str:
     """面向 AI 引擎的纯文本目录：逐条写清是什么、什么版本、能干什么、去哪下载。"""
     base = site_url or ""
     out = [
-        f"# {BRAND}",
+        f"# {brand}",
         "",
         "> 本机运行的 Windows 免费桌面小工具目录。绿色免安装、不需要联网、文件不上传，"
         "PDF 合并拆分、证件照、去水印、文件去重等常用办公操作全部在自己电脑上完成。"
@@ -428,7 +447,7 @@ def llms_txt(entries: list[dict], docs: list[dict], site_url: str, updated: str)
         "- 全部软件免费获取，无内购、无广告、不收集使用数据。",
         "- 系统要求：Windows 10 / Windows 11 64 位；解压即用，不需要装运行库。",
         "- 下载经夸克网盘、UC 网盘等渠道分发，提取码在页面上直接展示并可一键复制。",
-        "- 分享失效或想要还没做出的工具：微信公众号「HRX 软件库」可提需求，也接受定制开发。",
+        f"- 分享失效或想要还没做出的工具：微信公众号「{brand}」可提需求，也接受定制开发。",
         "",
     ]
     return "\n".join(out)
@@ -503,6 +522,10 @@ def build(args: argparse.Namespace) -> int:
     docs_site: dict = {}
     if docs_path.is_file():
         docs, docs_site = load_entries(docs_path, kind="docs")
+    brand, site_url, config_error = resolve_site(site, args)
+    if config_error:
+        return config_error
+    title = page_title(brand, bool(docs))
     all_rows = [e for e in ((yaml.safe_load(data_path.read_text(encoding="utf-8")) or {}).get("shares") or [])]
     all_docs = [e for e in ((yaml.safe_load(docs_path.read_text(encoding="utf-8")) or {}).get("docs") or [])] if docs_path.is_file() else []
     backlog = [
@@ -540,15 +563,15 @@ def build(args: argparse.Namespace) -> int:
 
     src = Path(args.src)
     copy_brand_assets(src, out)
-    site_url = (args.site_url or "").rstrip("/")
     desc = PAGE_DESC_WITH_DOCS if docs else PAGE_DESC
     updated = str(site.get("updated") or docs_site.get("updated") or date.today())
     count_line = f"共 {len(entries)} 款软件" + (f" · {len(docs)} 份资料" if docs else "")
     template = (src / "template.html").read_text(encoding="utf-8")
     page = (
-        template.replace("{{TITLE}}", PAGE_TITLE)
+        template.replace("{{TITLE}}", esc(title))
+        .replace("{{BRAND}}", esc(brand))
         .replace("{{DESC}}", esc(desc))
-        .replace("{{HEAD}}", head_extra(combined, site_url, desc))
+        .replace("{{HEAD}}", head_extra(combined, site_url, desc, brand, title))
         .replace("{{CHIPS}}", chips_html(combined))
         .replace("{{CARDS}}", "".join(card_html(e, i) for i, e in enumerate(entries)))
         .replace("{{DOCS_BLOCK}}", docs_block_html(docs))
@@ -566,7 +589,7 @@ def build(args: argparse.Namespace) -> int:
         encoding="utf-8",
     )
     (out / "robots.txt").write_text(robots_txt(site_url), encoding="utf-8")
-    (out / "llms.txt").write_text(llms_txt(entries, docs, site_url, updated), encoding="utf-8")
+    (out / "llms.txt").write_text(llms_txt(entries, docs, site_url, updated, brand), encoding="utf-8")
     if site_url:
         # 条目各自带 updated，lastmod 取全站最近一次真实内容变更；
         # 一律写成构建日会让抓取器把整站的更新信号当成噪声。
@@ -585,7 +608,7 @@ def build(args: argparse.Namespace) -> int:
     print(
         f"已上架 {len(entries)} 款软件"
         + (f" + {len(docs)} 份资料" if docs else "")
-        + f" → {display_path(out)}/  （{total:.2f} MB）"
+        + f" → {path_config.display_path(out)}/  （{total:.2f} MB）"
     )
     if entries:
         print(f"软件根目录：{jobs_root.as_posix()}（来源：{roots['jobs_root'].source}）")
@@ -601,6 +624,8 @@ def build(args: argparse.Namespace) -> int:
         print("文档缺封面图：" + "、".join(no_doc_cover))
     if total > SOFT_LIMIT_MB:
         print(f"警告：产物 {total:.1f} MB 接近发布上限，请下调封面尺寸或质量。")
+    if not site_url:
+        print("注意：本次是 --offline 构建，canonical/og/JSON-LD/sitemap 全部缺失，这份产物不要发布。")
     return 0
 
 
@@ -612,7 +637,8 @@ def main() -> int:
     p.add_argument("--src", default=str(DEFAULT_SRC))
     p.add_argument("--jobs-root", type=Path, default=None, help="软件根目录（默认取 data/paths.yaml 的 jobs_root）")
     p.add_argument("--docs-root", type=Path, default=None, help="文档根目录（默认取 data/paths.yaml 的 docs_root）")
-    p.add_argument("--site-url", default="", help="正式发布域名，用于 canonical/og/sitemap")
+    p.add_argument("--site-url", default="", help="临时覆盖 data/shares.yaml 的 site.url（换域名试构建用，正式值请写进配置）")
+    p.add_argument("--offline", action="store_true", help="本地预览：忽略 site.url，不产 canonical/og/JSON-LD/sitemap（这种产物 seo_check 判不通过）")
     p.add_argument("--no-images", action="store_true", help="跳过封面压缩")
     args = p.parse_args()
     if sys.stdout.encoding and sys.stdout.encoding.lower() not in ("utf-8", "utf8"):

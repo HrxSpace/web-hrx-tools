@@ -71,6 +71,15 @@ def to_config_value(target: Path) -> str:
     return Path(rel).as_posix()
 
 
+def display_path(path: Path) -> str:
+    """数据文件与产物常被写到仓库外的临时目录（试构建、占位数据验收），
+    这时相对路径显示不了也不能抛异常——退回绝对路径即可。"""
+    try:
+        return path.resolve().relative_to(SITE_ROOT).as_posix()
+    except ValueError:
+        return path.as_posix()
+
+
 def read_config(path: Path) -> dict[str, str]:
     if not path.is_file():
         return {}

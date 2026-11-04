@@ -77,6 +77,7 @@ HEADER = """\
 #   size_mb         发布包体积
 #   copy_source     简介抽取来源
 #
+# 站点名与正式发布域名只有一份，写在 shares.yaml 的 site: 段（name / url）；本文件的 site: 段只记 updated。
 # 文档根目录不在本文件里：改 data/paths.yaml 的 docs_root，或 python tools/paths.py set。
 # 新增文档：把 Wxxx_ 目录放进文档根目录，跑 `python tools/scan_docs.py`，再填链接。
 # 生成站点：`python tools/build_site.py`，产物在 web/。
@@ -337,7 +338,7 @@ def main() -> int:
             HEADER + yaml.safe_dump(payload, allow_unicode=True, sort_keys=False, width=100), encoding="utf-8"
         )
     report(founds, entries, notes, docs_root)
-    print(f"\n条目 {len(entries)} 条" + ("（--check 未写文件）" if args.check else f"，已写入 {args.out.relative_to(SITE_ROOT).as_posix()}"))
+    print(f"\n条目 {len(entries)} 条" + ("（--check 未写文件）" if args.check else f"，已写入 {path_config.display_path(args.out)}"))
     return 0
 
 
