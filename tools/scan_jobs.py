@@ -62,6 +62,8 @@ HEADER = """\
 #   name            站点品牌名，页面标题、<h1>、og:site_name、llms.txt 全部取它——改名只动这里
 #   url             正式发布域名，canonical/og/sitemap/JSON-LD 全部拼它。
 #                   缺了构建会直接失败，不再静默产出一个没有收录信号的裸页（本地预览请显式加 --offline）
+#   verify          站长验证文件清单（每项 file + text），构建时原样写进产物。
+#                   不要手工把 googleXXXX.html 丢进 web/：构建每次清空 web/，验证会悄悄失效
 #
 # 软件根目录不在本文件里：改 data/paths.yaml（相对站点工程），或 python tools/paths.py set。
 # 新增软件：把目录放进 AI_SOFT，跑 `python tools/scan_jobs.py`，再填链接。

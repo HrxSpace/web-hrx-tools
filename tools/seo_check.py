@@ -47,10 +47,9 @@ def expected_url(site_url: str, rel: str) -> str:
     return f"{site_url}/" if rel == "index.html" else f"{site_url}/{rel}"
 
 
-def read_site(data_path: Path) -> tuple[str, str]:
+def read_site(data_path: Path) -> dict:
     doc = yaml.safe_load(data_path.read_text(encoding="utf-8")) or {}
-    site = doc.get("site") or {}
-    return str(site.get("name") or "").strip(), str(site.get("url") or "").strip().rstrip("/")
+    return doc.get("site") or {}
 
 
 def check_page(html_path: Path, rel: str, site_url: str, titles: dict[str, str]) -> list[str]:
@@ -100,15 +99,23 @@ def check_page(html_path: Path, rel: str, site_url: str, titles: dict[str, str])
     return problems
 
 
-def check(out: Path, data_path: Path, verbose: bool) -> list[str]:
+def check(out: Path, data_path: Path, verbose: bool) -> tuple[list[str], list[str]]:
+    """返回 (不通过项, 参与检查的页面)。验证文件不算页面，计数也不该把它算进去。"""
     problems: list[str] = []
-    brand, site_url = read_site(data_path)
+    site = read_site(data_path)
+    brand = str(site.get("name") or "").strip()
+    site_url = str(site.get("url") or "").strip().rstrip("/")
     if not site_url:
-        return [f"{data_path.name} 的 site.url 未配置：没有域名就无法核对 canonical/sitemap，产物也不该发布"]
+        return [f"{data_path.name} 的 site.url 未配置：没有域名就无法核对 canonical/sitemap，产物也不该发布"], []
 
     pages = sorted(p.relative_to(out).as_posix() for p in out.rglob("*.html"))
     if not pages:
-        return [f"{out} 下没有任何 HTML 产物"]
+        return [f"{out} 下没有任何 HTML 产物"], []
+    # 站长验证文件也是 .html，但它不是页面：没有 title/h1，也绝不该进 sitemap
+    verify_names = {
+        str(item.get("file") or "").strip() for item in (site.get("verify") or []) if isinstance(item, dict)
+    }
+    pages = [rel for rel in pages if rel not in verify_names]
 
     titles: dict[str, str] = {}
     for rel in pages:
@@ -144,7 +151,19 @@ def check(out: Path, data_path: Path, verbose: bool) -> list[str]:
         if brand and not raw.startswith(f"# {brand}"):
             problems.append(f"llms.txt 首行不是站点名，应为 `# {brand}`")
 
-    return problems
+    for item in site.get("verify") or []:
+        name = str(item.get("file") if isinstance(item, dict) else "").strip()
+        text = str(item.get("text") if isinstance(item, dict) else "")
+        if not name or not text:
+            problems.append(f"site.verify 有条目缺 file 或 text：{item}")
+            continue
+        target = out / name
+        if not target.is_file():
+            problems.append(f"站长验证文件不在产物里：{name}（手工放会被下次构建清掉，要写进 site.verify）")
+        elif target.read_text(encoding="utf-8") != text:
+            problems.append(f"站长验证文件内容与配置不一致：{name}")
+
+    return problems, pages
 
 
 def main() -> int:
@@ -163,15 +182,14 @@ def main() -> int:
         print(f"数据文件不存在：{data_path}")
         return 2
 
-    problems = check(out, data_path, args.verbose)
-    page_count = len(list(out.rglob("*.html")))
+    problems, pages = check(out, data_path, args.verbose)
     if problems:
-        print(f"SEO 检查不通过（{len(problems)} 项，共 {page_count} 个页面）：")
+        print(f"SEO 检查不通过（{len(problems)} 项，共 {len(pages)} 个页面）：")
         for line in problems:
             print(f"  · {line}")
         print("\n修好后重跑；确认无误再发布。")
         return 1
-    print(f"SEO 检查通过：{page_count} 个页面，canonical/title/h1/JSON-LD/sitemap/robots/llms 全部一致。")
+    print(f"SEO 检查通过：{len(pages)} 个页面，canonical/title/h1/JSON-LD/sitemap/robots/llms 全部一致。")
     return 0
 
 

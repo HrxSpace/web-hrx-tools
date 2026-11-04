@@ -163,6 +163,24 @@ def resolve_site(site: dict, args: argparse.Namespace) -> tuple[str, str, int]:
     return brand, site_url, 0
 
 
+def write_verify_files(site: dict, out: Path) -> list[str]:
+    """站长验证文件由构建器产出，不许手工放进 web/。
+
+    原因很实际：构建每次会清空 web/ 下的 HTML，手工放进去的 googleXXXX.html
+    下一次构建就没了，而 Google 的验证会悄悄失效——届时排名数据断档，谁也想不起是构建干的。
+    """
+    written: list[str] = []
+    for item in site.get("verify") or []:
+        name = str((item or {}).get("file") if isinstance(item, dict) else "").strip()
+        text = str(item.get("text") if isinstance(item, dict) else "")
+        if not name or not text:
+            print(f"警告：site.verify 有条目缺 file 或 text，已跳过：{item}")
+            continue
+        (out / name).write_text(text, encoding="utf-8")
+        written.append(name)
+    return written
+
+
 def copy_brand_assets(src: Path, out: Path) -> None:
     """公众号二维码不是条目封面，--no-images 时也要复制。"""
     img_dir = out / "images"
@@ -971,6 +989,7 @@ def build(args: argparse.Namespace) -> int:
     )
     (out / "robots.txt").write_text(robots_txt(site_url), encoding="utf-8")
     (out / "llms.txt").write_text(llms_txt(entries, docs, site_url, updated, brand, paths), encoding="utf-8")
+    verify = write_verify_files(site, out)
     if site_url:
         # 每条 URL 的 lastmod 用该条自己的 updated：
         # 全站写同一个日期，抓取器会把"这站在动"的信号当成噪声。
@@ -1009,6 +1028,8 @@ def build(args: argparse.Namespace) -> int:
         print("文档缺封面图：" + "、".join(no_doc_cover))
     if no_manual:
         print("详情页缺用户手册正文（退到简介+功能清单，正文会偏薄）：" + "、".join(no_manual))
+    if verify:
+        print("站长验证文件已随构建产出：" + "、".join(verify))
     if brand_fixes:
         print(f"提示：手册里有 {brand_fixes} 处旧品牌写法，已按 site.name 统一渲染；源头在各软件工程的 md 里，建议顺手改掉。")
     thin = [rel for rel, content in pages.items() if rel != "index.html" and body_han(content) < MIN_PAGE_HAN]

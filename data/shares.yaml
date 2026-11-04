@@ -32,6 +32,9 @@
 site:
   name: HRX 资源库
   url: https://hrx-tools-g1ldzszv60x.qoder.zone
+  verify:
+    - file: google8850a877dbfc1756.html
+      text: 'google-site-verification: google8850a877dbfc1756.html'
   updated: '2026-11-03'
 shares:
 - slug: 000_PDF超级工具箱

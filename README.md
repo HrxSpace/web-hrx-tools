@@ -96,7 +96,7 @@ python -m http.server 4173 --bind 127.0.0.1 --directory web
 
 | 字段 | 谁负责 | 说明 |
 | --- | --- | --- |
-| `site.name` `site.url` | 人工 | 文件顶部 `site:` 段：站点品牌名与正式发布域名，整站唯一来源。改名只动 `name` |
+| `site.name` `site.url` `site.verify` | 人工 | 文件顶部 `site:` 段：品牌名、正式发布域名、站长验证文件清单（每项 `file` + `text`，构建时原样写进产物）。改名只动 `name`；**验证文件不要手工丢进 `web/`**，构建会清空该目录，验证会悄悄失效 |
 | `slug` | 脚本 | 主键=目录名，别手改 |
 | `name` `name_en` `exe_name` `version` | 脚本填、你可改 | 三者常不一致：`001` 目录叫证件照制作工具，商品名是证照快做，exe 是 idphotokit |
 | `summary` `description` `features` `keywords` | 脚本抽取、你可改写 | 抽取来源记在 `copy_source`；全部参与搜索 |
