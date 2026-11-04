@@ -1,4 +1,4 @@
-# HRX 软件库 · SEO 与 AI 可见性方案
+# HRX 资源库 · SEO 与 AI 可见性方案
 
 适用站点：`https://hrx-tools-g1ldzszv60x.qoder.zone/`（Qoder Sites 静态托管）
 数据源：`data/shares.yaml` → 构建器：`tools/build_site.py` → 产物：`web/`
@@ -8,6 +8,19 @@
 > 同日已落地「零风险基建」：卡片锚点与 `#slug` 深链、JSON-LD 补 `downloadUrl`/`fileSize`/`dateModified`/`featureList`/`WebSite` 实体、
 > `robots.txt` 三组显式放行、`llms.txt` 生成、首页唯一 `<h1>`、sitemap `lastmod` 取真实变更日、`og:site_name`/`og:locale`/twitter 字段、
 > `meta robots` 与 `theme-color`。**多页面化（P0）尚未做**，仍是全站 1 个可索引 URL。
+
+> **2026-11-04 决策记录**：
+> 1. 站点品牌统一为 **HRX 资源库**，微信公众号同步改名，页面与站外一律用这一个写法（实体一致性见 §4.3）。
+> 2. **域名选定方案 C：继续留在 Qoder Sites**。国内引擎（百度/搜狗/360/神马）正式放弃，收录主攻 Google + Bing/IndexNow + Yandex + AI 引擎；
+>    §五 的 A/B 两条路不再排期，§六 里依赖备案的百度/搜狗/360 提交动作一并删除。
+> 3. 详情页正文来源定为**脚本自动抽取 `用户手册/*.md`**：手册七章结构完全统一（`### 4.x` 功能详解 + `## 五、常见问题` 疑问句小节），
+>    已上架 4 款的手册体量为 4026 / 4346 / 5342 / 5108 汉字，足以支撑每页 800+ 汉字与 FAQPage，**不需要人工写作**。§七 第 2 条据此调整。
+> 4. 分类页 `/cat/*.html` 改为**同类条目 ≥3 时才由构建器自动生成**。当前 5 条恰好分 5 类、一页一条，
+>    内容与详情页雷同，属典型 doorway page，宁可不生成。§3.1 的「8 个分类页」按此修正。
+> 5. 同日已落地：站点名与域名收进 `data/shares.yaml` 的 `site:` 段（缺 `url` 时构建**直接失败**，本地预览须显式 `--offline`）；
+>    扫描器回写不再抹掉 `site.name` / `site.url`；新增 `tools/seo_check.py` 发布前断言。
+>    此前 `--site-url` 忘传会让 canonical/og/JSON-LD/sitemap 整段消失而构建照样报成功——已发布产物确实缺这些。
+>    **多页面化仍未做。**
 
 ---
 
@@ -72,11 +85,11 @@
 
 | 页面 | URL | title 模板 | 数量 |
 | --- | --- | --- | --- |
-| 首页 | `/` | `HRX 软件库 - {N} 款 Windows 离线小工具免费下载` | 1 |
-| 软件详情 | `/soft/{slug}.html` | `{name}_{功能词}软件下载 v{version}_离线不上传_{category} - HRX 软件库` | N（当前 3 → 目标 11） |
-| 分类 | `/cat/{cat}.html` | `{category}工具合集_{CATEGORY_NOTE} - HRX 软件库` | 8 |
-| 更新记录 | `/updates.html` | `更新记录_新版本与上架时间 - HRX 软件库` | 1 |
-| 关于 | `/about.html` | `关于 HRX 软件库_作者与站点说明 - HRX 软件库` | 1 |
+| 首页 | `/` | `HRX 资源库 - {N} 款 Windows 离线小工具免费下载` | 1 |
+| 软件详情 | `/soft/{slug}.html` | `{name}_{功能词}软件下载 v{version}_离线不上传_{category} - HRX 资源库` | N（当前 3 → 目标 11） |
+| 分类 | `/cat/{cat}.html` | `{category}工具合集_{CATEGORY_NOTE} - HRX 资源库` | 8 |
+| 更新记录 | `/updates.html` | `更新记录_新版本与上架时间 - HRX 资源库` | 1 |
+| 关于 | `/about.html` | `关于 HRX 资源库_作者与站点说明 - HRX 资源库` | 1 |
 
 slug 用 ASCII：`000_PDF超级工具箱` → `pdf-super-toolbox`（由 `name_en`/`exe_name` 小写连字符化）。**URL 不带中文**，避免国内引擎与部分爬虫的编码歧义。
 
@@ -145,7 +158,7 @@ web/sitemap-page.xml       → 首页/updates/about
 `web/llms.txt`（UTF-8，≤10 KB）：
 
 ```markdown
-# HRX 软件库
+# HRX 资源库
 > {N} 款 Windows 离线桌面小工具，免费、绿色免安装、不联网、文件不上传。
 数据更新于 {UPDATED}。
 
@@ -160,7 +173,7 @@ web/sitemap-page.xml       → 首页/updates/about
 ## 说明
 - 全部为个人开发的 Windows 10/11 64 位软件，解压即用。
 - 下载经夸克网盘/UC 网盘等渠道分发，提取码随链接展示。
-- 联系与更新：微信公众号 HRX 软件库。
+- 联系与更新：微信公众号 HRX 资源库。
 ```
 
 要点：**逐条写清"是什么 + 版本 + 干什么用 + 下载去哪"**，AI 引擎引用时可直接摘录；`> ` 引用块放站点一句话定义（llms.txt 规范的位置）；域名绝对地址一律由 `--site-url` 拼装。
@@ -224,7 +237,7 @@ Sitemap: {site_url}/sitemap.xml
 模型语料里没有你，站内做得再细也不会被引用。按性价比排序：
 
 1. **已有素材直接复用**：`推广素材/` 里已有 B 站封面与站点截图；`python-promo-suite` 技能能一次产出用户手册 + 8 平台推广文章 + 演示视频。**这是本项目最大的现成杠杆**。
-2. **实体一致性**：`HRX 软件库` 这个品牌名在 GitHub、公众号、知乎、B 站、CSDN、下载站用**同一写法 + 同一句描述 + 同一 URL**。多源一致是 AI 认实体的核心信号。
+2. **实体一致性**：`HRX 资源库` 这个品牌名在 GitHub、公众号、知乎、B 站、CSDN、下载站用**同一写法 + 同一句描述 + 同一 URL**。多源一致是 AI 认实体的核心信号。
 3. **优先被爬虫站点引用的位置**：知乎"PDF 合并工具推荐"类问题回答、CSDN/掘金/博客园 的工具评测、少数派/Appinn 投稿、B 站软件介绍视频简介带链接。
 4. **GitHub 仓库 + README 写站点 URL**：代码托管站在 AI 语料里权重极高，成本近乎 0。
 5. **下载站/软件目录登记**（吾爱破解、小众软件目录等）：反链权重高，但要人工提交。

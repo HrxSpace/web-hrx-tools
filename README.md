@@ -1,4 +1,4 @@
-# HRX 软件库 · 网盘分享站点
+# HRX 资源库 · 网盘分享站点
 
 本机能离线运行的 Windows 小工具目录站：卡片 + 关键词搜索 + 网盘分享链接。
 内容只由一份数据文件驱动，改数据 → 构建 → 发布，三步完成。
@@ -15,6 +15,7 @@ Z001_网盘站点/
 ├─ tools/scan_jobs.py    扫描软件目录（^\d{3}_）→ 维护 shares.yaml + 体检报告
 ├─ tools/scan_docs.py    扫描文档工程（^W\d{3}_）→ 维护 docs.yaml + 体检报告
 ├─ tools/build_site.py   两份数据 → 静态站点 web/
+├─ tools/seo_check.py    发布前断言：canonical/sitemap/title/h1/JSON-LD 对齐才放行
 └─ web/                  构建产物（发布目录，不要手改）
 ```
 
@@ -76,19 +77,26 @@ share_code: 1A2B          # 提取码，没有就留空
 platform: 夸克网盘         # 显示在卡片和按钮上
 ```
 
-**4. 构建 + 本地预览**
+**4. 构建 + 发布前检查 + 本地预览**
 
 ```bash
-python tools/build_site.py --site-url https://你的域名    # 带域名才会生成 canonical/og/sitemap/结构化数据
+python tools/build_site.py                    # 站点名与域名取 data/shares.yaml 的 site: 段
+python tools/seo_check.py                     # 发布前断言：canonical/sitemap/title/h1/JSON-LD 一致性
 python -m http.server 4173 --bind 127.0.0.1 --directory web
 ```
 
 浏览器打开 <http://127.0.0.1:4173/> 确认无误后，再让 Qoder 走 Sites 发布流程。
 
+站点品牌名与正式发布域名只有一份，写在 `data/shares.yaml` 顶部的 `site:` 段（`name` / `url`）：
+页面标题、`<h1>`、`og:site_name`、`llms.txt` 取 `name`，`canonical`/`og:url`/`sitemap`/JSON-LD 拼 `url`。
+**缺 `url` 时构建直接失败**——过去靠命令行传 `--site-url`，忘传就静默产出一个没有收录信号的裸页，
+构建器自己还报"成功"。只想本地看效果、不要任何收录标签时显式加 `--offline`，这种产物 `seo_check.py` 会判不通过。
+
 ## 字段与状态
 
 | 字段 | 谁负责 | 说明 |
 | --- | --- | --- |
+| `site.name` `site.url` | 人工 | 文件顶部 `site:` 段：站点品牌名与正式发布域名，整站唯一来源。改名只动 `name` |
 | `slug` | 脚本 | 主键=目录名，别手改 |
 | `name` `name_en` `exe_name` `version` | 脚本填、你可改 | 三者常不一致：`001` 目录叫证件照制作工具，商品名是证照快做，exe 是 idphotokit |
 | `summary` `description` `features` `keywords` | 脚本抽取、你可改写 | 抽取来源记在 `copy_source`；全部参与搜索 |
@@ -124,6 +132,7 @@ python tools/paths.py check           # 两个扫描根是否存在（不存在�
 python tools/scan_jobs.py --check     # 软件侧：不写文件，只报现状
 python tools/scan_docs.py --check     # 文档侧：缺发布包、缺封面、缺链接
 python tools/build_site.py            # 构建后也会打印「未挂链接、暂不显示 N 条」
+python tools/seo_check.py             # 发布前断言：收录信号齐不齐，不过就别发布
 ```
 
 体检报告会逐条列出：缺分享链接（附要上传的 `dist/*.zip` 绝对路径）、缺真实界面截图、未打包、版本漂移、发行包名与 spec 不一致。这些都不会让页面出错，只是告诉你还差什么。
