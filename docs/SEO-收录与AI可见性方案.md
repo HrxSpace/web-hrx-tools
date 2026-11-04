@@ -19,7 +19,10 @@
 >    内容与详情页雷同，属典型 doorway page，宁可不生成。§3.1 的「8 个分类页」按此修正。
 > 5. 同日已落地：站点名与域名收进 `data/shares.yaml` 的 `site:` 段（缺 `url` 时构建**直接失败**，本地预览须显式 `--offline`）；
 >    扫描器回写不再抹掉 `site.name` / `site.url`；新增 `tools/seo_check.py` 发布前断言。
->    此前 `--site-url` 忘传会让 canonical/og/JSON-LD/sitemap 整段消失而构建照样报成功——已发布产物确实缺这些。
+>    此前 `--site-url` 忘传会让 canonical/og/JSON-LD/sitemap 整段消失而构建照样报成功。
+>    **更正（11-04 实测线上）**：11-02 那次发布是带域名构建的，线上 canonical/og/JSON-LD/sitemap/robots 的 Sitemap 行齐全；
+>    缺信号的是本地 `web/` 那份后来不带参数重建的产物。风险描述成立但结论要改口径——
+>    不是"线上没做"，而是"此后任何一次忘带参数的重建都会静默产出裸页，并且能被直接发布出去"。配置化正是为了堵这个口子。
 > 6. **同日 P0 多页面化已落地**：`/soft/{英文名}.html`、`/doc/{英文名}.html` 一条资源一个可索引 URL，正文构建期从 `用户手册/*.md` 抽取，
 >    JSON-LD 的 `url` 改指详情页并补 `BreadcrumbList`/`FAQPage`，首页卡片标题改为真链接（`#slug` 弹窗保留），sitemap 逐条 `lastmod`，
 >    `llms.txt` 指向详情页，`tools/seo_check.py` 做发布前断言。实测 5 条资源 → 6 个页面，软件详情页正文 3750~4984 汉字。
