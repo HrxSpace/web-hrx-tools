@@ -273,6 +273,84 @@ dialog#lightbox img {
 .contact-foot { padding: 10px 13px; }
 .contact-foot .qr { width: 96px; height: 96px; }
 
+/* 详情页：一条资源一页，正文是主角，所以单栏、限宽、不吸顶 */
+.subpage .masthead-compact { padding-bottom: 16px; }
+.subpage .wordmark { color: var(--ink); text-decoration: none; }
+.subpage .wordmark:hover { color: var(--brand); }
+.crumbs {
+  max-width: 900px; margin: 0 auto; display: flex; flex-wrap: wrap; gap: 8px;
+  padding: 12px clamp(16px, 4vw, 44px) 0;
+  font-family: var(--mono); font-size: 12px; color: var(--muted);
+}
+.crumbs a { color: var(--ink-2); text-decoration: none; }
+.crumbs a:hover { color: var(--brand); text-decoration: underline; }
+.crumbs .sep { color: #b9c2cd; }
+.detail { padding: 14px clamp(16px, 4vw, 44px) 34px; }
+.detail-body {
+  max-width: 900px; margin: 0 auto; padding: clamp(20px, 3vw, 34px);
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow);
+}
+.detail-body h1 { font-size: clamp(23px, 3.2vw, 30px); letter-spacing: .01em; }
+.alt-name { margin-top: 6px; font-family: var(--mono); font-size: 12.5px; color: var(--muted); }
+.detail-body .meta-row { margin-top: 12px; }
+.lead { margin-top: 12px; font-size: 16.5px; color: var(--ink); }
+.detail-cover { margin: 18px 0 0; }
+.detail-cover img { display: block; width: 100%; border: 1px solid var(--line); border-radius: 10px; }
+.detail-cover figcaption { margin-top: 7px; font-size: 12px; color: var(--muted); }
+.block { margin-top: 26px; padding-top: 20px; border-top: 1px dashed var(--line); }
+.block h2 { font-size: 18.5px; letter-spacing: .01em; }
+.block > p { margin-top: 10px; color: var(--ink-2); }
+.sub { margin-top: 16px; }
+.sub h3 { font-size: 15.5px; }
+.sub p, .sub li, .block p { line-height: 1.75; }
+.sub p { margin-top: 8px; color: var(--ink-2); }
+.sub h4 { margin-top: 12px; font-size: 14px; color: var(--ink); }
+.sub ul, .sub ol, .block ul, .block ol { margin: 8px 0 0; padding-left: 22px; color: var(--ink-2); }
+.sub li, .block li { margin-top: 4px; }
+.feature-list { margin: 10px 0 0; padding-left: 22px; color: var(--ink-2); }
+.feature-list li { margin-top: 6px; }
+.quote {
+  margin: 10px 0 0; padding: 8px 12px; border-left: 3px solid #cfdcff;
+  background: var(--brand-soft); border-radius: 0 8px 8px 0; color: var(--ink-2);
+}
+code { font-family: var(--mono); font-size: .92em; background: var(--bg); border-radius: 4px; padding: 1px 5px; }
+pre {
+  margin: 10px 0 0; padding: 10px 12px; overflow-x: auto;
+  background: #f0f3f8; border: 1px solid var(--line); border-radius: 8px;
+}
+pre code { background: none; padding: 0; font-size: 12.5px; }
+table.md { width: 100%; margin-top: 10px; border-collapse: collapse; font-size: 13.5px; }
+table.md th, table.md td { padding: 6px 9px; border: 1px solid var(--line); text-align: left; color: var(--ink-2); }
+table.md th { background: var(--bg); color: var(--ink); }
+hr { border: 0; border-top: 1px solid var(--line); margin: 14px 0; }
+.faq { margin: 12px 0 0; }
+.faq dt { margin-top: 15px; font-size: 15px; font-weight: 700; }
+.faq dt:first-child { margin-top: 0; }
+.faq dd { margin: 6px 0 0; color: var(--ink-2); }
+.faq dd p { margin-top: 6px; }
+/* 详情页不加载 app.js，提取码只展示不复制，别让它看起来能点 */
+.subpage .dl-code { cursor: default; }
+.subpage .dl-code:hover { border-color: var(--line); color: var(--ink-2); }
+.related-list { margin: 10px 0 0; padding: 0; list-style: none; display: grid; gap: 10px; }
+.related-list a { color: var(--brand); font-weight: 700; text-decoration: none; }
+.related-list a:hover { text-decoration: underline; }
+.rl-note { display: block; margin-top: 2px; font-size: 12.5px; color: var(--muted); }
+.rl-all { margin: 14px 0 0; }
+.rl-all a { color: var(--ink-2); text-decoration: none; }
+.rl-all a:hover { color: var(--brand); }
+.foot-compact { display: block; }
+/* 卡片标题现在是真链接，观感上要能点但别抢按钮的视觉 */
+.name-link { color: inherit; text-decoration: none; border-bottom: 1px solid transparent; }
+.name-link:hover { color: var(--brand); border-bottom-color: currentColor; }
+
+@media (max-width: 620px) {
+  .crumbs { padding-top: 10px; }
+  .detail { padding: 10px 12px 26px; }
+  .detail-body { padding: 16px 14px 20px; border-radius: 12px; }
+  .block h2 { font-size: 17px; }
+  .faq dt { font-size: 14.5px; }
+}
+
 @media (max-width: 900px) {
   .masthead { display: block; }
   .contact { max-width: none; margin-top: 14px; }

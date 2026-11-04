@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{TITLE}}</title>
+<meta name="description" content="{{DESC}}">
+<meta name="robots" content="index,follow,max-snippet:-1,max-image-preview:large">
+<meta name="theme-color" content="#f4f6f9">
+{{HEAD}}
+<link rel="icon" href="{{ROOT}}favicon.svg" type="image/svg+xml">
+<link rel="alternate" type="text/plain" href="{{ROOT}}llms.txt">
+<link rel="stylesheet" href="{{ROOT}}style.css">
+</head>
+<body class="subpage">
+<a class="skip" href="#main">跳到正文</a>
+
+<header class="masthead masthead-compact">
+  <div class="brand">
+    <span class="mark" aria-hidden="true"></span>
+    <a class="wordmark" href="{{ROOT}}index.html">{{BRAND}}</a>
+    <span class="tagline">本机运行 · 不上传 · 绿色免安装</span>
+  </div>
+</header>
+
+<nav class="crumbs" aria-label="所在位置">{{CRUMBS}}</nav>
+
+<main id="main" class="detail">
+  <article class="detail-body">
+    <h1>{{NAME}}</h1>
+    <p class="alt-name">{{ALT_NAME}}</p>
+    <div class="meta-row">{{PILLS}}</div>
+    <p class="lead">{{SUMMARY}}</p>
+{{COVER_BLOCK}}
+{{INTRO_BLOCK}}
+{{DL_BLOCK}}
+{{INSTALL_BLOCK}}
+{{SECTIONS_BLOCK}}
+{{ENV_BLOCK}}
+{{FAQ_BLOCK}}
+{{NOTES_BLOCK}}
+{{ALSO_BLOCK}}
+{{RELATED_BLOCK}}
+  </article>
+</main>
+
+<footer class="foot foot-compact">
+  <div class="foot-text">
+    <p><a href="{{ROOT}}index.html">{{BRAND}}</a> · 数据更新于 {{UPDATED}} · 内容维护：HRX</p>
+    <p class="fine">免费获取、离线运行、文件不上传。分享失效，或想要还没做出来的工具：微信公众号「{{BRAND}}」可提需求，也接受定制开发。</p>
+  </div>
+</footer>
+</body>
+</html>

@@ -94,6 +94,9 @@ def check_page(html_path: Path, rel: str, site_url: str, titles: dict[str, str])
         except json.JSONDecodeError as exc:
             problems.append(f"{rel}：第 {i + 1} 段 JSON-LD 解析失败（{exc}）——引擎会整段丢弃")
 
+    if "{{" in text:
+        problems.append(f"{rel}：还留着没替换的模板占位符（{{{{...}}}}），页面有段落没渲染出来")
+
     return problems
 
 

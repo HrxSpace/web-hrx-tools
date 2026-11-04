@@ -26,7 +26,9 @@ from pathlib import Path
 
 import yaml
 
+import manual
 import paths as path_config
+from seo_check import display_width
 
 SITE_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_DATA = SITE_ROOT / "data" / "shares.yaml"
@@ -36,6 +38,8 @@ DEFAULT_SRC = SITE_ROOT / "site"
 MAX_WIDTH = 1280
 MAX_FULL_WIDTH = 1920
 SOFT_LIMIT_MB = 45
+# 详情页正文的下限：低于这个量的页面接不住长尾搜索，与其推广不如先承认它薄。
+MIN_PAGE_HAN = 600
 
 CATEGORY_NOTE = {
     "文档处理": "PDF 与文档类工具",
@@ -73,6 +77,16 @@ ROBOTS_GROUPS = [
 
 def esc(value: object) -> str:
     return html.escape(str(value if value is not None else ""), quote=True)
+
+
+def han_count(text: str) -> int:
+    return len(re.findall(r"[一-鿿]", text))
+
+
+def body_han(page_html: str) -> int:
+    """只数正文区的汉字：整页统计会被 JSON-LD 与 meta 灌水，薄页就再也不会被报出来。"""
+    body = re.search(r"<main.*?</main>", page_html, re.S)
+    return han_count(re.sub(r"<[^>]+>", " ", body.group(0) if body else ""))
 
 
 def entry_links(entry: dict) -> list[dict]:
@@ -214,7 +228,7 @@ def chip_label(feature: str) -> str:
     return label
 
 
-def card_html(entry: dict, index: int) -> str:
+def card_html(entry: dict, index: int, paths: dict[str, str]) -> str:
     slug = entry["slug"]
     docs = entry.get("kind") == "docs"
     soon = entry.get("status") == "coming_soon"
@@ -264,12 +278,13 @@ def card_html(entry: dict, index: int) -> str:
     ]
     pills = "".join(f'<span class="pill">{esc(t)}</span>' for t in facts if t)
     group_label = "资料" if docs else "软件"
+    # 标题链到详情页（抓取器与转发地址都走这条），详情按钮仍走原位弹窗（体验不变）
     return f"""
     <article class="card" id="{esc(slug)}" data-id="{esc(slug)}" data-group="{group_label}">
       {cover}
       <div class="card-body">
         <div class="title-row">
-          <h3 class="hl">{esc(entry.get("name"))}</h3>
+          <h3><a class="hl name-link" href="{esc(paths.get(slug) or '#' + slug)}">{esc(entry.get("name"))}</a></h3>
           <span class="name-en">{esc(entry.get("name_en"))}</span>
         </div>
         <div class="meta-row">{pills}</div>
@@ -301,9 +316,9 @@ def json_payload(entries: list[dict]) -> str:
     return json.dumps(rows, ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/")
 
 
-def app_item(entry: dict, site_url: str) -> dict:
-    """单条内容的结构化实体。片段地址目前就是该条目的可寻址位置，
-    等详情页拆成独立 URL 后只改 url 一行。"""
+def app_item(entry: dict, url: str, site_url: str) -> dict:
+    """单条内容的结构化实体。url 必须是详情页自己的地址——
+    指向首页片段（/#slug）的话，实体绑不到 URL 上，等于白写。"""
     links = entry.get("_links") or []
     docs = entry.get("kind") == "docs"
     item = {
@@ -313,7 +328,7 @@ def app_item(entry: dict, site_url: str) -> dict:
         "description": entry.get("summary") or entry.get("description") or "",
         "featureList": [f for f in (entry.get("features") or []) if f],
         "offers": {"@type": "Offer", "price": "0", "priceCurrency": "CNY"},
-        "url": f"{site_url}/#{entry['slug']}" if site_url else "",
+        "url": url,
     }
     if docs:
         item["inLanguage"] = "zh-CN"
@@ -335,7 +350,7 @@ def app_item(entry: dict, site_url: str) -> dict:
     return item
 
 
-def json_ld(entries: list[dict], site_url: str, desc: str, brand: str, title: str) -> str:
+def json_ld(entries: list[dict], site_url: str, desc: str, brand: str, title: str, paths: dict[str, str]) -> str:
     doc = {
         "@context": "https://schema.org",
         "@graph": [
@@ -353,7 +368,7 @@ def json_ld(entries: list[dict], site_url: str, desc: str, brand: str, title: st
                 "name": title,
                 "numberOfItems": len(entries),
                 "itemListElement": [
-                    {"@type": "ListItem", "position": i + 1, "item": app_item(e, site_url)}
+                    {"@type": "ListItem", "position": i + 1, "item": app_item(e, absolute(site_url, paths[e["slug"]]), site_url)}
                     for i, e in enumerate(entries)
                 ],
             },
@@ -362,7 +377,7 @@ def json_ld(entries: list[dict], site_url: str, desc: str, brand: str, title: st
     return json.dumps(doc, ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/")
 
 
-def head_extra(entries: list[dict], site_url: str, desc: str, brand: str, title: str) -> str:
+def head_extra(entries: list[dict], site_url: str, desc: str, brand: str, title: str, paths: dict[str, str]) -> str:
     lines = [
         f'<meta property="og:site_name" content="{esc(brand)}">',
         '<meta property="og:locale" content="zh_CN">',
@@ -385,12 +400,12 @@ def head_extra(entries: list[dict], site_url: str, desc: str, brand: str, title:
             '<meta name="twitter:card" content="summary_large_image">',
             f'<meta name="twitter:title" content="{esc(title)}">',
             f'<meta name="twitter:description" content="{esc(desc)}">',
-            f'<script type="application/ld+json">{json_ld(entries, site_url, desc, brand, title)}</script>',
+            f'<script type="application/ld+json">{json_ld(entries, site_url, desc, brand, title, paths)}</script>',
         ]
     return "\n".join(lines)
 
 
-def llms_row(e: dict, base: str) -> str:
+def llms_row(e: dict, base: str, paths: dict[str, str]) -> str:
     links = e.get("_links") or []
     plats = "、".join(l["platform"] for l in links if l["platform"]) or "网盘"
     codes = "；".join(f"{l['platform']} 提取码 {l['code']}" for l in links if l["code"])
@@ -405,7 +420,7 @@ def llms_row(e: dict, base: str) -> str:
     )
     feats = "；".join(f for f in (e.get("features") or [])[:4] if f)
     alias = "、".join(a for a in (e.get("aliases") or [])[:5] if a)
-    row = f"- [{e.get('name')}]({base}/#{e['slug']}): {e.get('summary') or ''}（{facts}）"
+    row = f"- [{e.get('name')}]({base}/{paths[e['slug']]}): {e.get('summary') or ''}（{facts}）"
     if feats:
         row += f" {'篇章：' if e.get('kind') == 'docs' else '功能：'}{feats}。"
     if alias:
@@ -415,7 +430,7 @@ def llms_row(e: dict, base: str) -> str:
     return row
 
 
-def llms_txt(entries: list[dict], docs: list[dict], site_url: str, updated: str, brand: str) -> str:
+def llms_txt(entries: list[dict], docs: list[dict], site_url: str, updated: str, brand: str, paths: dict[str, str]) -> str:
     """面向 AI 引擎的纯文本目录：逐条写清是什么、什么版本、能干什么、去哪下载。"""
     base = site_url or ""
     out = [
@@ -429,14 +444,14 @@ def llms_txt(entries: list[dict], docs: list[dict], site_url: str, updated: str,
         + f"，数据更新于 {updated}。",
         "",
         "## 站点",
-        f"- [全部软件目录]({base}/): 卡片式目录，按名称、英文名、功能关键词检索；"
-        "「详情」给出完整功能清单与全部下载渠道",
+        f"- [全部资源目录]({base}/): 卡片式首页，按名称、英文名、功能关键词检索；"
+        "下面每条资源另有独立页面，含完整功能详解、使用步骤与常见问题",
         "",
         "## 软件",
     ]
-    out += [llms_row(e, base) for e in entries]
+    out += [llms_row(e, base, paths) for e in entries]
     if docs:
-        out += ["", "## 文档资料"] + [llms_row(e, base) for e in docs]
+        out += ["", "## 文档资料"] + [llms_row(e, base, paths) for e in docs]
     cats = [c for c in dict.fromkeys(e.get("category") for e in entries + docs) if c]
     out += [
         "",
@@ -495,11 +510,11 @@ def root_missing_error(root: path_config.Root, label: str) -> int:
     return 2
 
 
-def docs_block_html(docs: list[dict]) -> str:
+def docs_block_html(docs: list[dict], paths: dict[str, str]) -> str:
     """文档区块：没有可上架的条目时整段不出现，免得留下一个空标题。"""
     if not docs:
         return ""
-    cards = "".join(card_html(e, i) for i, e in enumerate(docs))
+    cards = "".join(card_html(e, i, paths) for i, e in enumerate(docs))
     return (
         '\n<section class="group" id="library" aria-labelledby="library-title">\n'
         '  <div class="group-head">\n'
@@ -509,6 +524,351 @@ def docs_block_html(docs: list[dict]) -> str:
         f'  <div class="catalog">{cards}\n  </div>\n'
         "</section>"
     )
+
+
+# --------------------------------------------------------------------------- 详情页
+
+# title 预算比 seo_check 的 60 少 2：宁可构建时先缩，也不要发布前被断言拦下来才发现。
+TITLE_WIDTH = 58
+
+
+def ascii_slug(entry: dict) -> str:
+    """URL 只用 ASCII：中文名进 URL 会让部分引擎与爬虫做编码歧义处理。
+    优先英文名/exe 名；都不是 ASCII 时退回目录名里的 ASCII 片段（W000_WorkBuddy实战… → w000-workbuddy）。
+    驼峰要拆成词（PDFSuperToolbox → pdf-super-toolbox）：连成一串的单词丢了词边界，URL 里也是搜索信号。"""
+    base = entry.get("name_en") or entry.get("exe_name") or ""
+    if not base.isascii():
+        base = entry["slug"]
+    stem = re.sub(r"(?<=[A-Z])(?=[A-Z][a-z])|(?<=[a-z0-9])(?=[A-Z])", "-", base)
+    stem = re.sub(r"[^A-Za-z0-9]+", "-", stem).lower()
+    stem = re.sub(r"-{2,}", "-", stem).strip("-")
+    return stem or entry["slug"].split("_")[0].lower()
+
+
+def page_paths(entries: list[dict]) -> dict[str, str]:
+    """slug → 产物内的相对路径。一条内容一个可索引 URL，这是长尾词唯一的承接位。"""
+    paths: dict[str, str] = {}
+    used: set[str] = set()
+    for e in entries:
+        folder = "doc" if e.get("kind") == "docs" else "soft"
+        stem = ascii_slug(e)
+        cand = f"{folder}/{stem}.html"
+        if cand in used:  # 英文名撞车时加目录编号，保证两个 URL 都还在
+            cand = f"{folder}/{e['slug'].split('_')[0].lower()}-{stem}.html"
+        used.add(cand)
+        paths[e["slug"]] = cand
+    return paths
+
+
+def absolute(site_url: str, path: str) -> str:
+    """对外绝对地址。没有站点域名时返回空串：结构化数据里的相对 URL 会被引擎当成无效声明。"""
+    return f"{site_url}/{path}" if site_url else ""
+
+
+def title_words(entry: dict, limit: int = 2) -> list[str]:
+    """从功能要点里取 2 个短词拼进 title，承接"PDF 拆分"这类任务词搜索。"""
+    words: list[str] = []
+    for feat in entry.get("features") or []:
+        word = re.sub(r"\s+", "", chip_label(feat)).strip("…")
+        if 2 <= len(word) <= 8 and word not in words:
+            words.append(word)
+        if len(words) >= limit:
+            break
+    return words
+
+
+def detail_title(entry: dict, brand: str) -> str:
+    """标题用固定形状 `{资源名}_{用途}_离线不上传 - {品牌}`，装不下就从后往前丢段落。
+
+    品牌尾巴永远保留（多页一致的实体信号），"离线不上传"是本站区别于其他下载站的
+    卖点，优先级放在第二个功能词之前；宁可少一个词，也不把任何一段截成半个词。
+    """
+    docs = entry.get("kind") == "docs"
+    tail = f" - {brand}"
+    name = entry.get("name", "")
+    action = "_离线阅读" if docs else "_离线不上传"
+    lead = ""
+    if docs and entry.get("chapters"):
+        lead = f"共{entry['chapters']}篇资料"
+    else:
+        words = title_words(entry, 1)
+        lead = words[0] if words else ""
+    for body in (f"{name}_{lead}{action}" if lead else "", f"{name}{action}", name):
+        if body and display_width(body + tail) <= TITLE_WIDTH:
+            return body + tail
+    return name + tail  # 名字本身就超预算：不截名字，交给 seo_check 报出来
+
+
+def detail_desc(entry: dict) -> str:
+    docs = entry.get("kind") == "docs"
+    bits = [
+        entry.get("summary") or entry.get("description") or "",
+        f"v{entry['version']}" if entry.get("version") else "",
+        f"共 {entry['chapters']} 篇" if entry.get("chapters") else "",
+        f"{entry['size_mb']} MB" if entry.get("size_mb") else "",
+    ]
+    tail = (
+        "解压后离线阅读，不需要联网"
+        if docs
+        else "解压即用，全程在本机运行、文件不上传"
+    )
+    plats = "、".join(l["platform"] for l in (entry.get("_links") or []) if l["platform"])
+    if plats:
+        tail += f"；{plats} 分发"
+    if any(l["code"] for l in (entry.get("_links") or [])):
+        tail += "，提取码页面直接给出"
+    desc = " · ".join(b for b in bits if b) + "。" + tail + "。"
+    return desc[:158]
+
+
+def plain_text(fragment: str) -> str:
+    """HTML 片段 → 纯文本。FAQPage 结构化数据要的是答案原文，不能带标签。"""
+    return re.sub(r"\s+", " ", html.unescape(re.sub(r"<[^>]+>", " ", fragment))).strip()
+
+
+def block(title: str, inner: str, anchor: str) -> str:
+    inner = inner.strip()
+    if not inner:
+        return ""
+    return f'    <section class="block" id="{anchor}">\n      <h2>{esc(title)}</h2>\n{inner}\n    </section>'
+
+
+def subsections(items: list) -> str:
+    return "\n".join(
+        f'      <section class="sub">\n        <h3>{esc(item.title)}</h3>\n{indent(item.html)}\n      </section>'
+        for item in items
+    )
+
+
+def indent(fragment: str, spaces: int = 6) -> str:
+    pad = " " * spaces
+    return "\n".join(pad + line if line.strip() else line for line in fragment.splitlines())
+
+
+def cover_block_html(entry: dict, root: str) -> str:
+    """详情页配图：只放真实界面截图或资料海报，128px 的应用图标放大只会糊。"""
+    if entry.get("image_kind") not in ("screenshot", "poster") or not entry.get("_asset"):
+        return ""
+    docs = entry.get("kind") == "docs"
+    thumb = esc(root + entry["_asset"])
+    alt = f'{esc(entry["name"])}{"封面" if docs else "软件界面截图"}'
+    full = entry.get("_asset_full")
+    img = f'<a href="{esc(root + full)}" class="zoom-link"><img src="{thumb}" alt="{alt}" loading="lazy"></a>' if full else f'<img src="{thumb}" alt="{alt}" loading="lazy">'
+    return f'    <figure class="detail-cover">\n      {img}\n      <figcaption>{alt}{"（点开看原图）" if full else ""}</figcaption>\n    </figure>'
+
+
+def downloads_block_html(entry: dict) -> str:
+    links = entry.get("_links") or []
+    if not links:
+        return ""
+    docs = entry.get("kind") == "docs"
+    rows = []
+    for i, link in enumerate(links):
+        primary = i == 0
+        platform = link["platform"] or "网盘链接"
+        main = [f'<span class="dl-platform">{esc(platform)}</span>']
+        if primary and len(links) > 1:
+            main.append('<span class="dl-tag">推荐</span>')
+        if link["note"]:
+            main.append(f'<span class="dl-note">{esc(link["note"])}</span>')
+        side = []
+        if link["code"]:
+            side.append(f'<span class="dl-code">提取码 <b>{esc(link["code"])}</b></span>')
+        side.append(
+            f'<a class="btn dl-open{"" if primary else " ghost"}" href="{esc(link["url"])}"'
+            f' target="_blank" rel="noopener">{esc("打开" + platform)}</a>'
+        )
+        rows.append(
+            f'      <div class="dl-item{" primary" if primary else ""}">'
+            f'<div class="dl-main">{"".join(main)}</div><div class="dl-side">{"".join(side)}</div></div>'
+        )
+    tip = (
+        "解压后即可离线阅读，全程在你自己的电脑上打开，不需要联网。"
+        if docs
+        else "下载后解压即用，不需要装运行库；软件全程在本机运行，文件不上传。"
+    )
+    if any(l["code"] for l in links):
+        tip = "提取码随链接给出，打开前记得填。" + tip
+    inner = "\n".join([f'      <div class="dl-list">', *rows, "      </div>", f'      <p class="dl-tip">{esc(tip)}</p>'])
+    return block("下载渠道", inner, "download")
+
+
+def faq_block_html(faq: list[tuple[str, str]]) -> str:
+    if not faq:
+        return ""
+    pairs = "\n".join(
+        f"      <dt>{esc(q)}</dt>\n      <dd>{indent(a)}\n      </dd>" for q, a in faq
+    )
+    return block("常见问题", f'      <dl class="faq">\n{pairs}\n      </dl>', "faq")
+
+
+def also_block_html(entry: dict) -> str:
+    """把 aliases/keywords 写成自然句子，而不是塞一堆 meta keywords——
+    前者人和引擎都能读，后者是已被降权处理的写法。"""
+    alias = [a for a in (entry.get("aliases") or []) if a and not a.isdigit()]
+    words = [k for k in (entry.get("keywords") or []) if k and len(k) <= 12]
+    sentences = []
+    if alias:
+        sentences.append(f"也有人叫它{'、'.join(alias[:6])}。")
+    if entry.get("name_en"):
+        sentences.append(f"英文名 {esc(entry['name_en'])}，")
+    if entry.get("exe_name") and entry["exe_name"] != entry.get("name_en"):
+        sentences.append(f"程序名 {esc(entry['exe_name'])}。")
+    if words:
+        sentences.append("想找这类工具时常见的说法：" + "、".join(words[:12]) + "。")
+    body = "\n".join(f'      <p>{s}</p>' for s in sentences if s)
+    return block("其它叫法与搜索词", body, "words")
+
+
+def related_block_html(entry: dict, peers: list[dict], paths: dict[str, str], root: str) -> str:
+    if not peers:
+        return ""
+    items = "".join(
+        f'<li><a href="{esc(root + paths[p["slug"]])}">{esc(p["name"])}</a>'
+        f'<span class="rl-note">{esc(p.get("summary") or "")}</span></li>'
+        for p in peers
+    )
+    inner = (
+        f'      <p class="rl-lead">同属「{esc(entry.get("category") or "其它")}」的其他资源：</p>\n'
+        f'      <ul class="related-list">\n      {items}\n      </ul>\n'
+        f'      <p class="rl-all"><a href="{esc(root)}index.html">全部资源 →</a></p>'
+    )
+    return block("同类资源", inner, "related")
+
+
+def crumbs_html(entry: dict, brand: str, root: str) -> str:
+    return (
+        f'<a href="{esc(root)}index.html">{esc(brand)}</a><span class="sep">›</span>'
+        f'<span aria-current="page">{esc(entry["name"])}</span>'
+    )
+
+
+def detail_json_ld(entry: dict, path: str, site_url: str, brand: str, faq: list[tuple[str, str]]) -> str:
+    page_url = absolute(site_url, path) or f"/{path}"
+    graph = [
+        app_item(entry, page_url, site_url),
+        {
+            "@type": "BreadcrumbList",
+            "itemListElement": [
+                {"@type": "ListItem", "position": 1, "name": brand, "item": f"{site_url}/" if site_url else "/"},
+                {"@type": "ListItem", "position": 2, "name": entry["name"], "item": page_url},
+            ],
+        },
+    ]
+    if faq:
+        graph.append(
+            {
+                "@type": "FAQPage",
+                "mainEntity": [
+                    {"@type": "Question", "name": q, "acceptedAnswer": {"@type": "Answer", "text": plain_text(a)}}
+                    for q, a in faq
+                ],
+            }
+        )
+    doc = {"@context": "https://schema.org", "@graph": graph}
+    return json.dumps(doc, ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/")
+
+
+def detail_head(entry: dict, path: str, site_url: str, title: str, desc: str, brand: str) -> str:
+    url = absolute(site_url, path)
+    lines = [
+        f'<meta property="og:site_name" content="{esc(brand)}">',
+        '<meta property="og:locale" content="zh_CN">',
+    ]
+    if site_url:
+        cover = entry.get("_asset_full") or entry.get("_asset") or ""
+        lines += [
+            f'<link rel="canonical" href="{esc(url)}">',
+            '<meta property="og:type" content="website">',
+            f'<meta property="og:title" content="{esc(title)}">',
+            f'<meta property="og:description" content="{esc(desc)}">',
+            f'<meta property="og:url" content="{esc(url)}">',
+        ]
+        if cover:
+            lines.append(f'<meta property="og:image" content="{esc(site_url + "/" + cover)}">')
+        lines += [
+            f'<meta name="twitter:card" content="{"summary_large_image" if cover else "summary"}">',
+            f'<meta name="twitter:title" content="{esc(title)}">',
+            f'<meta name="twitter:description" content="{esc(desc)}">',
+        ]
+    return "\n".join(lines)
+
+
+def load_manual(entry: dict, jobs_root: Path, brand: str) -> tuple[object, str]:
+    """按软件目录现取手册：正文留在手册里，不抄进 shares.yaml，
+    否则两份内容必然漂移，而人工真源会被 4000 字散文挤到读不动。"""
+    if entry.get("kind") == "docs":
+        return None, ""
+    path = manual.find_manual(jobs_root / entry["slug"])
+    if not path:
+        return None, ""
+    return manual.parse(path, brand), path.as_posix()
+
+
+def detail_html(entry: dict, ctx: dict) -> str:
+    """一版详情页。缺手册不是错误：正文退到 description + 功能清单，
+    但要把这一条打印出来，否则没人知道某款软件其实是空壳页。"""
+    man, _ = ctx["manuals"].get(entry["slug"], (None, ""))
+    root = "../"
+    paths: dict[str, str] = ctx["paths"]
+    brand: str = ctx["brand"]
+    site_url: str = ctx["site_url"]
+    title = detail_title(entry, brand)
+    desc = detail_desc(entry)
+    docs = entry.get("kind") == "docs"
+    faq = list(man.faq) if man else []
+
+    facts = [
+        entry.get("chapters") and f"共 {entry['chapters']} 篇" if docs else entry.get("version") and f"v{entry['version']}",
+        entry.get("size_mb") and f"{entry['size_mb']} MB",
+        entry.get("category"),
+        entry.get("updated") and f"更新 {entry['updated']}",
+    ]
+    pills = "".join(f'<span class="pill">{esc(t)}</span>' for t in facts if t)
+    # 英文名与程序名经常相同（000 就是），并列显示只会显得这页在凑字数
+    alt_names = " · ".join(dict.fromkeys(v for v in (entry.get("name_en"), entry.get("exe_name")) if v))
+
+    intro_inner = (man.intro if man else "") or f"      <p>{esc(entry.get('description') or entry.get('summary') or '')}</p>"
+    intro_block = block("这是什么", indent(intro_inner), "about")
+    sections = subsections(man.sections) if man else ""
+    if not sections:
+        feats = "".join(f"<li>{esc(f)}</li>" for f in (entry.get("features") or []))
+        sections = f"      <ul class=\"feature-list\">\n      {feats}\n      </ul>" if feats else ""
+    sections_title = "篇章清单" if docs else "功能详解"
+    install_block = block("怎么用", subsections(man.install), "install") if man and man.install else ""
+    env_block = block("运行环境", indent(man.env), "requirements") if man and man.env else ""
+    notes_block = block("注意事项", indent(man.notes), "notes") if man and man.notes else ""
+
+    peers = [p for p in ctx["entries"] if p is not entry and p.get("category") == entry.get("category")][:3]
+    template: str = ctx["template"]
+    page = (
+        template.replace("{{TITLE}}", esc(title))
+        .replace("{{DESC}}", esc(desc))
+        .replace("{{BRAND}}", esc(brand))
+        .replace("{{ROOT}}", root)
+        .replace("{{HEAD}}", detail_head(entry, paths[entry["slug"]], site_url, title, desc, brand))
+        .replace("{{CRUMBS}}", crumbs_html(entry, brand, root))
+        .replace("{{NAME}}", esc(entry["name"]))
+        .replace("{{ALT_NAME}}", esc(alt_names))
+        .replace("{{PILLS}}", pills)
+        .replace("{{SUMMARY}}", esc(entry.get("summary") or ""))
+        .replace("{{COVER_BLOCK}}", cover_block_html(entry, root))
+        .replace("{{INTRO_BLOCK}}", intro_block)
+        .replace("{{DL_BLOCK}}", downloads_block_html(entry))
+        .replace("{{INSTALL_BLOCK}}", install_block)
+        .replace("{{SECTIONS_BLOCK}}", block(sections_title, sections, "features"))
+        .replace("{{ENV_BLOCK}}", env_block)
+        .replace("{{FAQ_BLOCK}}", faq_block_html(faq))
+        .replace("{{NOTES_BLOCK}}", notes_block)
+        .replace("{{ALSO_BLOCK}}", also_block_html(entry))
+        .replace("{{RELATED_BLOCK}}", related_block_html(entry, peers, paths, root))
+        .replace("{{UPDATED}}", esc(entry.get("updated") or ctx["updated"]))
+    )
+    ld = detail_json_ld(entry, paths[entry["slug"]], site_url, brand, faq)
+    if site_url:
+        page = page.replace("</head>", f'<script type="application/ld+json">{ld}</script>\n</head>', 1)
+    return page
+
 
 
 def build(args: argparse.Namespace) -> int:
@@ -548,8 +908,8 @@ def build(args: argparse.Namespace) -> int:
             return root_missing_error(roots["docs_root"], "文档")
     out = Path(args.out).resolve()
     out.mkdir(parents=True, exist_ok=True)
-    for stale in out.glob("*.html"):
-        stale.unlink()
+    for stale in out.rglob("*.html"):
+        stale.unlink()  # 详情页在子目录里，只清顶层会把下架的旧页留在发布包里
     for stale in (out / "images").glob("*"):
         stale.unlink()  # 下架条目的封面不该继续留在发布包里
 
@@ -566,21 +926,42 @@ def build(args: argparse.Namespace) -> int:
     desc = PAGE_DESC_WITH_DOCS if docs else PAGE_DESC
     updated = str(site.get("updated") or docs_site.get("updated") or date.today())
     count_line = f"共 {len(entries)} 款软件" + (f" · {len(docs)} 份资料" if docs else "")
+    paths = page_paths(combined)
+    manuals = {e["slug"]: load_manual(e, jobs_root, brand) for e in combined}
+    no_manual = [e["name"] for e in entries if not manuals[e["slug"]][0]]
+    brand_fixes = sum(m.brand_fixes for m, _ in manuals.values() if m)
+    ctx = {
+        "paths": paths,
+        "manuals": manuals,
+        "brand": brand,
+        "site_url": site_url,
+        "template": (src / "detail.html").read_text(encoding="utf-8"),
+        "entries": combined,
+        "updated": updated,
+    }
     template = (src / "template.html").read_text(encoding="utf-8")
-    page = (
-        template.replace("{{TITLE}}", esc(title))
-        .replace("{{BRAND}}", esc(brand))
-        .replace("{{DESC}}", esc(desc))
-        .replace("{{HEAD}}", head_extra(combined, site_url, desc, brand, title))
-        .replace("{{CHIPS}}", chips_html(combined))
-        .replace("{{CARDS}}", "".join(card_html(e, i) for i, e in enumerate(entries)))
-        .replace("{{DOCS_BLOCK}}", docs_block_html(docs))
-        .replace("{{DATA}}", json_payload(combined))
-        .replace("{{COUNT}}", count_line)
-        .replace("{{UPDATED}}", updated)
-        .replace("{{MAINTAINER}}", "HRX")
-    )
-    (out / "index.html").write_text(page, encoding="utf-8")
+    pages: dict[str, str] = {
+        "index.html": (
+            template.replace("{{TITLE}}", esc(title))
+            .replace("{{BRAND}}", esc(brand))
+            .replace("{{DESC}}", esc(desc))
+            .replace("{{HEAD}}", head_extra(combined, site_url, desc, brand, title, paths))
+            .replace("{{CHIPS}}", chips_html(combined))
+            .replace("{{CARDS}}", "".join(card_html(e, i, paths) for i, e in enumerate(entries)))
+            .replace("{{DOCS_BLOCK}}", docs_block_html(docs, paths))
+            .replace("{{DATA}}", json_payload(combined))
+            .replace("{{COUNT}}", count_line)
+            .replace("{{UPDATED}}", updated)
+            .replace("{{MAINTAINER}}", "HRX")
+        )
+    }
+    for e in combined:
+        pages[paths[e["slug"]]] = detail_html(e, ctx)
+    for rel, content in pages.items():
+        target = out / rel
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(content, encoding="utf-8")
+
     (out / "style.css").write_text((src / "style.css").read_text(encoding="utf-8"), encoding="utf-8")
     (out / "app.js").write_text((src / "app.js").read_text(encoding="utf-8"), encoding="utf-8")
     (out / "favicon.svg").write_text(
@@ -589,12 +970,16 @@ def build(args: argparse.Namespace) -> int:
         encoding="utf-8",
     )
     (out / "robots.txt").write_text(robots_txt(site_url), encoding="utf-8")
-    (out / "llms.txt").write_text(llms_txt(entries, docs, site_url, updated, brand), encoding="utf-8")
+    (out / "llms.txt").write_text(llms_txt(entries, docs, site_url, updated, brand, paths), encoding="utf-8")
     if site_url:
-        # 条目各自带 updated，lastmod 取全站最近一次真实内容变更；
-        # 一律写成构建日会让抓取器把整站的更新信号当成噪声。
-        lastmod = max([str(e["updated"]) for e in combined if e.get("updated")] + [updated])
-        urls = "\n".join([f"  <url><loc>{esc(site_url)}/</loc><lastmod>{esc(lastmod)}</lastmod></url>"])
+        # 每条 URL 的 lastmod 用该条自己的 updated：
+        # 全站写同一个日期，抓取器会把"这站在动"的信号当成噪声。
+        by_path = {paths[e["slug"]]: e for e in combined}
+        rows = []
+        for rel in pages:
+            loc = f"{site_url}/" if rel == "index.html" else f"{site_url}/{rel}"
+            rows.append(f'  <url><loc>{esc(loc)}</loc><lastmod>{esc(by_path.get(rel, {}).get("updated") or updated)}</lastmod></url>')
+        urls = "\n".join(rows)
         (out / "sitemap.xml").write_text(
             f'<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n{urls}\n</urlset>\n',
             encoding="utf-8",
@@ -608,7 +993,7 @@ def build(args: argparse.Namespace) -> int:
     print(
         f"已上架 {len(entries)} 款软件"
         + (f" + {len(docs)} 份资料" if docs else "")
-        + f" → {path_config.display_path(out)}/  （{total:.2f} MB）"
+        + f"，{len(pages)} 个页面 → {path_config.display_path(out)}/  （{total:.2f} MB）"
     )
     if entries:
         print(f"软件根目录：{jobs_root.as_posix()}（来源：{roots['jobs_root'].source}）")
@@ -622,6 +1007,18 @@ def build(args: argparse.Namespace) -> int:
         print("缺真实界面截图：" + "、".join(no_cover))
     if no_doc_cover:
         print("文档缺封面图：" + "、".join(no_doc_cover))
+    if no_manual:
+        print("详情页缺用户手册正文（退到简介+功能清单，正文会偏薄）：" + "、".join(no_manual))
+    if brand_fixes:
+        print(f"提示：手册里有 {brand_fixes} 处旧品牌写法，已按 site.name 统一渲染；源头在各软件工程的 md 里，建议顺手改掉。")
+    thin = [rel for rel, content in pages.items() if rel != "index.html" and body_han(content) < MIN_PAGE_HAN]
+    if thin:
+        print(f"警告：{len(thin)} 个详情页正文少于 {MIN_PAGE_HAN} 汉字，承接不住长尾搜索，先补内容再对外推广：")
+        for rel in thin:
+            print(f"  · {rel}（正文 {body_han(pages[rel])} 汉字）")
+    leftovers = [rel for rel, content in pages.items() if "{{" in content]
+    if leftovers:
+        print("警告：页面里还有没替换掉的模板占位符：" + "、".join(leftovers))
     if total > SOFT_LIMIT_MB:
         print(f"警告：产物 {total:.1f} MB 接近发布上限，请下调封面尺寸或质量。")
     if not site_url:
