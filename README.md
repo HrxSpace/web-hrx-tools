@@ -102,6 +102,8 @@ python -m http.server 4173 --bind 127.0.0.1 --directory web
 | `name` `name_en` `exe_name` `version` | 脚本填、你可改 | 三者常不一致：`001` 目录叫证件照制作工具，商品名是证照快做，exe 是 idphotokit |
 | `summary` `description` `features` `keywords` | 脚本抽取、你可改写 | 抽取来源记在 `copy_source`；全部参与搜索 |
 | `category` `aliases` | 人工 | 分类筛选栏来自 `category` 去重；`aliases` 放用户可能的叫法 |
+| `tags` | 人工 | 卡片上的可点标签（3~4 个），渲染成指向本条详情页的真 `<a>`——抓取器据此把搜索词与工具对上。脚本不生成也不覆盖；词必须是该详情页回答得了的（`keywords` 里"用鼠标把水印涂出来"这类噪声不能当标签） |
+| `site.tasks` | 人工 | 搜索框下方「常见需求」导航：`label`（用户会搜的任务词）+ `slug`（回答它的条目）。只渲染已上架条目，`seo_check.py` 会断言配了几个就渲染几个、目标页必须存在 |
 | `downloads` | 人工 | 多网盘渠道列表，第一个为主渠道；填了它就不再读下面的三件套 |
 | `share_url` `share_code` `platform` | 人工 | 单渠道快捷写法；`downloads` 为空时生效。**没有任何渠道的条目不会出现在页面上**，只留在数据文件里当待办 |
 | `status` | 人工 | `live` 上架 / `coming_soon` 灰态「即将上架」 / `hidden` 不渲染 |
