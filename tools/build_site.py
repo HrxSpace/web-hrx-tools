@@ -40,6 +40,9 @@ MAX_FULL_WIDTH = 1920
 SOFT_LIMIT_MB = 45
 # 详情页正文的下限：低于这个量的页面接不住长尾搜索，与其推广不如先承认它薄。
 MIN_PAGE_HAN = 600
+# 卡片两行短标签的额度：功能芯片给关键词标签让一个位，卡片高度不至于比原来高一截。
+MAX_FEAT_CHIPS = 3
+MAX_CARD_TAGS = 4
 
 CATEGORY_NOTE = {
     "文档处理": "PDF 与文档类工具",
@@ -257,8 +260,12 @@ def card_html(entry: dict, index: int, paths: dict[str, str]) -> str:
     docs = entry.get("kind") == "docs"
     soon = entry.get("status") == "coming_soon"
     feats = [f for f in (entry.get("features") or []) if f]
-    chips = "".join(f"<li>{esc(chip_label(f))}</li>" for f in feats[:4])
-    extra = f'<li class="more">+{len(feats) - 4}</li>' if len(feats) > 4 else ""
+    chips = "".join(f"<li>{esc(chip_label(f))}</li>" for f in feats[:MAX_FEAT_CHIPS])
+    extra = f'<li class="more">+{len(feats) - MAX_FEAT_CHIPS}</li>' if len(feats) > MAX_FEAT_CHIPS else ""
+    # 关键词标签走真链接而不是 JS 填搜索框：抓取器要能顺着锚文本把「PDF拆分」这类词
+    # 和具体工具对上——这正是当初那句批评的要害。
+    href = esc(paths.get(slug) or f"#{slug}")
+    tag_html = "".join(f'<a class="tag hl" href="{href}">{esc(t)}</a>' for t in (entry.get("tags") or [])[:MAX_CARD_TAGS] if t)
     cover_note = "封面待补" if docs else "界面截图待补"
     if entry.get("_asset"):
         if entry.get("image_kind") == "icon":
@@ -314,6 +321,7 @@ def card_html(entry: dict, index: int, paths: dict[str, str]) -> str:
         <div class="meta-row">{pills}</div>
         <p class="summary hl">{esc(entry.get("summary"))}</p>
         <ul class="feats">{chips}{extra}</ul>
+        {f'<div class="tags">{tag_html}</div>' if tag_html else ""}
         <div class="card-foot">
           {cta}
           <a class="btn ghost btn-copy" href="#{esc(slug)}" data-more="{esc(slug)}">详情</a>
@@ -326,10 +334,10 @@ def json_payload(entries: list[dict]) -> str:
     """内嵌给前端的数据。封面一律用相对路径：站点部署在域名根目录，
     绝对地址会随域名变化而失效，只有 og:image 需要绝对 URL。"""
     keep = ("slug", "name", "name_en", "exe_name", "version", "size_mb", "status", "category", "summary",
-            "description", "features", "keywords", "aliases", "chapters")
+            "description", "features", "keywords", "aliases", "tags", "chapters")
     rows = []
     for e in entries:
-        row = {k: e.get(k) or ([] if k in ("features", "keywords", "aliases") else "") for k in keep}
+        row = {k: e.get(k) or ([] if k in ("features", "keywords", "aliases", "tags") else "") for k in keep}
         row["id"] = e["slug"]
         row["kind"] = e.get("kind") or "software"
         row["cover"] = e.get("_asset") or ""
@@ -518,6 +526,22 @@ def chips_html(entries: list[dict]) -> str:
     for c in cats:
         parts.append(f'<button class="chip" type="button" data-cat="{esc(c)}" aria-pressed="false">{esc(c)}<span class="n">{counts[c]}</span></button>')
     return "".join(parts)
+
+
+def tasks_row_html(site: dict, paths: dict[str, str]) -> str:
+    """「常见需求」导航行。只渲染已上架条目的任务词：指向不存在的页面，
+    等于把人从首页送进 404，比没有这一行更糟。一个都不剩时整行不产出。"""
+    rows = []
+    for item in site.get("tasks") or []:
+        label = str((item or {}).get("label") or "").strip()
+        slug = str((item or {}).get("slug") or "").strip()
+        if not label or slug not in paths:
+            continue
+        rows.append(f'<a class="task" href="{esc(paths[slug])}">{esc(label)}</a>')
+    if not rows:
+        return ""
+    return ('<div class="tasks" aria-label="常见需求">'
+            '<span class="tasks-label">常见需求</span>' + "".join(rows) + "</div>")
 
 
 def resolve_roots(args: argparse.Namespace) -> dict[str, path_config.Root]:
@@ -976,6 +1000,7 @@ def build(args: argparse.Namespace) -> int:
             .replace("{{DESC}}", esc(desc))
             .replace("{{HEAD}}", head_extra(combined, site_url, desc, brand, title, paths))
             .replace("{{CHIPS}}", chips_html(combined))
+            .replace("{{TASKS_ROW}}", tasks_row_html(site, paths))
             .replace("{{CARDS}}", "".join(card_html(e, i, paths) for i, e in enumerate(entries)))
             .replace("{{DOCS_BLOCK}}", docs_block_html(docs, paths))
             .replace("{{DATA}}", json_payload(combined))

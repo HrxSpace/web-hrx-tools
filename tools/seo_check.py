@@ -37,6 +37,8 @@ DESC_RE = re.compile(r'<meta\s+name="description"\s+content="([^"]*)"')
 LD_JSON_RE = re.compile(r'<script\s+type="application/ld\+json">(.*?)</script>', re.S)
 LOC_RE = re.compile(r"<loc>([^<]+)</loc>")
 
+TASK_LINK_RE = re.compile(r'<a class="task" href="([^"]+)">([^<]+)</a>')
+
 # 「微信公众号 · X」这类写法里的 X 是外部事实（公众号名），不能拿站点品牌顶替：
 # 名字对不上，读者扫码就会发现。构建改对了也得防着下次被人改回去。
 WECHAT_MENTION_RE = re.compile(
@@ -177,6 +179,22 @@ def check(out: Path, data_path: Path, verbose: bool) -> tuple[list[str], list[st
             problems.append(f"llms.txt 首行不是站点名，应为 `# {brand}`")
         if wechat:
             problems += check_wechat_names(raw, "llms.txt", wechat)
+
+    tasks = [t for t in (site.get("tasks") or []) if isinstance(t, dict) and str(t.get("label") or "").strip()]
+    index_text = (out / "index.html").read_text(encoding="utf-8") if (out / "index.html").is_file() else ""
+    rendered = TASK_LINK_RE.findall(index_text)
+    if tasks and len(rendered) != len(tasks):
+        problems.append(
+            f"site.tasks 配了 {len(tasks)} 个任务词，首页只渲染出 {len(rendered)} 个："
+            "slug 写错或目标条目没上架时，构建会静默丢掉这一项"
+        )
+    for href, label in rendered:
+        if not (out / href).is_file():
+            problems.append(f"常见需求「{label}」指向 {href}，产物里没有这个页面：这是送人进 404 的导航")
+    labels = [label for _, label in rendered]
+    dupes = [label for label in dict.fromkeys(labels) if labels.count(label) > 1]
+    if dupes:
+        problems.append("常见需求里有重复任务词：" + "、".join(dupes))
 
     for item in site.get("verify") or []:
         name = str(item.get("file") if isinstance(item, dict) else "").strip()

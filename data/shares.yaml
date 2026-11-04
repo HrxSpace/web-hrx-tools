@@ -19,6 +19,10 @@
 #   description     详情段落，建议直接取自用户手册的软件简介
 #   features        功能要点列表，参与搜索
 #   keywords        额外搜索词（用户可能的叫法、同义词）
+#   aliases         用户可能的叫法，参与搜索
+#   tags            卡片上的可点标签（3~4 个），渲染成指向本条详情页的真链接：抓取器据此
+#                     把「搜索词」与「具体工具」对上，人不用点开详情就知道哪个词归哪个软件。
+#                     人工精选，脚本不生成也不覆盖；词必须是该详情页正文真的回答得了的
 #   image           封面图路径，相对软件根目录；脚本会自动挑选真实界面截图
 #   artifact        发行包路径，相对软件根目录（你据此去建分享）
 #   size_mb         发行包体积（MB），仅用于分享前核对
@@ -38,6 +42,23 @@ site:
   verify:
     - file: google8850a877dbfc1756.html
       text: 'google-site-verification: google8850a877dbfc1756.html'
+  # 搜索框下方的「常见需求」：用户会搜的任务词 → 回答得了它的详情页。
+  # 这是导航，不是关键词云：只收已上架条目、每个词都得在目标页有实际答案，凑数词一律不要。
+  tasks:
+  - label: PDF合并
+    slug: 000_PDF超级工具箱
+  - label: PDF拆分
+    slug: 000_PDF超级工具箱
+  - label: 证件照制作
+    slug: 001_证件照制作工具
+  - label: 图片去水印
+    slug: 006_图片去除水印工具
+  - label: 清理C盘
+    slug: 009_AI缓存清道夫
+  - label: AI工具缓存
+    slug: 009_AI缓存清道夫
+  - label: WorkBuddy实战教程
+    slug: W000_WorkBuddy实战文档系列
   updated: '2026-11-05'
 shares:
 - slug: 000_PDF超级工具箱
@@ -83,6 +104,11 @@ shares:
   - pdf合并
   - pdf拆分
   - '000'
+  tags:
+  - PDF合并
+  - PDF拆分
+  - PDF压缩
+  - PDF转图片
   image: 推广套件/images/01-主界面.png
   image_kind: screenshot
   artifact: dist/PDFSuperToolbox_v3.1.0.zip
@@ -140,6 +166,11 @@ shares:
   - 签证照
   - 回执
   - '001'
+  tags:
+  - 证件照制作
+  - 证件照换底色
+  - 报名照
+  - 签证照
   image: 推广套件/images/01-导入页.png
   image_kind: screenshot
   artifact: dist/idphotokit_v0.1.0.zip
@@ -443,6 +474,11 @@ shares:
   - 水印去除
   - 抹除物体
   - '006'
+  tags:
+  - 图片去水印
+  - 一键去水印
+  - 涂抹修复
+  - 抹除物体
   image: 用户手册/images/01-主界面.png
   image_kind: screenshot
   artifact: dist/图片去水印_v1.29.6.zip
@@ -591,6 +627,11 @@ shares:
   - Claude Code 缓存
   - AICacheSweeper
   - 009
+  tags:
+  - 清理C盘
+  - AI工具缓存
+  - 缓存清理
+  - Claude Code缓存
   image: 推广套件/images/01-主界面空态.png
   image_kind: screenshot
   artifact: dist/AI缓存清道夫_v0.3.2.zip

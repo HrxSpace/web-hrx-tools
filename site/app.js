@@ -24,7 +24,7 @@
   const softCount = DATA.filter((d) => d.kind !== "docs").length;
   const docCount = DATA.length - softCount;
   const haystack = (d) =>
-    norm([d.name, d.name_en, d.exe_name, d.category, d.summary, d.description, d.features, d.keywords, d.aliases].flat().join(" "));
+    norm([d.name, d.name_en, d.exe_name, d.category, d.summary, d.description, d.features, d.keywords, d.aliases, d.tags].flat().join(" "));
 
   function tokens() {
     return input.value.trim().split(/\s+/).filter(Boolean);
@@ -78,14 +78,36 @@
 
   function renderSuggest() {
     suggestEl.textContent = "";
-    const picks = [...new Set(DATA.flatMap((d) => d.keywords || []))]
-      .filter((k) => /[一-龥]{2,}/.test(k))
-      .slice(0, 6);
-    for (const k of picks) {
+    // 空态里给的建议词，点了必须有结果：先按全站命中量筛掉零结果词。
+    // 候选只用 tags/aliases（人工精选的任务词），不用 keywords——后者命中越高的词越泛
+    // （「不联网」「大小」这种），给出来等于没给。
+    const lists = DATA.map((d) =>
+      [...new Set([d.tags, d.aliases].flat().filter(Boolean))]
+        .filter((w) => /[一-龥]{2,}/.test(w))
+        .map((w) => ({ word: w, hits: DATA.filter((x) => haystack(x).includes(norm(w))).length }))
+        .filter((x) => x.hits > 0)
+        .sort((a, b) => b.hits - a.hits || a.word.length - b.word.length)
+    );
+    // 逐条轮转取词：一轮里每个条目只交出一个最好的词，免得六个建议全是同一款工具的叫法。
+    const seen = new Set();
+    const picks = [];
+    while (picks.length < 6) {
+      let added = 0;
+      for (const list of lists) {
+        const cand = list.find((x) => !seen.has(x.word));
+        if (!cand) continue;
+        seen.add(cand.word);
+        picks.push(cand.word);
+        added += 1;
+        if (picks.length >= 6) break;
+      }
+      if (!added) break;
+    }
+    for (const word of picks) {
       const b = document.createElement("button");
       b.type = "button";
-      b.textContent = k;
-      b.onclick = () => { input.value = k; apply(); input.focus(); };
+      b.textContent = word;
+      b.onclick = () => { input.value = word; apply(); input.focus(); };
       suggestEl.append(b);
     }
   }

@@ -105,6 +105,14 @@ h1, h2, h3, p { margin: 0; }
   color: var(--ink-2); cursor: pointer; font-size: 13px;
 }
 .clear:hover { background: var(--line); }
+/* 常见需求：一行"文字链接"而不是按钮，视觉上要与下面的分类筛选区分开 */
+.tasks { display: flex; flex-wrap: wrap; align-items: baseline; gap: 5px 14px; margin-top: 11px; font-size: 13px; }
+.tasks-label { color: var(--muted); font-size: 12.5px; }
+.task {
+  color: var(--ink-2); text-decoration: none; white-space: nowrap;
+  border-bottom: 1px dashed var(--line); padding-bottom: 1px;
+}
+.task:hover { color: var(--brand); border-bottom-color: var(--brand); }
 .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
 .chip {
   font: inherit; font-size: 13px; color: var(--ink-2); background: var(--surface);
@@ -161,6 +169,14 @@ h1, h2, h3, p { margin: 0; }
   border-radius: 6px; padding: 2px 8px;
 }
 .feats li.more { color: var(--muted); background: var(--bg); }
+/* 关键词标签：与功能芯片区分开（描边 vs 实底），一眼能看出这是"点进去看这个词怎么用" */
+.tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.tags .tag {
+  font-size: 12px; line-height: 1.5; color: var(--ink-2); text-decoration: none;
+  border: 1px solid var(--line); border-radius: 6px; padding: 1px 8px; background: var(--surface);
+  white-space: nowrap;
+}
+.tags .tag:hover { color: var(--brand); border-color: var(--brand); background: var(--brand-soft); }
 .card-foot { margin-top: auto; display: flex; gap: 8px; align-items: center; }
 .btn {
   font: inherit; font-size: 14px; border-radius: 9px; padding: 9px 14px; cursor: pointer;

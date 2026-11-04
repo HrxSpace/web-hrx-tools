@@ -15,6 +15,7 @@
 #   chapters        正文篇数（脚本按 docs/*.md 计数）
 #   keywords        搜索关键词，参与搜索
 #   aliases         用户可能的叫法，参与搜索
+#   tags            卡片上的可点标签（3~4 个），指向本条详情页；人工精选，脚本不生成也不覆盖
 #   image           封面图，相对本文档工程目录
 #   image_kind      poster=宣传海报 / screenshot=正文插图
 #   artifact        发布包路径，相对本文档工程目录（你据此去建分享）
@@ -67,6 +68,11 @@ docs:
   - 自动化
   - WorkBuddy实战文档系列
   aliases: []
+  tags:
+  - WorkBuddy实战教程
+  - 提示词工程
+  - SKILL精通
+  - 10分钟快速上手
   image: posters/知乎封面-1200x800.png
   image_kind: poster
   artifact: WorkBuddy实战文档系列-发布版.zip
