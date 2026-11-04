@@ -20,7 +20,11 @@
 > 5. 同日已落地：站点名与域名收进 `data/shares.yaml` 的 `site:` 段（缺 `url` 时构建**直接失败**，本地预览须显式 `--offline`）；
 >    扫描器回写不再抹掉 `site.name` / `site.url`；新增 `tools/seo_check.py` 发布前断言。
 >    此前 `--site-url` 忘传会让 canonical/og/JSON-LD/sitemap 整段消失而构建照样报成功——已发布产物确实缺这些。
->    **多页面化仍未做。**
+> 6. **同日 P0 多页面化已落地**：`/soft/{英文名}.html`、`/doc/{英文名}.html` 一条资源一个可索引 URL，正文构建期从 `用户手册/*.md` 抽取，
+>    JSON-LD 的 `url` 改指详情页并补 `BreadcrumbList`/`FAQPage`，首页卡片标题改为真链接（`#slug` 弹窗保留），sitemap 逐条 `lastmod`，
+>    `llms.txt` 指向详情页，`tools/seo_check.py` 做发布前断言。实测 5 条资源 → 6 个页面，软件详情页正文 3750~4984 汉字。
+>    §1.2 里的两条 P0（整站 1 个 URL、JSON-LD 指向片段）与两条 P1（正文进不了 HTML、首页无 h1）至此关闭；
+>    §3.4 的 sitemap 拆分**暂未做**（6 条 URL 用单文件即可，>100 条再拆 index，避免拆了没法验证）；分类页按第 4 条阈值等条目长齐。
 
 ---
 
