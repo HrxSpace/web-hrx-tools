@@ -1,0 +1,176 @@
+#!/usr/bin/env python3
+"""发布前的 SEO 断言：检查 web/ 产物，不过就别发布。
+
+这个脚本存在的理由：构建时站点域名缺失，canonical/og/JSON-LD/sitemap 会整段消失，
+而构建本身照样"成功"、产物照样能打开——这个项目踩过一次，所以把检查固化成一条命令，
+而不是靠人记得去看 head。
+
+用法：
+    python tools/seo_check.py                    # 检查默认产物目录 web/
+    python tools/seo_check.py --out /path/to/试构建
+    python tools/seo_check.py --verbose          # 打印每一页的 title 与 canonical
+
+退出码：0 全部通过；1 有不通过项；2 产物目录或数据文件不在。
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import re
+from pathlib import Path
+
+import yaml
+
+SITE_ROOT = Path(__file__).resolve().parents[1]
+DEFAULT_OUT = SITE_ROOT / "web"
+DEFAULT_DATA = SITE_ROOT / "data" / "shares.yaml"
+
+# 搜索结果里的标题按半角宽度截断，中文算 2、ASCII 算 1；超过这个宽度会被省略号砍掉。
+MAX_TITLE_WIDTH = 60
+MAX_LLMS_BYTES = 10 * 1024
+
+CANONICAL_RE = re.compile(r'<link\s+rel="canonical"\s+href="([^"]+)"')
+TITLE_RE = re.compile(r"<title>(.*?)</title>", re.S)
+H1_RE = re.compile(r"<h1[\s>]")
+DESC_RE = re.compile(r'<meta\s+name="description"\s+content="([^"]*)"')
+LD_JSON_RE = re.compile(r'<script\s+type="application/ld\+json">(.*?)</script>', re.S)
+LOC_RE = re.compile(r"<loc>([^<]+)</loc>")
+
+
+def display_width(text: str) -> int:
+    return sum(2 if ord(ch) > 0xFF else 1 for ch in text)
+
+
+def expected_url(site_url: str, rel: str) -> str:
+    """产物相对路径 → 对外 URL。index.html 就是站点根，其余按目录原样拼。"""
+    return f"{site_url}/" if rel == "index.html" else f"{site_url}/{rel}"
+
+
+def read_site(data_path: Path) -> tuple[str, str]:
+    doc = yaml.safe_load(data_path.read_text(encoding="utf-8")) or {}
+    site = doc.get("site") or {}
+    return str(site.get("name") or "").strip(), str(site.get("url") or "").strip().rstrip("/")
+
+
+def check_page(html_path: Path, rel: str, site_url: str, titles: dict[str, str]) -> list[str]:
+    problems: list[str] = []
+    text = html_path.read_text(encoding="utf-8")
+    want = expected_url(site_url, rel)
+
+    canonicals = CANONICAL_RE.findall(text)
+    if not canonicals:
+        problems.append(f"{rel}：没有 canonical（构建时 site.url 缺失就会这样）")
+    elif len(canonicals) > 1:
+        problems.append(f"{rel}：canonical 有 {len(canonicals)} 个，应为 1 个")
+    elif canonicals[0] != want:
+        problems.append(f"{rel}：canonical 指向 {canonicals[0]}，应为 {want}")
+
+    titles_found = TITLE_RE.findall(text)
+    title = titles_found[0].strip() if titles_found else ""
+    if not title:
+        problems.append(f"{rel}：没有 <title>")
+    else:
+        width = display_width(title)
+        if width > MAX_TITLE_WIDTH:
+            problems.append(f"{rel}：title 半角宽度 {width} > {MAX_TITLE_WIDTH}，搜索结果里会被截断 → {title}")
+        if title in titles:
+            problems.append(f"{rel}：title 与 {titles[title]} 完全相同，搜索引擎会当成重复页")
+        titles[title] = rel
+
+    h1s = H1_RE.findall(text)
+    if len(h1s) != 1:
+        problems.append(f"{rel}：<h1> 有 {len(h1s)} 个，应为 1 个")
+
+    if not DESC_RE.search(text):
+        problems.append(f"{rel}：没有 meta description")
+
+    blocks = LD_JSON_RE.findall(text)
+    if not blocks:
+        problems.append(f"{rel}：没有 JSON-LD 结构化数据")
+    for i, raw in enumerate(blocks):
+        try:
+            json.loads(raw)
+        except json.JSONDecodeError as exc:
+            problems.append(f"{rel}：第 {i + 1} 段 JSON-LD 解析失败（{exc}）——引擎会整段丢弃")
+
+    return problems
+
+
+def check(out: Path, data_path: Path, verbose: bool) -> list[str]:
+    problems: list[str] = []
+    brand, site_url = read_site(data_path)
+    if not site_url:
+        return [f"{data_path.name} 的 site.url 未配置：没有域名就无法核对 canonical/sitemap，产物也不该发布"]
+
+    pages = sorted(p.relative_to(out).as_posix() for p in out.rglob("*.html"))
+    if not pages:
+        return [f"{out} 下没有任何 HTML 产物"]
+
+    titles: dict[str, str] = {}
+    for rel in pages:
+        problems += check_page(out / rel, rel, site_url, titles)
+        if verbose:
+            text = (out / rel).read_text(encoding="utf-8")
+            print(f"  {rel}  title={TITLE_RE.findall(text)[0].strip() if TITLE_RE.search(text) else '(无)'}")
+
+    sitemap = out / "sitemap.xml"
+    if not sitemap.is_file():
+        problems.append("sitemap.xml 不存在：抓取器只能靠外链偶然发现你")
+    else:
+        locs = set(LOC_RE.findall(sitemap.read_text(encoding="utf-8")))
+        expected = {expected_url(site_url, rel) for rel in pages}
+        for missing in sorted(expected - locs):
+            problems.append(f"页面存在但没进 sitemap：{missing}")
+        for ghost in sorted(locs - expected):
+            problems.append(f"sitemap 里有页面但产物找不到：{ghost}")
+
+    robots = out / "robots.txt"
+    if not robots.is_file():
+        problems.append("robots.txt 不存在")
+    elif f"Sitemap: {site_url}/sitemap.xml" not in robots.read_text(encoding="utf-8"):
+        problems.append("robots.txt 缺 Sitemap: 行，或指向的域名与 site.url 不一致")
+
+    llms = out / "llms.txt"
+    if not llms.is_file():
+        problems.append("llms.txt 不存在")
+    else:
+        raw = llms.read_text(encoding="utf-8")
+        if len(llms.read_bytes()) > MAX_LLMS_BYTES:
+            problems.append(f"llms.txt {len(llms.read_bytes())} 字节 > {MAX_LLMS_BYTES}，AI 引擎读不完")
+        if brand and not raw.startswith(f"# {brand}"):
+            problems.append(f"llms.txt 首行不是站点名，应为 `# {brand}`")
+
+    return problems
+
+
+def main() -> int:
+    p = argparse.ArgumentParser(description="发布前 SEO 断言")
+    p.add_argument("--out", default=str(DEFAULT_OUT), help="产物目录，默认 web/")
+    p.add_argument("--data", default=str(DEFAULT_DATA), help="站点配置来源，默认 data/shares.yaml")
+    p.add_argument("--verbose", action="store_true", help="打印每页 title")
+    args = p.parse_args()
+
+    out = Path(args.out).resolve()
+    data_path = Path(args.data)
+    if not out.is_dir():
+        print(f"产物目录不存在：{out}\n先跑 python tools/build_site.py。")
+        return 2
+    if not data_path.is_file():
+        print(f"数据文件不存在：{data_path}")
+        return 2
+
+    problems = check(out, data_path, args.verbose)
+    page_count = len(list(out.rglob("*.html")))
+    if problems:
+        print(f"SEO 检查不通过（{len(problems)} 项，共 {page_count} 个页面）：")
+        for line in problems:
+            print(f"  · {line}")
+        print("\n修好后重跑；确认无误再发布。")
+        return 1
+    print(f"SEO 检查通过：{page_count} 个页面，canonical/title/h1/JSON-LD/sitemap/robots/llms 全部一致。")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
