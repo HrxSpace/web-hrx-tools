@@ -87,16 +87,17 @@ python -m http.server 4173 --bind 127.0.0.1 --directory web
 
 浏览器打开 <http://127.0.0.1:4173/> 确认无误后，再让 Qoder 走 Sites 发布流程。
 
-站点品牌名与正式发布域名只有一份，写在 `data/shares.yaml` 顶部的 `site:` 段（`name` / `url`）：
+站点品牌名与正式发布域名只有一份，写在 `data/shares.yaml` 顶部的 `site:` 段（`name` / `wechat_name` / `url`）：
 页面标题、`<h1>`、`og:site_name`、`llms.txt` 取 `name`，`canonical`/`og:url`/`sitemap`/JSON-LD 拼 `url`。
-**缺 `url` 时构建直接失败**——过去靠命令行传 `--site-url`，忘传就静默产出一个没有收录信号的裸页，
+`wechat_name` 是**公众号的真名**，页面上"微信公众号 ·"与手册里"公众号「…」"都取它——公众号改名要走平台流程，
+站点品牌改了它不会跟着变，写错了读者扫码就发现对不上号。**缺 `url` 或 `wechat_name` 时构建直接失败**——过去靠命令行传 `--site-url`，忘传就静默产出一个没有收录信号的裸页，
 构建器自己还报"成功"。只想本地看效果、不要任何收录标签时显式加 `--offline`，这种产物 `seo_check.py` 会判不通过。
 
 ## 字段与状态
 
 | 字段 | 谁负责 | 说明 |
 | --- | --- | --- |
-| `site.name` `site.url` `site.verify` | 人工 | 文件顶部 `site:` 段：品牌名、正式发布域名、站长验证文件清单（每项 `file` + `text`，构建时原样写进产物）。改名只动 `name`；**验证文件不要手工丢进 `web/`**，构建会清空该目录，验证会悄悄失效 |
+| `site.name` `site.wechat_name` `site.url` `site.verify` | 人工 | 文件顶部 `site:` 段：品牌名、公众号真名、正式发布域名、站长验证文件清单（每项 `file` + `text`，构建时原样写进产物）。改名只动 `name`，公众号名只动 `wechat_name`；**验证文件不要手工丢进 `web/`**，构建会清空该目录，验证会悄悄失效 |
 | `slug` | 脚本 | 主键=目录名，别手改 |
 | `name` `name_en` `exe_name` `version` | 脚本填、你可改 | 三者常不一致：`001` 目录叫证件照制作工具，商品名是证照快做，exe 是 idphotokit |
 | `summary` `description` `features` `keywords` | 脚本抽取、你可改写 | 抽取来源记在 `copy_source`；全部参与搜索 |

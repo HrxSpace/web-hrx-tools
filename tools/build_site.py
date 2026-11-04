@@ -143,24 +143,30 @@ def load_entries(path: Path, kind: str = "software") -> tuple[list[dict], dict]:
     return visible, doc.get("site") or {}
 
 
-def resolve_site(site: dict, args: argparse.Namespace) -> tuple[str, str, int]:
-    """站点品牌与正式发布域名。缺配置直接失败并说清改哪里：
+def resolve_site(site: dict, args: argparse.Namespace) -> tuple[str, str, str, int]:
+    """站点品牌、公众号名与正式发布域名。缺配置直接失败并说清改哪里：
     这两种情况过去都会让构建「成功」，只是产出一个没名字或没收录信号的裸页。"""
     brand = str(site.get("name") or "").strip()
     if not brand:
         print("site.name 缺失：品牌名是页面标题、<h1>、og:site_name 与 llms.txt 首行的唯一来源。")
         print("  修法：在 data/shares.yaml 顶部的 site: 段补一行 name: HRX 资源库")
-        return "", "", 2
+        return "", "", "", 2
+    wechat = str(site.get("wechat_name") or "").strip()
+    if not wechat:
+        print("site.wechat_name 缺失：页面上「微信公众号 ·」后面那个名字得有出处。")
+        print("  回落成站点名会写出与真实公众号不符的名字，读者扫码就对不上号——所以要必填。")
+        print("  修法：在 data/shares.yaml 顶部的 site: 段补一行 wechat_name: HRX 工具库")
+        return brand, "", "", 2
     if args.offline:
         # 本地预览故意不写线上域名：这种产物会被 seo_check 判不通过，正好挡住"预览包误发布"。
-        return brand, "", 0
+        return brand, wechat, "", 0
     site_url = str(args.site_url or site.get("url") or "").strip().rstrip("/")
     if not site_url:
         print("site.url 未配置且没加 --offline：canonical、og、JSON-LD、sitemap 全都不会产出，这样的产物不要发布。")
         print("  正式发布：在 data/shares.yaml 的 site: 段补一行 url: https://你的域名")
         print("  本地预览：python tools/build_site.py --offline")
-        return brand, "", 2
-    return brand, site_url, 0
+        return brand, wechat, "", 2
+    return brand, wechat, site_url, 0
 
 
 def write_verify_files(site: dict, out: Path) -> list[str]:
@@ -448,7 +454,7 @@ def llms_row(e: dict, base: str, paths: dict[str, str]) -> str:
     return row
 
 
-def llms_txt(entries: list[dict], docs: list[dict], site_url: str, updated: str, brand: str, paths: dict[str, str]) -> str:
+def llms_txt(entries: list[dict], docs: list[dict], site_url: str, updated: str, brand: str, wechat: str, paths: dict[str, str]) -> str:
     """面向 AI 引擎的纯文本目录：逐条写清是什么、什么版本、能干什么、去哪下载。"""
     base = site_url or ""
     out = [
@@ -480,7 +486,7 @@ def llms_txt(entries: list[dict], docs: list[dict], site_url: str, updated: str,
         "- 全部软件免费获取，无内购、无广告、不收集使用数据。",
         "- 系统要求：Windows 10 / Windows 11 64 位；解压即用，不需要装运行库。",
         "- 下载经夸克网盘、UC 网盘等渠道分发，提取码在页面上直接展示并可一键复制。",
-        f"- 分享失效或想要还没做出的工具：微信公众号「{brand}」可提需求，也接受定制开发。",
+        f"- 分享失效或想要还没做出的工具：微信公众号「{wechat}」可提需求，也接受定制开发。",
         "",
     ]
     return "\n".join(out)
@@ -812,7 +818,7 @@ def detail_head(entry: dict, path: str, site_url: str, title: str, desc: str, br
     return "\n".join(lines)
 
 
-def load_manual(entry: dict, jobs_root: Path, brand: str) -> tuple[object, str]:
+def load_manual(entry: dict, jobs_root: Path, brand: str, wechat: str) -> tuple[object, str]:
     """按软件目录现取手册：正文留在手册里，不抄进 shares.yaml，
     否则两份内容必然漂移，而人工真源会被 4000 字散文挤到读不动。"""
     if entry.get("kind") == "docs":
@@ -820,7 +826,7 @@ def load_manual(entry: dict, jobs_root: Path, brand: str) -> tuple[object, str]:
     path = manual.find_manual(jobs_root / entry["slug"])
     if not path:
         return None, ""
-    return manual.parse(path, brand), path.as_posix()
+    return manual.parse(path, brand, wechat), path.as_posix()
 
 
 def detail_html(entry: dict, ctx: dict) -> str:
@@ -830,6 +836,7 @@ def detail_html(entry: dict, ctx: dict) -> str:
     root = "../"
     paths: dict[str, str] = ctx["paths"]
     brand: str = ctx["brand"]
+    wechat: str = ctx["wechat"]
     site_url: str = ctx["site_url"]
     title = detail_title(entry, brand)
     desc = detail_desc(entry)
@@ -863,6 +870,7 @@ def detail_html(entry: dict, ctx: dict) -> str:
         template.replace("{{TITLE}}", esc(title))
         .replace("{{DESC}}", esc(desc))
         .replace("{{BRAND}}", esc(brand))
+        .replace("{{WECHAT}}", esc(wechat))
         .replace("{{ROOT}}", root)
         .replace("{{HEAD}}", detail_head(entry, paths[entry["slug"]], site_url, title, desc, brand))
         .replace("{{CRUMBS}}", crumbs_html(entry, brand, root))
@@ -900,7 +908,7 @@ def build(args: argparse.Namespace) -> int:
     docs_site: dict = {}
     if docs_path.is_file():
         docs, docs_site = load_entries(docs_path, kind="docs")
-    brand, site_url, config_error = resolve_site(site, args)
+    brand, wechat, site_url, config_error = resolve_site(site, args)
     if config_error:
         return config_error
     title = page_title(brand, bool(docs))
@@ -945,13 +953,15 @@ def build(args: argparse.Namespace) -> int:
     updated = str(site.get("updated") or docs_site.get("updated") or date.today())
     count_line = f"共 {len(entries)} 款软件" + (f" · {len(docs)} 份资料" if docs else "")
     paths = page_paths(combined)
-    manuals = {e["slug"]: load_manual(e, jobs_root, brand) for e in combined}
+    manuals = {e["slug"]: load_manual(e, jobs_root, brand, wechat) for e in combined}
     no_manual = [e["name"] for e in entries if not manuals[e["slug"]][0]]
     brand_fixes = sum(m.brand_fixes for m, _ in manuals.values() if m)
+    wechat_fixes = sum(m.wechat_fixes for m, _ in manuals.values() if m)
     ctx = {
         "paths": paths,
         "manuals": manuals,
         "brand": brand,
+        "wechat": wechat,
         "site_url": site_url,
         "template": (src / "detail.html").read_text(encoding="utf-8"),
         "entries": combined,
@@ -962,6 +972,7 @@ def build(args: argparse.Namespace) -> int:
         "index.html": (
             template.replace("{{TITLE}}", esc(title))
             .replace("{{BRAND}}", esc(brand))
+            .replace("{{WECHAT}}", esc(wechat))
             .replace("{{DESC}}", esc(desc))
             .replace("{{HEAD}}", head_extra(combined, site_url, desc, brand, title, paths))
             .replace("{{CHIPS}}", chips_html(combined))
@@ -988,7 +999,7 @@ def build(args: argparse.Namespace) -> int:
         encoding="utf-8",
     )
     (out / "robots.txt").write_text(robots_txt(site_url), encoding="utf-8")
-    (out / "llms.txt").write_text(llms_txt(entries, docs, site_url, updated, brand, paths), encoding="utf-8")
+    (out / "llms.txt").write_text(llms_txt(entries, docs, site_url, updated, brand, wechat, paths), encoding="utf-8")
     verify = write_verify_files(site, out)
     if site_url:
         # 每条 URL 的 lastmod 用该条自己的 updated：
@@ -1032,6 +1043,8 @@ def build(args: argparse.Namespace) -> int:
         print("站长验证文件已随构建产出：" + "、".join(verify))
     if brand_fixes:
         print(f"提示：手册里有 {brand_fixes} 处旧品牌写法，已按 site.name 统一渲染；源头在各软件工程的 md 里，建议顺手改掉。")
+    if wechat_fixes:
+        print(f"提示：手册里有 {wechat_fixes} 处提到公众号，已按 site.wechat_name 渲染（公众号名不跟着站点品牌走）。")
     thin = [rel for rel, content in pages.items() if rel != "index.html" and body_han(content) < MIN_PAGE_HAN]
     if thin:
         print(f"警告：{len(thin)} 个详情页正文少于 {MIN_PAGE_HAN} 汉字，承接不住长尾搜索，先补内容再对外推广：")

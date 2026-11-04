@@ -31,11 +31,14 @@
 
 site:
   name: HRX 资源库
+  # 公众号名与站点品牌是两件事：改名要走平台流程，二维码扫出来的名字不会跟着站点改。
+  # 页面上凡是"微信公众号 ·"「公众号」后面的名字都取这里，缺失即构建失败。
+  wechat_name: HRX 工具库
   url: https://hrx-tools-g1ldzszv60x.qoder.zone
   verify:
     - file: google8850a877dbfc1756.html
       text: 'google-site-verification: google8850a877dbfc1756.html'
-  updated: '2026-11-03'
+  updated: '2026-11-05'
 shares:
 - slug: 000_PDF超级工具箱
   name: PDF超级工具箱

@@ -37,6 +37,12 @@ DESC_RE = re.compile(r'<meta\s+name="description"\s+content="([^"]*)"')
 LD_JSON_RE = re.compile(r'<script\s+type="application/ld\+json">(.*?)</script>', re.S)
 LOC_RE = re.compile(r"<loc>([^<]+)</loc>")
 
+# 「微信公众号 · X」这类写法里的 X 是外部事实（公众号名），不能拿站点品牌顶替：
+# 名字对不上，读者扫码就会发现。构建改对了也得防着下次被人改回去。
+WECHAT_MENTION_RE = re.compile(
+    r"(?:微信公众号|关注作者公众号|关注官方公众号|扫码关注|公众号)[^。\n；;]{0,8}?HRX\s*(?:工具库|软件库|资源库|工具箱)"
+)
+
 
 def display_width(text: str) -> int:
     return sum(2 if ord(ch) > 0xFF else 1 for ch in text)
@@ -52,7 +58,17 @@ def read_site(data_path: Path) -> dict:
     return doc.get("site") or {}
 
 
-def check_page(html_path: Path, rel: str, site_url: str, titles: dict[str, str]) -> list[str]:
+def check_wechat_names(text: str, rel: str, wechat: str) -> list[str]:
+    """页面上所有提到公众号的地方，名字都得是 site.wechat_name。"""
+    problems: list[str] = []
+    for m in WECHAT_MENTION_RE.finditer(text):
+        said = m.group(0)
+        if wechat not in said:
+            problems.append(f"{rel}：公众号名写成了「{said}」，应为 site.wechat_name = {wechat}")
+    return problems
+
+
+def check_page(html_path: Path, rel: str, site_url: str, wechat: str, titles: dict[str, str]) -> list[str]:
     problems: list[str] = []
     text = html_path.read_text(encoding="utf-8")
     want = expected_url(site_url, rel)
@@ -96,6 +112,9 @@ def check_page(html_path: Path, rel: str, site_url: str, titles: dict[str, str])
     if "{{" in text:
         problems.append(f"{rel}：还留着没替换的模板占位符（{{{{...}}}}），页面有段落没渲染出来")
 
+    if wechat:
+        problems += check_wechat_names(text, rel, wechat)
+
     return problems
 
 
@@ -104,9 +123,15 @@ def check(out: Path, data_path: Path, verbose: bool) -> tuple[list[str], list[st
     problems: list[str] = []
     site = read_site(data_path)
     brand = str(site.get("name") or "").strip()
+    wechat = str(site.get("wechat_name") or "").strip()
     site_url = str(site.get("url") or "").strip().rstrip("/")
     if not site_url:
         return [f"{data_path.name} 的 site.url 未配置：没有域名就无法核对 canonical/sitemap，产物也不该发布"], []
+    if not wechat:
+        problems.append(
+            f"{data_path.name} 的 site.wechat_name 未配置：页面提到公众号时必须用真实公众号名，"
+            "拿站点品牌顶替会写出扫码对不上号的名字"
+        )
 
     pages = sorted(p.relative_to(out).as_posix() for p in out.rglob("*.html"))
     if not pages:
@@ -119,7 +144,7 @@ def check(out: Path, data_path: Path, verbose: bool) -> tuple[list[str], list[st
 
     titles: dict[str, str] = {}
     for rel in pages:
-        problems += check_page(out / rel, rel, site_url, titles)
+        problems += check_page(out / rel, rel, site_url, wechat, titles)
         if verbose:
             text = (out / rel).read_text(encoding="utf-8")
             print(f"  {rel}  title={TITLE_RE.findall(text)[0].strip() if TITLE_RE.search(text) else '(无)'}")
@@ -150,6 +175,8 @@ def check(out: Path, data_path: Path, verbose: bool) -> tuple[list[str], list[st
             problems.append(f"llms.txt {len(llms.read_bytes())} 字节 > {MAX_LLMS_BYTES}，AI 引擎读不完")
         if brand and not raw.startswith(f"# {brand}"):
             problems.append(f"llms.txt 首行不是站点名，应为 `# {brand}`")
+        if wechat:
+            problems += check_wechat_names(raw, "llms.txt", wechat)
 
     for item in site.get("verify") or []:
         name = str(item.get("file") if isinstance(item, dict) else "").strip()

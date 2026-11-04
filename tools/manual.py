@@ -73,6 +73,7 @@ class Manual:
     faq: list[tuple[str, str]] = field(default_factory=list)
     notes: str = ""
     brand_fixes: int = 0
+    wechat_fixes: int = 0
 
     @property
     def han_count(self) -> int:
@@ -248,7 +249,7 @@ def sub_blocks(lines: list[str]) -> list[tuple[str, list[str]]]:
     return blocks
 
 
-def parse(manual_path: Path, brand: str = "") -> Manual:
+def parse(manual_path: Path, brand: str = "", wechat: str = "") -> Manual:
     """章节角色以二级标题为准，三级标题只做细化。
 
     为什么不能整章按小标题判角色：常见问题章的小标题是一个个疑问句
@@ -288,25 +289,32 @@ def parse(manual_path: Path, brand: str = "") -> Manual:
             else:
                 manual.sections.append(Section(heading, body))
     if brand:
-        manual.brand_fixes = apply_brand(manual, brand)
+        manual.brand_fixes, manual.wechat_fixes = apply_brand(manual, brand, wechat)
     return manual
 
 
-def apply_brand(man: Manual, brand: str) -> int:
-    """把正文里残留的旧品牌写法换成站点配置那一个，返回替换处数。"""
-    fixes = 0
+def apply_brand(man: Manual, brand: str, wechat: str = "") -> tuple[int, int]:
+    """把正文里残留的旧品牌写法换成站点配置那一个，返回 (品牌改动数, 公众号名改动数)。"""
+    counts = [0, 0]
 
     def fix(text: str) -> str:
-        nonlocal fixes
-        new, n = BRAND_VARIANTS.subn(brand, text)
-        fixes += n
-        return new
+        def rep(m: re.Match) -> str:
+            hit = m.group("brand")
+            is_wechat = bool(m.group("wechat"))
+            # 公众号语境换成公众号名：它是外部事实，不跟着站点品牌走
+            want = (wechat or brand) if is_wechat else brand
+            if hit != want:
+                counts[1 if is_wechat else 0] += 1
+                return m.group(0).replace(hit, want)
+            return m.group(0)
+
+        return BRAND_SCOPES.sub(rep, text)
 
     man.intro, man.env, man.notes = fix(man.intro), fix(man.env), fix(man.notes)
     man.sections = [Section(fix(s.title), fix(s.html)) for s in man.sections]
     man.install = [Section(fix(s.title), fix(s.html)) for s in man.install]
     man.faq = [(fix(q), fix(a)) for q, a in man.faq]
-    return fixes
+    return counts[0], counts[1]
 
 
 def refine_role(sub: str, chapter_role_name: str) -> str:
@@ -330,4 +338,9 @@ def read_text(path: Path) -> str:
 
 # 手册与推广文里出现过「HRX 工具库」「HRX 软件库」等多种写法。同一页里三个品牌名会让
 # 读者困惑，也让搜索引擎与 AI 认不出这是同一个实体，所以抽取时统一成站点配置里那一个。
-BRAND_VARIANTS = re.compile(r"HRX\s*(?:工具库|软件库|资源库|工具箱)")
+# 唯独公众号语境不变：公众号的名字是外部事实，改名要走平台流程，公众号二维码扫出来的
+# 名字也不会跟着站点改——写错了，读者扫码就会发现对不上号。
+BRAND_SCOPES = re.compile(
+    r"(?P<wechat>(?:微信公众号|关注作者公众号|关注官方公众号|扫码关注|公众号)[^。\n；;]{0,8}?)?"
+    r"(?P<brand>HRX\s*(?:工具库|软件库|资源库|工具箱))"
+)
