@@ -150,7 +150,7 @@ def read_text(path: Path) -> str:
 
 
 def locate_project(project: Path) -> Path:
-    """003 这类项目在子目录里，找到真正含 pyproject/src 的那层。"""
+    """历史上有项目把源码套在子目录里（如 003 的 mediatoolbox-src），找到真正含 pyproject/src 的那层。"""
     if (project / "src").is_dir() or (project / "pyproject.toml").is_file():
         return project
     for child in sorted(project.iterdir()):

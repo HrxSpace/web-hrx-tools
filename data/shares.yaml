@@ -272,18 +272,18 @@ shares:
   - 提取音频
   - 转GIF
   - '003'
-  image: mediatoolbox-src/resources/icon/app.png
+  image: resources/icon/app.png
   image_kind: icon
-  artifact: mediatoolbox-src/dist/MediaToolbox_v0.1.0.zip
-  artifact_dir: mediatoolbox-src/dist/MediaToolbox
+  artifact: dist/MediaToolbox_v0.1.0.zip
+  artifact_dir: dist/MediaToolbox
   size_mb: 223.3
-  copy_source: mediatoolbox-src/README.txt
+  copy_source: README.txt
   updated: '2026-10-29'
   discovered:
     version: 0.1.4
-    artifact: mediatoolbox-src/dist/MediaToolbox_v0.1.0.zip
-    image: mediatoolbox-src/resources/icon/app.png
-    project_dir: mediatoolbox-src
+    artifact: dist/MediaToolbox_v0.1.0.zip
+    image: resources/icon/app.png
+    project_dir: 003_音视频工具箱
 - slug: 004_表格加工厂
   name: 表格加工厂
   name_en: TableWorks
