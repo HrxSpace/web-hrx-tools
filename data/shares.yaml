@@ -48,6 +48,8 @@ site:
         <users>
           <user>6967013A744D4A440318882383AD062F</user>
         </users>
+    - file: sogousiteverification.txt
+      text: gQnIYtrOHt
   # 搜索框下方的「常见需求」：用户会搜的任务词 → 回答得了它的详情页。
   # 这是导航，不是关键词云：只收已上架条目、每个词都得在目标页有实际答案，凑数词一律不要。
   tasks:
