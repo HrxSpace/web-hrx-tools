@@ -148,7 +148,7 @@ JSON-LD 都从这一处拼出来。
 
 - 目标：搜索与 AI 爬虫尽量能抓，但不做高频压测。
 - `robots.txt`：搜索引擎 / AI 检索 / AI 训练三组显式放行，每组带 `Crawl-delay: 1`（Google 不读它，真正限速靠 Cloudflare）；`Sitemap` 指向 `site.url`。
-- `site/_headers`：构建时复制到 `web/_headers`；HTML 5 分钟、图片/favicon 1 天、CSS/JS 1 小时，减少重复抓取。
+- `site/_headers`：构建时复制到 `web/_headers`；HTML 5 分钟、图片/favicon 1 天；CSS/JS 由 Cloudflare Pages 默认缓存约 4 小时，减少重复抓取。
 - 站点是纯静态 + Cloudflare 边缘，爬虫压不垮源站；**不要开启 Bot Fight Mode / Under Attack Mode**，它们会把想放行的 AI 爬虫一起挑战掉。
 - 真遇到异常高频请求，再在 Cloudflare 控制台加“速率限制”规则；阈值放宽（例如每 IP 每分钟 120 次以上），避免误伤共用出口 IP 的用户。
 - 换主域名后，去 Google Search Console / Bing / 百度重新验证 `pcpan.top` 并提交 `https://pcpan.top/sitemap.xml`；旧域名的验证文件不会自动验证新域名。
