@@ -69,23 +69,36 @@ def main() -> int:
         return 0
 
     pushed: list[str] = []
+    unchanged: list[str] = []
     failed: list[str] = []
     for remote in REMOTES:
         if git("remote", "get-url", remote, check=False).returncode != 0:
             print(f"远端不存在，跳过：{remote}")
             continue
+        before = git("rev-parse", "--verify", "--quiet", f"{remote}/{branch}", check=False)
+        before_sha = before.stdout.strip() if before.returncode == 0 else ""
         if git("push", remote, branch, check=False, capture=False).returncode != 0:
             failed.append(remote)
+            continue
+        after = git("rev-parse", "--verify", "--quiet", f"{remote}/{branch}", check=False)
+        after_sha = after.stdout.strip() if after.returncode == 0 else ""
+        if before_sha and before_sha == after_sha:
+            unchanged.append(remote)
         else:
             pushed.append(remote)
     if failed:
         print("推送失败：" + "、".join(failed) + "（其它远端已尝试；未使用强推）")
         return 1
-    targets = " + ".join(pushed) or "无远端"
-    print(
-        f"已推送到 {targets}。Cloudflare Pages 会自动部署；"
-        + ("web/ 有变动，qoder.zone 仍需在 Qoder 里发布。" if web_changed else "web/ 无变动，qoder.zone 无需发布。")
-    )
+    if unchanged:
+        print("已是最新：" + "、".join(unchanged) + "。")
+    if pushed:
+        print(
+            "已推送：" + "、".join(pushed) + "。"
+            + ("Cloudflare Pages 会自动部署。" if "github" in pushed else "GitHub 未更新，Cloudflare 不会重新部署。")
+        )
+    else:
+        print("没有新提交，Cloudflare 不会重新部署。")
+    print("web/ 有变动，qoder.zone 仍需在 Qoder 里发布。" if web_changed else "web/ 无变动，qoder.zone 无需发布。")
     return 0
 
 
