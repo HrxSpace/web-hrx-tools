@@ -1,7 +1,8 @@
-web/
 .preview/
 __pycache__/
+.ruff_cache/
 *.pyc
 .*.qoder.site
 # 本机路径例外：只在目录结构与默认布局不同才需要，不进版本库
 data/paths.local.yaml
+# web/ 是 Cloudflare Pages 的发布源，必须进版本库（见 README「部署」）

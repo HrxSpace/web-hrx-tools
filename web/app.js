@@ -1,0 +1,332 @@
+/* 检索逻辑：本地数据、无后端。输入即过滤，多关键词按「与」匹配。 */
+(() => {
+  const DATA = JSON.parse(document.getElementById("shares-data").textContent);
+  const byId = new Map(DATA.map((d) => [d.id, d]));
+  const input = document.getElementById("q");
+  const clearBtn = document.getElementById("clear");
+  const statusEl = document.getElementById("status");
+  const emptyEl = document.getElementById("empty");
+  const suggestEl = document.getElementById("suggest");
+  const cards = [...document.querySelectorAll(".card")];
+  const chipBox = document.getElementById("chips");
+  const dialog = document.getElementById("detail");
+  const sheetBody = dialog.querySelector(".sheet-body");
+  const toastEl = document.getElementById("toast");
+  const pageToastEl = document.getElementById("page-toast");
+  const lightbox = document.getElementById("lightbox");
+  const lightboxImg = document.getElementById("lightbox-img");
+  const coverBtn = document.getElementById("detail-cover-btn");
+  const coverImg = document.getElementById("detail-cover");
+  let toastTimer = 0;
+
+  const norm = (s) => (s || "").toLowerCase().replace(/\s+/g, "");
+  const hasDocs = DATA.some((d) => d.kind === "docs");
+  const softCount = DATA.filter((d) => d.kind !== "docs").length;
+  const docCount = DATA.length - softCount;
+  const haystack = (d) =>
+    norm([d.name, d.name_en, d.exe_name, d.category, d.summary, d.description, d.features, d.keywords, d.aliases, d.tags].flat().join(" "));
+
+  function tokens() {
+    return input.value.trim().split(/\s+/).filter(Boolean);
+  }
+
+  function mark(el, words) {
+    const text = el.dataset.text || el.textContent;
+    el.dataset.text = text;
+    el.textContent = "";
+    if (!words.length) return void el.append(text);
+    const re = new RegExp("(" + words.map((w) => w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|") + ")", "gi");
+    let last = 0;
+    for (const m of text.matchAll(re)) {
+      if (m.index > last) el.append(text.slice(last, m.index));
+      const k = document.createElement("mark");
+      k.textContent = m[0];
+      el.append(k);
+      last = m.index + m[0].length;
+    }
+    el.append(text.slice(last));
+  }
+
+  function apply() {
+    const words = tokens();
+    const active = chipBox.querySelector('.chip[aria-pressed="true"]');
+    const cat = active ? active.dataset.cat : "";
+    let shown = 0;
+    for (const card of cards) {
+      const d = byId.get(card.dataset.id);
+      if (!d) continue;
+      const okCat = !cat || cat === "全部" || d.category === cat;
+      const okWord = words.every((w) => haystack(d).includes(norm(w)));
+      const visible = okCat && okWord;
+      card.hidden = !visible;
+      if (visible) {
+        shown += 1;
+        card.querySelectorAll(".hl").forEach((el) => mark(el, words));
+      }
+    }
+    clearBtn.hidden = !input.value;
+    statusEl.textContent = words.length || cat && cat !== "全部"
+      ? `匹配 ${shown} / ${cards.length} 项` + (words.length ? `：${words.join(" + ")}` : "")
+      : hasDocs ? `共 ${softCount} 款软件 · ${docCount} 份资料` : `共 ${cards.length} 款软件`;
+    // 筛完空掉的区块只剩一个标题会像页面坏了，整段收起
+    for (const group of document.querySelectorAll("section.group")) {
+      group.hidden = !group.querySelectorAll(".card:not([hidden])").length;
+    }
+    emptyEl.hidden = shown !== 0;
+    if (!shown) renderSuggest();
+  }
+
+  function renderSuggest() {
+    suggestEl.textContent = "";
+    // 空态里给的建议词，点了必须有结果：先按全站命中量筛掉零结果词。
+    // 候选只用 tags/aliases（人工精选的任务词），不用 keywords——后者命中越高的词越泛
+    // （「不联网」「大小」这种），给出来等于没给。
+    const lists = DATA.map((d) =>
+      [...new Set([d.tags, d.aliases].flat().filter(Boolean))]
+        .filter((w) => /[一-龥]{2,}/.test(w))
+        .map((w) => ({ word: w, hits: DATA.filter((x) => haystack(x).includes(norm(w))).length }))
+        .filter((x) => x.hits > 0)
+        .sort((a, b) => b.hits - a.hits || a.word.length - b.word.length)
+    );
+    // 逐条轮转取词：一轮里每个条目只交出一个最好的词，免得六个建议全是同一款工具的叫法。
+    const seen = new Set();
+    const picks = [];
+    while (picks.length < 6) {
+      let added = 0;
+      for (const list of lists) {
+        const cand = list.find((x) => !seen.has(x.word));
+        if (!cand) continue;
+        seen.add(cand.word);
+        picks.push(cand.word);
+        added += 1;
+        if (picks.length >= 6) break;
+      }
+      if (!added) break;
+    }
+    for (const word of picks) {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.textContent = word;
+      b.onclick = () => { input.value = word; apply(); input.focus(); };
+      suggestEl.append(b);
+    }
+  }
+
+  function showToast(text) {
+    const host = dialog.open ? toastEl : pageToastEl;
+    toastEl.classList.remove("show");
+    pageToastEl.classList.remove("show");
+    host.textContent = text;
+    host.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => {
+      toastEl.classList.remove("show");
+      pageToastEl.classList.remove("show");
+    }, 2400);
+  }
+
+  function legacyCopy(text) {
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    ta.setAttribute("readonly", "");
+    ta.style.cssText = "position:fixed;top:0;left:0;opacity:0;pointer-events:none";
+    document.body.append(ta);
+    ta.select();
+    let ok = false;
+    try { ok = document.execCommand("copy"); } catch { ok = false; }
+    ta.remove();
+    return ok;
+  }
+
+  function copyText(text) {
+    if (navigator.clipboard?.writeText) {
+      try {
+        return navigator.clipboard.writeText(text).then(() => true, () => legacyCopy(text));
+      } catch {
+        return Promise.resolve(legacyCopy(text));
+      }
+    }
+    return Promise.resolve(legacyCopy(text));
+  }
+
+  function copyCode(code) {
+    copyText(code).then((ok) => {
+      showToast(ok ? `已复制提取码 ${code}` : `复制失败，请手动选择提取码 ${code}`);
+    });
+  }
+
+  function linkRow(link, primary, total) {
+    const item = document.createElement("div");
+    item.className = "dl-item" + (primary ? " primary" : "");
+    const main = Object.assign(document.createElement("div"), { className: "dl-main" });
+    main.append(Object.assign(document.createElement("span"), {
+      className: "dl-platform",
+      textContent: link.platform || "网盘链接",
+    }));
+    if (primary && total > 1) {
+      main.append(Object.assign(document.createElement("span"), { className: "dl-tag", textContent: "推荐" }));
+    }
+    if (link.note) {
+      main.append(Object.assign(document.createElement("span"), { className: "dl-note", textContent: link.note }));
+    }
+    const side = Object.assign(document.createElement("div"), { className: "dl-side" });
+    if (link.code) {
+      const code = Object.assign(document.createElement("button"), {
+        className: "dl-code",
+        type: "button",
+        title: `点击复制提取码 ${link.code}`,
+      });
+      code.append("提取码 ");
+      code.append(Object.assign(document.createElement("b"), { textContent: link.code }));
+      code.addEventListener("click", () => copyCode(link.code));
+      side.append(code);
+    }
+    const open = Object.assign(document.createElement("a"), {
+      className: "btn dl-open" + (primary ? "" : " ghost"),
+      href: link.url,
+      target: "_blank",
+      rel: "noopener",
+      textContent: link.platform ? `打开${link.platform}` : "打开链接",
+    });
+    if (link.code) {
+      open.addEventListener("click", () => {
+        copyText(link.code).then((ok) => {
+          showToast(ok
+            ? `提取码 ${link.code} 已复制，正在打开${link.platform || "下载页"}`
+            : `提取码 ${link.code}，请在新页面手动输入`);
+        });
+      });
+    }
+    side.append(open);
+    item.append(main, side);
+    return item;
+  }
+
+  function renderDownloads(d) {
+    const box = document.getElementById("detail-links");
+    const countEl = document.getElementById("detail-dl-count");
+    const tipEl = document.getElementById("detail-dl-tip");
+    const links = d.links || [];
+    box.textContent = "";
+    if (d.status === "coming_soon") {
+      countEl.textContent = "";
+      box.append(Object.assign(document.createElement("p"), {
+        className: "dl-empty",
+        textContent: "开发中，即将上架",
+      }));
+      tipEl.textContent = "上架后会把下载渠道更新到这里。";
+      return;
+    }
+    countEl.textContent = links.length > 1 ? `共 ${links.length} 个` : "";
+    links.forEach((link, i) => box.append(linkRow(link, i === 0, links.length)));
+    if (!links.length) {
+      box.append(Object.assign(document.createElement("p"), {
+        className: "dl-empty",
+        textContent: "暂未开放下载",
+      }));
+    }
+    const docs = d.kind === "docs";
+    tipEl.textContent = links.some((link) => link.code)
+      ? "点提取码可以单独复制；打开链接时也会自动复制。" + (docs ? "解压后即可离线阅读，全程在你自己的电脑上打开。" : "下载后解压即用，软件全程在本机运行。")
+      : docs ? "解压后即可离线阅读；资料全程在你自己的电脑上打开，不需要联网。" : "下载后解压即用；软件全部在你自己的电脑上运行，不需要联网。";
+  }
+
+  function openDetail(id) {
+    const d = byId.get(id);
+    if (!d) return;
+    document.getElementById("detail-name").textContent = d.name;
+    document.getElementById("detail-sub").textContent =
+      [d.name_en, d.exe_name && d.exe_name !== d.name_en ? d.exe_name : "", d.category].filter(Boolean).join(" · ");
+    const meta = document.getElementById("detail-meta");
+    meta.textContent = "";
+    for (const t of [
+      d.chapters ? `共 ${d.chapters} 篇` : "",
+      d.version ? `v${d.version}` : "",
+      d.size_mb ? `${d.size_mb} MB` : "",
+      d.updated ? `更新 ${d.updated}` : "",
+    ]) {
+      if (t) meta.append(Object.assign(document.createElement("span"), { className: "pill", textContent: t }));
+    }
+    const full = d.cover_full;
+    if (full) {
+      coverImg.src = full;
+      coverImg.alt = `${d.name} ${d.kind === "docs" ? "封面" : "界面截图"}`;
+      coverBtn.hidden = false;
+    } else {
+      coverImg.removeAttribute("src");
+      coverBtn.hidden = true;
+    }
+    document.getElementById("detail-desc").textContent = d.description || d.summary;
+    renderDownloads(d);
+    const feats = d.features || [];
+    document.getElementById("feats-title").textContent = d.kind === "docs" ? "篇章清单" : "功能要点";
+    const list = document.getElementById("detail-features");
+    list.textContent = "";
+    feats.forEach((f) => list.append(Object.assign(document.createElement("li"), { textContent: f })));
+    document.getElementById("detail-feats-block").hidden = !feats.length;
+    toastEl.classList.remove("show");
+    pageToastEl.classList.remove("show");
+    if (!dialog.open) dialog.showModal();
+    sheetBody.scrollTop = 0;
+  }
+
+  function openLightbox() {
+    if (!coverImg.getAttribute("src")) return;
+    lightboxImg.src = coverImg.src;
+    lightboxImg.alt = coverImg.alt;
+    lightbox.showModal();
+  }
+
+  chipBox.addEventListener("click", (e) => {
+    const chip = e.target.closest(".chip");
+    if (!chip) return;
+    chipBox.querySelectorAll(".chip").forEach((c) => c.setAttribute("aria-pressed", String(c === chip)));
+    apply();
+  });
+  // 详情按钮在软件列表和文档区块里都有，监听挂在文档上而不是某个列表里
+  document.addEventListener("click", (e) => {
+    const more = e.target.closest("[data-more]");
+    if (!more) return;
+    e.preventDefault(); // 详情面板就是定位结果，别让浏览器再滚一次锚点
+    openDetail(more.dataset.more);
+    history.replaceState(null, "", `#${more.dataset.more}`);
+  });
+  document.addEventListener("click", (e) => {
+    const link = e.target.closest("a[data-code]");
+    if (!link) return;
+    const code = link.dataset.code;
+    copyText(code).then((ok) => showToast(ok ? `提取码 ${code} 已复制` : `提取码 ${code}，请手动输入`));
+  });
+  document.getElementById("detail-close").onclick = () => dialog.close();
+  dialog.addEventListener("click", (e) => { if (e.target === dialog) dialog.close(); });
+  coverBtn.addEventListener("click", openLightbox);
+  document.getElementById("lightbox-close").onclick = () => lightbox.close();
+  lightbox.addEventListener("click", (e) => { if (e.target === lightbox) lightbox.close(); });
+  input.addEventListener("input", apply);
+  clearBtn.onclick = () => { input.value = ""; apply(); input.focus(); };
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "/" && document.activeElement !== input) {
+      e.preventDefault();
+      input.focus();
+      input.select();
+    }
+    if (e.key === "Escape" && document.activeElement === input && input.value) {
+      input.value = "";
+      apply();
+    }
+  });
+
+  // 带 #slug 进来（别人转发的地址、结构化数据里声明的 url）时直接展开对应详情
+  const hashId = () => {
+    const id = decodeURIComponent(location.hash.slice(1));
+    return byId.has(id) ? id : "";
+  };
+  window.addEventListener("hashchange", () => {
+    const id = hashId();
+    if (id) openDetail(id);
+  });
+
+  apply();
+  const deep = hashId();
+  if (deep) openDetail(deep);
+})();

@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>图片去水印_一键去水印_离线不上传 - HRX 资源库</title>
+<meta name="description" content="本地 AI 图片修复：涂抹水印区域，一键修复成自然画面 · v1.29.6 · 489.9 MB。解压即用，全程在本机运行、文件不上传；夸克网盘、UC网盘 分发。">
+<meta name="robots" content="index,follow,max-snippet:-1,max-image-preview:large">
+<meta name="theme-color" content="#f4f6f9">
+<meta property="og:site_name" content="HRX 资源库">
+<meta property="og:locale" content="zh_CN">
+<link rel="canonical" href="https://hrx-tools.pages.dev/soft/watermark-remover.html">
+<meta property="og:type" content="website">
+<meta property="og:title" content="图片去水印_一键去水印_离线不上传 - HRX 资源库">
+<meta property="og:description" content="本地 AI 图片修复：涂抹水印区域，一键修复成自然画面 · v1.29.6 · 489.9 MB。解压即用，全程在本机运行、文件不上传；夸克网盘、UC网盘 分发。">
+<meta property="og:url" content="https://hrx-tools.pages.dev/soft/watermark-remover.html">
+<meta property="og:image" content="https://hrx-tools.pages.dev/images/006-full.webp">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="图片去水印_一键去水印_离线不上传 - HRX 资源库">
+<meta name="twitter:description" content="本地 AI 图片修复：涂抹水印区域，一键修复成自然画面 · v1.29.6 · 489.9 MB。解压即用，全程在本机运行、文件不上传；夸克网盘、UC网盘 分发。">
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="alternate" type="text/plain" href="../llms.txt">
+<link rel="stylesheet" href="../style.css">
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"SoftwareApplication","name":"图片去水印","alternateName":"WatermarkRemover","description":"本地 AI 图片修复：涂抹水印区域，一键修复成自然画面","featureList":["一键去水印：涂抹水印区域，AI 自动修复成自然画面","批量去水印：整批图片位置相同的水印，涂一次蒙版全部套用；也支持逐张涂抹","快速预览：正式处理前先看修复效果，不满意可以继续调整","灵活涂抹：左键涂抹、右键擦除，笔刷大小和边缘柔和度都可调","画布缩放平移：滚轮缩放、中键拖动，小水印也能涂得精准","撤销与重做：涂错了随时回退，也可一键清空全部涂抹","多种格式：支持打开 png / jpg / webp / bmp / ico /…","自动命名：保存时自动加时间戳，不会覆盖你的原图"],"offers":{"@type":"Offer","price":"0","priceCurrency":"CNY"},"url":"https://hrx-tools.pages.dev/soft/watermark-remover.html","operatingSystem":"Windows 10 / Windows 11 64 位","applicationCategory":"UtilitiesApplication","softwareVersion":"1.29.6","fileSize":"489.9 MB","dateModified":"2026-11-01","downloadUrl":"https://pan.quark.cn/s/165cd872ae53","image":"https://hrx-tools.pages.dev/images/006-full.webp"},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"HRX 资源库","item":"https://hrx-tools.pages.dev/"},{"@type":"ListItem","position":2,"name":"图片去水印","item":"https://hrx-tools.pages.dev/soft/watermark-remover.html"}]},{"@type":"FAQPage","mainEntity":[{"@type":"Question","name":"第一次预览/处理特别慢，正常吗？","acceptedAnswer":{"@type":"Answer","text":"原因 ：正常。第一次使用时软件要加载 AI 修复模型，在没有独立显卡的电脑上会用 CPU 计算，首次等待会明显偏长。 解决 ：耐心等一次即可，之后同一批操作会快很多。有 NVIDIA 显卡的电脑保持设置里「设备」为「自动」就能自动启用加速。"}},{"@type":"Question","name":"处理一张图要等多久？怎么更快？","acceptedAnswer":{"@type":"Answer","text":"原因 ：处理时间和涂抹面积、图片大小、是否用显卡都有关系。纯 CPU 的电脑处理大图需要多等一会儿。 解决 ：三个办法——只涂抹水印本身，不要大面积涂；在【设置】→【高级】里把「最大边长」调小（如 1024），速度会明显加快，但细节会略有损失；有 NVIDIA 显卡的话让「设备」保持「自动」。作为参考：一台无独立显卡的笔记本上，一张 900×600 的图完整处理约 8 秒、预览约 2～5 秒（同一台机器同一张图实测，你的结果会因机器而异）。"}},{"@type":"Question","name":"预览里水印没消干净，留了一道白影？","acceptedAnswer":{"@type":"Answer","text":"原因 ：多半是蒙版没整块盖住水印，漏了字的某条边。模型只重画被蒙版标住的区域，漏住的边就留在原地。 解决 ：回画布把漏的地方补涂一笔（必要时按 [ 把笔刷调小描边），再按空格重新预览。这一步不用等完整处理，很快。"}},{"@type":"Question","name":"我的图片会被上传到网上吗？","acceptedAnswer":{"@type":"Answer","text":"原因 ：不会。 解决 ：软件全部在本机完成，不需要联网，断网也能正常使用。状态栏右侧会显示当前用的推理引擎，鼠标停上去有说明。"}},{"@type":"Question","name":"提示找不到模型文件？","acceptedAnswer":{"@type":"Answer","text":"原因 ：只有用源码方式运行才会遇到——AI 模型文件体积较大，没有随源码一起存放。 解决 ：这时会弹出一个标题为「引擎初始化失败」的提示框，内容是\"LaMa 模型文件不存在，请确认模型已随程序打包。\"按项目自述文件的说明下载 big-lama.pt 模型文件，放入源码目录的 src/watermark_remover/resources/models/ 文件夹后重新启动。 使用打包版（exe）不会遇到这个问题 ，模型已内置。"}},{"@type":"Question","name":"处理完成后没有弹对比窗口，直接就保存了？","acceptedAnswer":{"@type":"Answer","text":"原因 ：设置里关闭了「处理完成后显示原图对比」，处理完成会自动按默认位置和格式保存。 解决 ：想要每次确认后再保存，就在【设置】→【保存】里重新勾选「处理完成后显示原图对比」。"}},{"@type":"Question","name":"批量模式涂好的蒙版存在哪？想清掉怎么办？","acceptedAnswer":{"@type":"Answer","text":"原因 ：逐张涂抹模式的蒙版默认跟着图片存，位置在图片所在文件夹的 .watermark_masks 子目录，每张一份，文件名是「原图片名.mask.png」。 解决 ：删掉对应文件、或直接删掉整个 .watermark_masks 文件夹即可。以后不想让它往图片文件夹里写东西，在【设置】→【保存】里取消「批量模式：逐张蒙版随图保存」，蒙版就只在当前批量窗口里有效。统一蒙版本来就不落盘，关掉批量窗口就没了。"}},{"@type":"Question","name":"双击图标没反应？","acceptedAnswer":{"@type":"Answer","text":"原因 ：软件同一时间只允许运行一个窗口，已经有窗口开着时，再次启动不会有新窗口出现。 解决 ：在任务栏找到已打开的「图片去水印」窗口直接使用；确实找不到窗口时，在任务管理器里结束「图片去水印」进程后再重新双击打开。"}}]}]}</script>
+</head>
+<body class="subpage">
+<a class="skip" href="#main">跳到正文</a>
+
+<header class="masthead masthead-compact">
+  <div class="brand">
+    <span class="mark" aria-hidden="true"></span>
+    <a class="wordmark" href="../index.html">HRX 资源库</a>
+    <span class="tagline">本机运行 · 不上传 · 绿色免安装</span>
+  </div>
+</header>
+
+<nav class="crumbs" aria-label="所在位置"><a href="../index.html">HRX 资源库</a><span class="sep">›</span><span aria-current="page">图片去水印</span></nav>
+
+<main id="main" class="detail">
+  <article class="detail-body">
+    <h1>图片去水印</h1>
+    <p class="alt-name">WatermarkRemover · 图片去水印</p>
+    <div class="meta-row"><span class="pill">v1.29.6</span><span class="pill">489.9 MB</span><span class="pill">图片处理</span><span class="pill">更新 2026-11-01</span></div>
+    <p class="lead">本地 AI 图片修复：涂抹水印区域，一键修复成自然画面</p>
+    <figure class="detail-cover">
+      <a href="../images/006-full.webp" class="zoom-link"><img src="../images/006-cover.webp" alt="图片去水印软件界面截图" loading="lazy"></a>
+      <figcaption>图片去水印软件界面截图（点开看原图）</figcaption>
+    </figure>
+    <section class="block" id="about">
+      <h2>这是什么</h2>
+<p><strong>图片去水印</strong>是一款本地运行的图片修复工具：打开一张带水印的图片，用鼠标把水印涂出来，AI 会自动把涂抹的区域修复成自然的画面，最后另存为新图片。整个过程在你的电脑上完成，图片不会被上传到任何服务器。</p>
+      <p>典型场景：去掉照片上的文字水印、Logo、日期戳，或抹掉画面里不想要的小物件。</p>
+    </section>
+    <section class="block" id="download">
+      <h2>下载渠道</h2>
+<div class="dl-list">
+      <div class="dl-item primary"><div class="dl-main"><span class="dl-platform">夸克网盘</span><span class="dl-tag">推荐</span></div><div class="dl-side"><a class="btn dl-open" href="https://pan.quark.cn/s/165cd872ae53" target="_blank" rel="noopener">打开夸克网盘</a></div></div>
+      <div class="dl-item"><div class="dl-main"><span class="dl-platform">UC网盘</span></div><div class="dl-side"><a class="btn dl-open ghost" href="https://drive.uc.cn/s/dd4ebdb5991d4?public=1" target="_blank" rel="noopener">打开UC网盘</a></div></div>
+      </div>
+      <p class="dl-tip">下载后解压即用，不需要装运行库；软件全程在本机运行，文件不上传。</p>
+    </section>
+    <section class="block" id="install">
+      <h2>怎么用</h2>
+<section class="sub">
+        <h3>安装</h3>
+      <ol><li>拿到软件压缩包（如 <code>图片去水印_v1.29.7.zip</code>），右键选择「全部解压」到任意文件夹</li><li>打开解压出的文件夹，找到 <strong>图片去水印.exe</strong></li><li>如果杀毒软件首次运行时弹出提示，选择「允许运行」即可（软件无广告、无捆绑）</li></ol>
+      </section>
+      <section class="sub">
+        <h3>启动</h3>
+      <ol><li>双击 <strong>图片去水印.exe</strong>，启动后进入主界面（见下文「三、界面一览」）</li><li>软件同一时间只运行一个窗口：如果已经开着又双击了一次，不会开出第二个窗口，切回已打开的窗口即可</li></ol>
+      <p class="quote">进阶：会使用 Python 的用户也可以用源码方式运行，参见文末「问题反馈」前端的说明。</p>
+      </section>
+      <section class="sub">
+        <h3>基本流程：四步去掉水印</h3>
+      <p>整个流程就是四步：<strong>打开图片 → 涂抹水印 → 预览效果 → 处理保存</strong>。</p>
+      </section>
+      <section class="sub">
+        <h3>第一步：打开图片</h3>
+      <p><strong>这个功能做什么</strong>：把要处理的图片载入画布。</p>
+      <p><strong>操作步骤</strong>：</p>
+      <ol><li>点击工具栏【打开图片】按钮（或按 Ctrl+O，也可以直接把图片文件拖进画布）</li><li>在弹出的窗口里选中图片，点击【打开(O)】</li></ol>
+      <p><strong>操作后你会看到</strong>：图片出现在画布上，底部状态栏显示「已打开: 文件名」，工具栏的【撤销】【预览】【开始处理】同时变亮。</p>
+      <p></p>
+      </section>
+      <section class="sub">
+        <h3>第二步：涂抹水印区域</h3>
+      <p><strong>这个功能做什么</strong>：把要去除的水印用红色涂抹出来，告诉软件修复哪里。</p>
+      <p><strong>操作步骤</strong>：</p>
+      <ol><li>在画布上<strong>按住鼠标左键</strong>，像用画笔一样把水印区域涂出来，涂过的地方会盖上一层红色</li><li>涂出界了就<strong>按住鼠标右键</strong>拖动，擦掉涂多的部分</li><li>水印小不好涂时，滚轮缩放画布、按住中键拖动平移，把画面放大了慢慢涂</li><li>笔刷太粗或太细时，按 <code>[</code> 减小、<code>]</code> 增大笔刷</li></ol>
+      <p class="quote">小技巧：涂抹范围要<strong>整块盖住水印</strong>，尤其是文字的上下边缘。实测中只要漏掉字的上沿一小条，预览就会留一道白影；补涂一笔再预览，残影就没了。涂得越准，修复效果越好，速度也越快。</p>
+      <p><strong>操作后你会看到</strong>：水印被红色蒙版盖住（蒙版就是这层红色标记，正式处理时它会消失）。鼠标位置会显示两个圆圈——实线圈是笔刷大小，虚线圈是边缘柔和的范围。</p>
+      <p></p>
+      </section>
+      <section class="sub">
+        <h3>第三步：预览修复效果</h3>
+      <p><strong>这个功能做什么</strong>：先用小尺寸快速试一下修复效果，不用等完整处理，不满意可以回头继续涂。</p>
+      <p><strong>操作步骤</strong>：</p>
+      <ol><li>按空格键（或点击工具栏【预览】按钮）</li><li>稍等片刻，会弹出「预览对比」窗口，显示修复后的画面</li><li>在预览窗口里：滚轮缩放、左键拖动平移、<strong>长按左下角【原图】按钮</strong>可以切回原图对比前后差异</li><li>点【关闭】回到主界面</li></ol>
+      <p><strong>操作后你会看到</strong>：预览窗口里水印已经消失。预览是缩小了算的，所以画面会比正式结果<strong>偏软一点</strong>，这是正常的——它的作用是让你快速判断"位置涂对了吗、大概效果行不行"，不用等完整处理。效果不满意，回到画布用右键补涂或擦除，再按空格重新预览。</p>
+      <p></p>
+      <p>在预览窗口里<strong>按住左下角【原图】按钮不放</strong>，画面会切回带水印的原图，按钮文字变成「松开恢复」；松手回到修复后的画面。来回按几次，前后差别看得很清楚。</p>
+      <p></p>
+      </section>
+      <section class="sub">
+        <h3>第四步：处理与保存</h3>
+      <p><strong>这个功能做什么</strong>：按原始分辨率完整修复图片，并把结果保存为新文件。</p>
+      <p><strong>操作步骤</strong>：</p>
+      <ol><li>预览满意后，点击工具栏【开始处理】（或按回车键），等待处理完成</li><li>完成后会弹出「预览对比」窗口，这次右下角多了【保存】按钮——先长按【原图】确认效果，再点【保存】</li><li>在保存窗口里选好位置和格式（默认 png），点击【保存】</li><li>也可以随时用菜单【文件】→【保存结果】（Ctrl+S）手动另存</li></ol>
+      <p><strong>操作后你会看到</strong>：图片保存成功。默认保存在原图所在文件夹，文件名自动加上时间戳（如 <code>logo_20260118_153000.png</code>），<strong>原图不会被覆盖</strong>。</p>
+      <p></p>
+      <p class="quote">如果你不喜欢每次都弹对比窗口：在【设置】里取消勾选「处理完成后显示原图对比」，以后处理完成会直接自动保存，不再弹出窗口。</p>
+      </section>
+    </section>
+    <section class="block" id="features">
+      <h2>功能详解</h2>
+<section class="sub">
+        <h3>界面一览</h3>
+      <p></p>
+      <ul><li><strong>菜单栏</strong>：【文件】【编辑】【设置】【帮助】四个菜单，常用的打开、保存、撤销都在里面</li><li><strong>工具栏</strong>：【打开图片】【撤销】【预览】三个按钮在左上角，【开始处理】在右上角。刚启动还没打开图片时，除【打开图片】外都是灰的</li><li><strong>画布</strong>：打开图片后图片显示在这里，你在这块区域上涂抹</li><li><strong>状态栏</strong>：左边显示当前状态（比如「已打开: photo_main.png」）；右边依次是引擎状态「引擎: LaMa (PyTorch-CPU)」、常驻操作提示「左键涂抹 · 右键擦除 · 滚轮缩放 · [ ] 笔刷大小 · 空格预览」，忘了怎么操作时看一眼这里就行</li></ul>
+      <p class="quote">状态栏的引擎那一格，是软件在告诉你"图是在这台电脑上算的"。括号里显示当前实际用的计算设备：<code>CPU</code> 或 <code>CUDA</code>，鼠标停上去还能看到"图片只在本机处理，不会上传"。</p>
+      </section>
+      <section class="sub">
+        <h3>鼠标操作</h3>
+      <table class="md"><thead><tr><th>操作</th><th>效果</th></tr></thead><tbody><tr><td>左键拖动</td><td>涂抹红色蒙版</td></tr><tr><td>右键拖动</td><td>擦除涂错的地方</td></tr><tr><td>中键拖动</td><td>平移画布</td></tr><tr><td>滚轮</td><td>缩放画布（以鼠标所在位置为中心）</td></tr></tbody></table>
+      <p>缩放范围从 5% 到 8 倍，笔刷半径可设 1～200 像素（默认 20），羽化半径 0～50 像素（默认 5）。涂得快时软件会自动补齐两点之间的轨迹，不会断成一个个圆点。</p>
+      </section>
+      <section class="sub">
+        <h3>键盘快捷键（默认值）</h3>
+      <table class="md"><thead><tr><th>快捷键</th><th>功能</th><th>快捷键</th><th>功能</th></tr></thead><tbody><tr><td>Ctrl+O</td><td>打开图片</td><td>Ctrl+Del</td><td>清除涂抹（一键清空）</td></tr><tr><td>Ctrl+S</td><td>保存结果</td><td>Ctrl+=</td><td>放大画布</td></tr><tr><td>Ctrl+Z</td><td>撤销</td><td>Ctrl+-</td><td>缩小画布</td></tr><tr><td>Ctrl+Y</td><td>重做</td><td>Ctrl+0</td><td>适应窗口</td></tr><tr><td>Space</td><td>快速预览</td><td>[</td><td>减小笔刷</td></tr><tr><td>Enter</td><td>开始处理</td><td>]</td><td>增大笔刷</td></tr><tr><td>Ctrl+B</td><td>批量去水印</td><td>Ctrl+Q</td><td>退出程序</td></tr></tbody></table>
+      <p>涂错几笔用撤销（Ctrl+Z），整块不想留了用【编辑】→【清除涂抹】一键清空重来。以上快捷键都可以在【设置】里改成你顺手的键。</p>
+      </section>
+      <section class="sub">
+        <h3>批量去水印</h3>
+      <p><strong>这个功能做什么</strong>：一批带水印的图片不用一张张打开处理——菜单栏【文件】→【批量模式】（Ctrl+B）打开批量窗口，添加图片、涂蒙版、一键处理整批。蒙版有两种模式（窗口左栏顶部切换）：</p>
+      <ul><li><strong>统一蒙版</strong>：整批图水印位置比例一致时用（同一软件截图、同一模板加水印）。涂一次，按相对位置套用到所有图。</li><li><strong>逐张涂抹</strong>：每张图水印位置不同、或想逐张精调时用。点击队列项切换图片，每张图各自涂抹，已涂的带 ● 标记。</li></ul>
+      </section>
+      <section class="sub">
+        <h3>统一蒙版：操作步骤</h3>
+      <ol><li><strong>添加图片</strong>：点【添加图片…】多选，或【添加文件夹…】导入整个文件夹（只认 png/jpg/webp/bmp/ico/icns，重复添加的自动忽略）</li><li><strong>涂抹蒙版</strong>：第一张图会自动作为「参考图」显示在画布上，像单图模式一样把水印涂出来（左键涂、右键擦、滚轮缩放）；也可以选中其他行点【设为参考图】换一张来涂</li><li><strong>预览效果（可选）</strong>：点【预览当前图效果】，对画布上这张图先看修复效果（快速预览、不保存），满意再开始整批</li><li><strong>开始批量处理</strong>：点【开始批量处理】，进度条逐张推进；随时点【取消批量】，当前这张处理完就停</li></ol>
+      <p></p>
+      <p class="quote">批量窗口左栏底部有【撤销】【重做】【适应窗口】，中间画布的涂法和单图完全一样。注意：单图正在处理的时候打不开批量窗口，会提示"单图处理进行中，请完成后再打开批量模式"。</p>
+      </section>
+      <section class="sub">
+        <h3>逐张涂抹：操作步骤</h3>
+      <ol><li>左栏选「逐张涂抹」</li><li>添加图片，第一张自动显示在画布上，直接涂抹</li><li><strong>点击队列里下一张</strong>再涂——切换时当前图的蒙版自动保存；已涂的图在队列里带 ● 标记，右侧也显示「已涂抹 / 未涂抹」</li><li>想改某张：再点它，已涂蒙版自动恢复，可继续补涂或 Ctrl+Z 撤销</li><li>全部涂完后点【开始批量处理】；还有未涂的会提示，不会开始。若有几张确实不想处理，可勾选左栏「<strong>跳过未涂抹的图片</strong>」，开始时只处理已涂的，结尾会给出「成功 x 张，失败 y 张」的小结</li><li><strong>预览效果（可选）</strong>：点【预览当前图效果】先看当前这张的修复效果，满意再开始整批</li></ol>
+      <p></p>
+      <p><strong>蒙版会随图保存</strong>：逐张蒙版默认存在图片所在文件夹的 <code>.watermark_masks</code> 子目录里，每张图一份，文件名是「原图片名.mask.png」（如 <code>trip_01.png.mask.png</code>）。重新打开软件、重新添加同一批图片时蒙版自动恢复，标记直接显示已涂；不想落盘可在【设置】→【保存】里取消「批量模式：逐张蒙版随图保存」。不想要了删掉对应文件（或整个 <code>.watermark_masks</code> 文件夹）即可；把图片移到别的文件夹或改名后，需重新涂抹。统一蒙版不落盘，仅本次窗口内有效。</p>
+      <p><strong>窗口会记住你的习惯</strong>：批量窗口会记住上次的蒙版模式、「跳过未涂抹」勾选和上次添加图片的目录，下次打开直接就是上次的状态。</p>
+      </section>
+      <section class="sub">
+        <h3>结果保存在哪</h3>
+      <ul><li><strong>保存位置</strong>：跟随设置里的「保存位置」——默认存在各原图旁边；设置了自定义目录则全部存到那里</li><li><strong>文件名</strong>：<code>原名_no_wm.格式</code>（如 <code>photo_no_wm.png</code>），重名自动加 <code>-1</code>、<code>-2</code>，不会覆盖任何文件；格式跟随设置里的「默认保存格式」</li><li><strong>结果汇总</strong>：右侧列表逐行列出每张的成功/失败，失败的不影响其余图片，最后会给出「成功 x 张，失败 y 张」的小结</li></ul>
+      </section>
+      <section class="sub">
+        <h3>统一蒙版怎么套用到不同尺寸的图</h3>
+      <p>蒙版按<strong>相对位置</strong>套用：参考图上涂在「横向 10%～30%、纵向 20%～42%」的区域，套到任何尺寸的图上都在同样的相对位置（自动缩放）。因此：</p>
+      <ul><li>✅ 适合：水印位置在各张图里比例一致（最常见的批量场景）</li><li>⚠️ 注意：如果某些图与参考图<strong>宽高比不同</strong>（比如竖图混在横图里），蒙版会随宽高拉伸，位置可能有偏差——这类图建议挑出来用单图模式单独处理</li><li>更换参考图会清空已涂的蒙版，需要重新涂抹</li></ul>
+      </section>
+      <section class="sub">
+        <h3>软件设置</h3>
+      <p><strong>这个功能做什么</strong>：调整笔刷、保存习惯、快捷键和高级参数。</p>
+      <p><strong>操作步骤</strong>：</p>
+      <ol><li>点击菜单【设置】→【设置...】，打开设置窗口</li><li>按需修改四个分组的选项（窗口内容较多，<strong>向下滚动</strong>才能看到最后的「高级」分组）：</li></ol>
+      <ul><li><strong>画笔</strong>：笔刷半径（一次涂抹的宽度，1～200 像素，默认 20）、羽化半径（涂抹边缘的柔和过渡，0～50 像素，默认 5，0 表示不柔和）</li><li><strong>保存</strong>：是否在处理后弹出对比窗口；保存位置（图片所在目录或自定义目录）；默认格式（png / jpg / webp / bmp）；「批量模式：逐张蒙版随图保存」（关闭后逐张涂抹的蒙版仅本次批量窗口内有效，不写入图片文件夹）</li><li><strong>快捷键</strong>：12 项逐个点选，按下你想用的组合键即可替换默认值。若两个功能按了同一个键，会弹出「快捷键冲突」提示，改开才行</li><li><strong>高级</strong>：设备（保持「自动」即可，有 NVIDIA 显卡会自动加速，没有则回退 CPU）；最大边长（超过这个值先缩小处理再放大回原尺寸，512～4096，默认 2048，调小可换更快速度但损失细节）；预览最大边长（256～2048，默认 512，调小可加快预览速度）</li></ul>
+      <ol><li>点击【确定】保存设置；点【取消】放弃修改</li></ol>
+      <p><strong>操作后你会看到</strong>：设置立即生效，并且会被记住，下次打开软件不用重新调。</p>
+      <p></p>
+      <p></p>
+      </section>
+    </section>
+    <section class="block" id="requirements">
+      <h2>运行环境</h2>
+<table class="md"><thead><tr><th>项目</th><th>要求</th></tr></thead><tbody><tr><td>操作系统</td><td>Windows 10 / 11（64 位）</td></tr><tr><td>硬盘空间</td><td>建议预留 1GB 以上（软件包约 430MB）</td></tr><tr><td>显卡</td><td>可选。有 NVIDIA 显卡时自动加速；没有则用 CPU，一样能完成处理</td></tr></tbody></table>
+    </section>
+    <section class="block" id="faq">
+      <h2>常见问题</h2>
+<dl class="faq">
+      <dt>第一次预览/处理特别慢，正常吗？</dt>
+      <dd>      <p><strong>原因</strong>：正常。第一次使用时软件要加载 AI 修复模型，在没有独立显卡的电脑上会用 CPU 计算，首次等待会明显偏长。</p>
+      <p><strong>解决</strong>：耐心等一次即可，之后同一批操作会快很多。有 NVIDIA 显卡的电脑保持设置里「设备」为「自动」就能自动启用加速。</p>
+      </dd>
+      <dt>处理一张图要等多久？怎么更快？</dt>
+      <dd>      <p><strong>原因</strong>：处理时间和涂抹面积、图片大小、是否用显卡都有关系。纯 CPU 的电脑处理大图需要多等一会儿。</p>
+      <p><strong>解决</strong>：三个办法——只涂抹水印本身，不要大面积涂；在【设置】→【高级】里把「最大边长」调小（如 1024），速度会明显加快，但细节会略有损失；有 NVIDIA 显卡的话让「设备」保持「自动」。作为参考：一台无独立显卡的笔记本上，一张 900×600 的图完整处理约 8 秒、预览约 2～5 秒（同一台机器同一张图实测，你的结果会因机器而异）。</p>
+      </dd>
+      <dt>预览里水印没消干净，留了一道白影？</dt>
+      <dd>      <p><strong>原因</strong>：多半是蒙版没整块盖住水印，漏了字的某条边。模型只重画被蒙版标住的区域，漏住的边就留在原地。</p>
+      <p><strong>解决</strong>：回画布把漏的地方补涂一笔（必要时按 <code>[</code> 把笔刷调小描边），再按空格重新预览。这一步不用等完整处理，很快。</p>
+      </dd>
+      <dt>我的图片会被上传到网上吗？</dt>
+      <dd>      <p><strong>原因</strong>：不会。</p>
+      <p><strong>解决</strong>：软件全部在本机完成，不需要联网，断网也能正常使用。状态栏右侧会显示当前用的推理引擎，鼠标停上去有说明。</p>
+      </dd>
+      <dt>提示找不到模型文件？</dt>
+      <dd>      <p><strong>原因</strong>：只有用源码方式运行才会遇到——AI 模型文件体积较大，没有随源码一起存放。</p>
+      <p><strong>解决</strong>：这时会弹出一个标题为「引擎初始化失败」的提示框，内容是"LaMa 模型文件不存在，请确认模型已随程序打包。"按项目自述文件的说明下载 <code>big-lama.pt</code> 模型文件，放入源码目录的 <code>src/watermark_remover/resources/models/</code> 文件夹后重新启动。<strong>使用打包版（exe）不会遇到这个问题</strong>，模型已内置。</p>
+      </dd>
+      <dt>处理完成后没有弹对比窗口，直接就保存了？</dt>
+      <dd>      <p><strong>原因</strong>：设置里关闭了「处理完成后显示原图对比」，处理完成会自动按默认位置和格式保存。</p>
+      <p><strong>解决</strong>：想要每次确认后再保存，就在【设置】→【保存】里重新勾选「处理完成后显示原图对比」。</p>
+      </dd>
+      <dt>批量模式涂好的蒙版存在哪？想清掉怎么办？</dt>
+      <dd>      <p><strong>原因</strong>：逐张涂抹模式的蒙版默认跟着图片存，位置在图片所在文件夹的 <code>.watermark_masks</code> 子目录，每张一份，文件名是「原图片名.mask.png」。</p>
+      <p><strong>解决</strong>：删掉对应文件、或直接删掉整个 <code>.watermark_masks</code> 文件夹即可。以后不想让它往图片文件夹里写东西，在【设置】→【保存】里取消「批量模式：逐张蒙版随图保存」，蒙版就只在当前批量窗口里有效。统一蒙版本来就不落盘，关掉批量窗口就没了。</p>
+      </dd>
+      <dt>双击图标没反应？</dt>
+      <dd>      <p><strong>原因</strong>：软件同一时间只允许运行一个窗口，已经有窗口开着时，再次启动不会有新窗口出现。</p>
+      <p><strong>解决</strong>：在任务栏找到已打开的「图片去水印」窗口直接使用；确实找不到窗口时，在任务管理器里结束「图片去水印」进程后再重新双击打开。</p>
+      </dd>
+      </dl>
+    </section>
+    <section class="block" id="notes">
+      <h2>注意事项</h2>
+<ul><li>保存的是<strong>新文件</strong>（文件名带时间戳），原图不会被覆盖；但若在保存窗口手动选了已有文件名，会覆盖同名文件，注意确认</li><li>打开 ico / icns 图标文件后，保存时请从 png / jpg / webp / bmp 中选择格式</li><li>建议养成「先预览、满意再处理」的习惯，避免不必要的完整处理等待</li><li>涂抹时把水印<strong>整块盖住</strong>（文字的上下边缘尤其别漏），同时别把无关区域也涂进去——漏了会留残影，多涂会白白扩大重画范围</li><li>你的设置会自动保存（包括窗口位置和大小），升级新版本后自动沿用，无需重新配置</li></ul>
+    </section>
+    <section class="block" id="words">
+      <h2>其它叫法与搜索词</h2>
+<p>也有人叫它去水印、水印去除、抹除物体。</p>
+      <p>英文名 WatermarkRemover，</p>
+      <p>程序名 图片去水印。</p>
+      <p>想找这类工具时常见的说法：用鼠标把水印涂出来、Logo、日期戳、逐张涂抹、每张图各自的蒙版、不满意可以继续调整、右键擦除、中键拖动、小水印也能涂得精准、也可一键清空全部涂抹、打开 png、jpg。</p>
+    </section>
+
+  </article>
+</main>
+
+<footer class="foot foot-compact">
+  <div class="foot-text">
+    <p><a href="../index.html">HRX 资源库</a> · 数据更新于 2026-11-01 · 内容维护：HRX</p>
+    <p class="fine">免费获取、离线运行、文件不上传。分享失效，或想要还没做出来的工具：微信公众号「HRX 工具库」可提需求，也接受定制开发。</p>
+  </div>
+</footer>
+</body>
+</html>
