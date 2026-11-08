@@ -65,4 +65,4 @@ Allow: /
 User-agent: Amazonbot
 Allow: /
 
-Sitemap: https://hrx-tools.pages.dev/sitemap.xml
+Sitemap: https://hrx-tools-g1ldzszv60x.qoder.zone/sitemap.xml

@@ -16,7 +16,7 @@ Z001_网盘站点/
 ├─ tools/scan_docs.py    扫描文档工程（^W\d{3}_）→ 维护 docs.yaml + 体检报告
 ├─ tools/build_site.py   两份数据 → 静态站点 web/
 ├─ tools/seo_check.py    发布前断言：canonical/sitemap/title/h1/JSON-LD 对齐才放行
-└─ web/                  构建产物（Cloudflare 发布源，已进版本库，不要手改）
+└─ web/                  构建产物（qoder.zone + pages.dev 共用发布源，已进版本库，不要手改）
 ```
 
 ## 换机器 / 目录布局不同
@@ -85,7 +85,7 @@ python tools/seo_check.py                     # 发布前断言：canonical/site
 python -m http.server 4173 --bind 127.0.0.1 --directory web
 ```
 
-浏览器打开 <http://127.0.0.1:4173/> 确认无误后提交并推送，Cloudflare Pages 会自动部署。
+浏览器打开 <http://127.0.0.1:4173/> 确认无误后提交并推送（Cloudflare 自动部署），再把同一份 `web/` 发布到 Qoder 站点。
 
 站点品牌名与正式发布域名只有一份，写在 `data/shares.yaml` 顶部的 `site:` 段（`name` / `wechat_name` / `url`）：
 页面标题、`<h1>`、`og:site_name`、`llms.txt` 取 `name`，`canonical`/`og:url`/`sitemap`/JSON-LD 拼 `url`。
@@ -93,11 +93,20 @@ python -m http.server 4173 --bind 127.0.0.1 --directory web
 站点品牌改了它不会跟着变，写错了读者扫码就发现对不上号。**缺 `url` 或 `wechat_name` 时构建直接失败**——过去靠命令行传 `--site-url`，忘传就静默产出一个没有收录信号的裸页，
 构建器自己还报"成功"。只想本地看效果、不要任何收录标签时显式加 `--offline`，这种产物 `seo_check.py` 会判不通过。
 
-## 部署（GitHub → Cloudflare Pages）
+## 部署（qoder.zone + Cloudflare Pages）
 
-站点是纯静态的，线上直接发布 `web/`。构建依赖本机的 `../AI_SOFT`、`../AI_WORD`（封面与用户手册），
-GitHub 的构建机上没有这两个目录，所以**不在 Cloudflare 侧构建**：`web/` 已纳入版本库，
-Cloudflare Pages 只负责原样发布。
+同一份 `web/` 同时发布到两个地址：
+
+| 地址 | 角色 | 怎么更新 |
+| --- | --- | --- |
+| <https://hrx-tools-g1ldzszv60x.qoder.zone> | 主站，canonical 指向它 | Qoder 发布流程（把 `web/` 发布到现有站点） |
+| <https://hrx-tools.pages.dev> | 镜像/备份 | GitHub push 后 Cloudflare Pages 自动部署 |
+
+canonical、sitemap、llms.txt、JSON-LD 只认 `data/shares.yaml` 的 `site.url`（当前是 qoder.zone）。
+pages.dev 上的页面也声明 qoder.zone 为 canonical，搜索权重集中到主站，两边不会互相抢排名。
+
+构建依赖本机的 `../AI_SOFT`、`../AI_WORD`（封面与用户手册），GitHub 构建机上没有这两个目录，
+所以**不在 Cloudflare 侧构建**：`web/` 已纳入版本库，Cloudflare Pages 只负责原样发布。
 
 首次准备：
 
@@ -106,18 +115,22 @@ Cloudflare Pages 只负责原样发布。
 3. 构建设置：Production branch `master`；Build command 留空；Build output directory `web`。
 4. 保存并部署。项目名 `hrx-tools` 对应 <https://hrx-tools.pages.dev>。
 
-日常更新：
+日常更新（一次改动同步两边）：
 
 ```bash
 python -m pip install -r requirements.txt   # 首次或换机器时
 python tools/build_site.py
-python tools/seo_check.py                   # 不过就别提交
-git add data/ site/ tools/ web/             # web/ 是发布源，必须一起提交
+python tools/seo_check.py                   # 不过就别发布
+git add data/ site/ tools/ web/             # web/ 是两边共用的发布源
 git commit -m "Feat: ..."
-git push github master                      # 推送后 Cloudflare 自动部署
+git push github master                      # Cloudflare 自动部署
 ```
 
-换域名或改 `site.url` 后必须重新构建并跑 `seo_check.py`：canonical、sitemap、llms.txt、JSON-LD 都从这一处拼出来。
+推送完成后，再让 Qoder 把同一份 `web/` 发布到现有站点。Qoder Sites 没有 Git 集成，这一步不能由
+`git push` 代替；只推送不发布，qoder.zone 不会更新。
+
+换域名只改 `data/shares.yaml` 的 `site.url`，然后重建 + 跑 `seo_check.py`；canonical、sitemap、llms.txt、
+JSON-LD 都从这一处拼出来。
 
 ## 字段与状态
 
@@ -148,9 +161,9 @@ git push github master                      # 推送后 Cloudflare 自动部署
 - 文档资料区块：与软件共用同一份搜索索引、同一套 `#slug` 深链与详情面板，也一起进分类筛选栏、`llms.txt` 和结构化数据（文档用 `CreativeWork`，软件用 `SoftwareApplication`）；卡片按钮是「获取资料」，详情里「篇章清单」替代「功能要点」。一条资料都没挂上链接时整段不渲染，搜索筛空后区块标题一并收起。
 - 上架门槛：只有至少挂了一个渠道（`downloads` 或 `share_url`）的条目会渲染，其余留在数据文件里，页面上看不到。`coming_soon` 目前也要求先挂一个占位渠道才会显示灰卡，否则只留在待办列表里。
 - 无后端、无外部请求：数据以 JSON 内嵌页面，卡片正文与详情页正文都预渲染进 HTML，搜索引擎可收录。
-  Cloudflare Pages 原样发布静态文件，不会改写 HTML；旧 Qoder 托管会在 `</body>` 前注入水印脚本
-  （实测首页 31 KB → 线上 88 KB），且会把纯文本验证文件一起注入——迁到 Cloudflare 后
-  `site.verify` 生成的 HTML 文件可直接用于 Google 站长验证。
+  Cloudflare Pages 原样发布静态文件，不会改写 HTML；Qoder 托管会在 `</body>` 前注入水印脚本
+  （实测首页 31 KB → 线上 88 KB），且会把纯文本验证文件一起注入。两个域名共用一份 HTML 时，
+  Google 站长验证在 qoder.zone 上要用 HTML meta 标签法而不是 HTML 文件法；pages.dev 镜像不受注入影响。
 - 详情页：一条资源一个可索引 URL（软件 `/soft/{英文名}.html`、资料 `/doc/...`），URL 只用 ASCII 且按驼峰拆词（`PDFSuperToolbox` → `pdf-super-toolbox`）。正文在构建时从各软件的 `用户手册/*.md` 现取：功能详解、使用步骤、运行环境、常见问题、注意事项逐节渲染，**不抄进 `shares.yaml`**（两份内容必然漂移，而且人工真源会被 4000 字散文挤到读不动）。手册里的随文截图不入库，指向截图的「*图：…*」说明一并省略。
 - 深链：卡片标题是真实的 `<a href="soft/xxx.html">`（抓取器与转发地址走这条）；卡片「详情」按钮仍是 `#slug` 锚点，点开是原位弹窗，体验没变。
 - 抓取与收录：`robots.txt` 按「搜索引擎 / AI 检索类 / AI 训练类」三组显式放行；`sitemap.xml` 逐条列出全部页面，每条 `lastmod` 用该条自己的 `updated`；`llms.txt` 是给 AI 引擎读的纯文本目录，每行指向详情页而不是首页片段；发布前用 `python tools/seo_check.py` 断言，不过就别发。
