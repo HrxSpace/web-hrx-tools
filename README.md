@@ -100,7 +100,7 @@ python -m http.server 4173 --bind 127.0.0.1 --directory web
 | 地址 | 角色 | 怎么更新 |
 | --- | --- | --- |
 | <https://hrx-tools-g1ldzszv60x.qoder.zone> | 主站，canonical 指向它 | Qoder 发布流程（把 `web/` 发布到现有站点） |
-| <https://hrx-tools.pages.dev> | 镜像/备份 | GitHub push 后 Cloudflare Pages 自动部署 |
+| <https://web-hrx-tools.pages.dev> | 镜像/备份 | GitHub push 后 Cloudflare Pages 自动部署 |
 
 canonical、sitemap、llms.txt、JSON-LD 只认 `data/shares.yaml` 的 `site.url`（当前是 qoder.zone）。
 pages.dev 上的页面也声明 qoder.zone 为 canonical，搜索权重集中到主站，两边不会互相抢排名。
@@ -113,21 +113,29 @@ pages.dev 上的页面也声明 qoder.zone 为 canonical，搜索权重集中到
 1. 在 GitHub 建一个空仓库，把本仓库推上去（可保留 Gitee 的 `origin`，另加名为 `github` 的远端）。
 2. Cloudflare 控制台 → Workers & Pages → Create → Pages → Connect to Git，选该仓库。
 3. 构建设置：Production branch `master`；Build command 留空；Build output directory `web`。
-4. 保存并部署。项目名 `hrx-tools` 对应 <https://hrx-tools.pages.dev>。
+4. 保存并部署。项目名 `web-hrx-tools` 对应 <https://web-hrx-tools.pages.dev>。
 
 日常更新（一次改动同步两边）：
 
 ```bash
 python -m pip install -r requirements.txt   # 首次或换机器时
+python tools/publish.py -m "Feat: ..."      # 构建 + SEO 断言 + 提交 + 推送 Gitee/GitHub
+```
+
+`publish.py` 只暂存 `data/ site/ tools/ web/ README.md requirements.txt`，不会把无关改动带进去。
+推送完成后，再让 Qoder 把同一份 `web/` 发布到现有站点。Qoder Sites 没有 Git 集成，这一步不能由
+`git push` 代替；只推送不发布，qoder.zone 不会更新。
+
+需要分开操作时，等价的手工命令：
+
+```bash
 python tools/build_site.py
 python tools/seo_check.py                   # 不过就别发布
 git add data/ site/ tools/ web/             # web/ 是两边共用的发布源
 git commit -m "Feat: ..."
+git push origin master                      # Gitee 代码备份
 git push github master                      # Cloudflare 自动部署
 ```
-
-推送完成后，再让 Qoder 把同一份 `web/` 发布到现有站点。Qoder Sites 没有 Git 集成，这一步不能由
-`git push` 代替；只推送不发布，qoder.zone 不会更新。
 
 换域名只改 `data/shares.yaml` 的 `site.url`，然后重建 + 跑 `seo_check.py`；canonical、sitemap、llms.txt、
 JSON-LD 都从这一处拼出来。
