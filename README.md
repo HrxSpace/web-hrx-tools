@@ -16,7 +16,7 @@ Z001_网盘站点/
 ├─ tools/scan_docs.py    扫描文档工程（^W\d{3}_）→ 维护 docs.yaml + 体检报告
 ├─ tools/build_site.py   两份数据 → 静态站点 web/
 ├─ tools/seo_check.py    发布前断言：canonical/sitemap/title/h1/JSON-LD 对齐才放行
-└─ web/                  构建产物（qoder.zone + pages.dev 共用发布源，已进版本库，不要手改）
+└─ web/                  构建产物（pcpan.top + qoder.zone + pages.dev 共用发布源，已进版本库，不要手改）
 ```
 
 ## 换机器 / 目录布局不同
@@ -93,17 +93,18 @@ python -m http.server 4173 --bind 127.0.0.1 --directory web
 站点品牌改了它不会跟着变，写错了读者扫码就发现对不上号。**缺 `url` 或 `wechat_name` 时构建直接失败**——过去靠命令行传 `--site-url`，忘传就静默产出一个没有收录信号的裸页，
 构建器自己还报"成功"。只想本地看效果、不要任何收录标签时显式加 `--offline`，这种产物 `seo_check.py` 会判不通过。
 
-## 部署（qoder.zone + Cloudflare Pages）
+## 部署（pcpan.top 主站 + Cloudflare Pages / Qoder 镜像）
 
-同一份 `web/` 同时发布到两个地址：
+同一份 `web/` 同时发布到三个地址：
 
 | 地址 | 角色 | 怎么更新 |
 | --- | --- | --- |
-| <https://hrx-tools-g1ldzszv60x.qoder.zone> | 主站，canonical 指向它 | Qoder 发布流程（把 `web/` 发布到现有站点） |
-| <https://web-hrx-tools.pages.dev> | 镜像/备份 | GitHub push 后 Cloudflare Pages 自动部署 |
+| <https://pcpan.top> | 主站，canonical 指向它 | GitHub push 后 Cloudflare Pages 自动部署 |
+| <https://web-hrx-tools.pages.dev> | 镜像/备份 | 同一 Pages 项目，GitHub push 自动部署 |
+| <https://hrx-tools-g1ldzszv60x.qoder.zone> | 镜像 | Qoder 发布流程（把 `web/` 发布到现有站点） |
 
-canonical、sitemap、llms.txt、JSON-LD 只认 `data/shares.yaml` 的 `site.url`（当前是 qoder.zone）。
-pages.dev 上的页面也声明 qoder.zone 为 canonical，搜索权重集中到主站，两边不会互相抢排名。
+canonical、sitemap、llms.txt、JSON-LD 只认 `data/shares.yaml` 的 `site.url`（当前是 pcpan.top）。
+qoder.zone 与 pages.dev 上的页面也声明 pcpan.top 为 canonical，搜索权重集中到主站，三个地址不会互相抢排名。
 
 构建依赖本机的 `../AI_SOFT`、`../AI_WORD`（封面与用户手册），GitHub 构建机上没有这两个目录，
 所以**不在 Cloudflare 侧构建**：`web/` 已纳入版本库，Cloudflare Pages 只负责原样发布。
@@ -114,6 +115,8 @@ pages.dev 上的页面也声明 qoder.zone 为 canonical，搜索权重集中到
 2. Cloudflare 控制台 → Workers & Pages → Create → Pages → Connect to Git，选该仓库。
 3. 构建设置：Production branch `master`；Build command 留空；Build output directory `web`。
 4. 保存并部署。项目名 `web-hrx-tools` 对应 <https://web-hrx-tools.pages.dev>。
+5. Pages 项目 → Custom domains → 添加 `pcpan.top`（需要的话再加 `www.pcpan.top` 并 301 到主域名）。
+   主站 canonical 用 `https://pcpan.top`。
 
 日常更新（一次改动同步两边）：
 
@@ -140,6 +143,15 @@ git push github master                      # Cloudflare 自动部署
 
 换域名只改 `data/shares.yaml` 的 `site.url`，然后重建 + 跑 `seo_check.py`；canonical、sitemap、llms.txt、
 JSON-LD 都从这一处拼出来。
+
+## 爬虫与缓存
+
+- 目标：搜索与 AI 爬虫尽量能抓，但不做高频压测。
+- `robots.txt`：搜索引擎 / AI 检索 / AI 训练三组显式放行，每组带 `Crawl-delay: 1`（Google 不读它，真正限速靠 Cloudflare）；`Sitemap` 指向 `site.url`。
+- `site/_headers`：构建时复制到 `web/_headers`；HTML 5 分钟、图片/favicon 1 天、CSS/JS 1 小时，减少重复抓取。
+- 站点是纯静态 + Cloudflare 边缘，爬虫压不垮源站；**不要开启 Bot Fight Mode / Under Attack Mode**，它们会把想放行的 AI 爬虫一起挑战掉。
+- 真遇到异常高频请求，再在 Cloudflare 控制台加“速率限制”规则；阈值放宽（例如每 IP 每分钟 120 次以上），避免误伤共用出口 IP 的用户。
+- 换主域名后，去 Google Search Console / Bing / 百度重新验证 `pcpan.top` 并提交 `https://pcpan.top/sitemap.xml`；旧域名的验证文件不会自动验证新域名。
 
 ## 字段与状态
 
@@ -170,16 +182,17 @@ JSON-LD 都从这一处拼出来。
 - 文档资料区块：与软件共用同一份搜索索引、同一套 `#slug` 深链与详情面板，也一起进分类筛选栏、`llms.txt` 和结构化数据（文档用 `CreativeWork`，软件用 `SoftwareApplication`）；卡片按钮是「获取资料」，详情里「篇章清单」替代「功能要点」。一条资料都没挂上链接时整段不渲染，搜索筛空后区块标题一并收起。
 - 上架门槛：只有至少挂了一个渠道（`downloads` 或 `share_url`）的条目会渲染，其余留在数据文件里，页面上看不到。`coming_soon` 目前也要求先挂一个占位渠道才会显示灰卡，否则只留在待办列表里。
 - 无后端、无外部请求：数据以 JSON 内嵌页面，卡片正文与详情页正文都预渲染进 HTML，搜索引擎可收录。
-  Cloudflare Pages 原样发布静态文件，不会改写 HTML；Qoder 托管会在 `</body>` 前注入水印脚本
-  （实测首页 31 KB → 线上 88 KB），且会把纯文本验证文件一起注入。两个域名共用一份 HTML 时，
-  Google 站长验证在 qoder.zone 上要用 HTML meta 标签法而不是 HTML 文件法；pages.dev 镜像不受注入影响。
+  Cloudflare Pages（pcpan.top / pages.dev）原样发布静态文件，不会改写 HTML；Qoder 托管会在 `</body>` 前注入水印脚本
+  （实测首页 31 KB → 线上 88 KB），且会把纯文本验证文件一起注入。Google 站长验证应针对主站 pcpan.top 做
+  （HTML 文件法可直接用）；qoder.zone 镜像受注入影响，不要拿它做文件验证。
 - 详情页：一条资源一个可索引 URL（软件 `/soft/{英文名}.html`、资料 `/doc/...`），URL 只用 ASCII 且按驼峰拆词（`PDFSuperToolbox` → `pdf-super-toolbox`）。正文在构建时从各软件的 `用户手册/*.md` 现取：功能详解、使用步骤、运行环境、常见问题、注意事项逐节渲染，**不抄进 `shares.yaml`**（两份内容必然漂移，而且人工真源会被 4000 字散文挤到读不动）。手册里的随文截图不入库，指向截图的「*图：…*」说明一并省略。
 - 深链：卡片标题是真实的 `<a href="soft/xxx.html">`（抓取器与转发地址走这条）；卡片「详情」按钮仍是 `#slug` 锚点，点开是原位弹窗，体验没变。
-- 抓取与收录：`robots.txt` 按「搜索引擎 / AI 检索类 / AI 训练类」三组显式放行；`sitemap.xml` 逐条列出全部页面，每条 `lastmod` 用该条自己的 `updated`；`llms.txt` 是给 AI 引擎读的纯文本目录，每行指向详情页而不是首页片段；发布前用 `python tools/seo_check.py` 断言，不过就别发。
+- 抓取与收录：`robots.txt` 按「搜索引擎 / AI 检索类 / AI 训练类」三组显式放行并带 `Crawl-delay: 1`；`sitemap.xml` 逐条列出全部页面，每条 `lastmod` 用该条自己的 `updated`；`llms.txt` 是给 AI 引擎读的纯文本目录，每行指向详情页而不是首页片段；发布前用 `python tools/seo_check.py` 断言，不过就别发。
 - 标题层级：首页唯一 `<h1>` 是品牌名，卡片标题为 `<h3>`；详情页唯一 `<h1>` 是资源名，章级标题 `<h2>`、手册小节 `<h3>`。
 - 分类页 `/cat/*.html` **暂未生成**：同类 ≥3 条才值得做，现在 5 类各 1 条，一页一条与详情页内容雷同，是典型 doorway page。
 - 缺截图的条目用排版封面并标注「界面截图待补」，不放假图。
 - 公众号二维码：站头右上角、搜索无结果空态、页脚三处，都在非信息区，不遮挡搜索框/分类/卡片；素材在 `site/assets/qrcode_wc.png`，构建时复制为 `web/images/wechat-qr.png`（换码只需替换该文件）。
+- 页脚有「收藏本站」提示，域名取 `site.url`，换主域名后自动跟着变。
 
 ## 待办怎么看
 

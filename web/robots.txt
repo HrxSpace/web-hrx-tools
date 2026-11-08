@@ -1,68 +1,109 @@
 # 全站开放抓取：无后台、无接口、无用户数据，页面内容即全部内容。
 User-agent: *
 Allow: /
+Crawl-delay: 1
 
 # 搜索引擎
 User-agent: Googlebot
 Allow: /
+Crawl-delay: 1
 
 User-agent: Bingbot
 Allow: /
+Crawl-delay: 1
 
 User-agent: Baiduspider
 Allow: /
+Crawl-delay: 1
 
 User-agent: Sogou web spider
 Allow: /
+Crawl-delay: 1
 
 User-agent: 360Spider
 Allow: /
+Crawl-delay: 1
 
 User-agent: YisouSpider
 Allow: /
+Crawl-delay: 1
 
 User-agent: YandexBot
 Allow: /
+Crawl-delay: 1
 
 User-agent: Applebot
 Allow: /
+Crawl-delay: 1
 
 # AI 检索类：回答中带来源链接，能带来回访
 User-agent: OAI-SearchBot
 Allow: /
+Crawl-delay: 1
 
 User-agent: ChatGPT-User
 Allow: /
+Crawl-delay: 1
 
 User-agent: Claude-SearchBot
 Allow: /
+Crawl-delay: 1
 
 User-agent: PerplexityBot
 Allow: /
+Crawl-delay: 1
 
 User-agent: DuckAssistBot
 Allow: /
+Crawl-delay: 1
+
+User-agent: YouBot
+Allow: /
+Crawl-delay: 1
 
 # AI 训练类：决定内容进不进模型长期记忆
 User-agent: GPTBot
 Allow: /
+Crawl-delay: 1
 
 User-agent: ClaudeBot
 Allow: /
+Crawl-delay: 1
 
 User-agent: anthropic-ai
 Allow: /
+Crawl-delay: 1
 
 User-agent: Google-Extended
 Allow: /
+Crawl-delay: 1
 
 User-agent: Bytespider
 Allow: /
+Crawl-delay: 1
 
 User-agent: CCBot
 Allow: /
+Crawl-delay: 1
 
 User-agent: Amazonbot
 Allow: /
+Crawl-delay: 1
 
-Sitemap: https://hrx-tools-g1ldzszv60x.qoder.zone/sitemap.xml
+User-agent: Applebot-Extended
+Allow: /
+Crawl-delay: 1
+
+User-agent: meta-externalagent
+Allow: /
+Crawl-delay: 1
+
+User-agent: cohere-ai
+Allow: /
+Crawl-delay: 1
+
+User-agent: Diffbot
+Allow: /
+Crawl-delay: 1
+
+Sitemap: https://pcpan.top/sitemap.xml

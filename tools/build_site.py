@@ -23,6 +23,7 @@ import re
 import sys
 from datetime import date
 from pathlib import Path
+from urllib.parse import urlsplit
 
 import yaml
 
@@ -73,8 +74,8 @@ def page_title(brand: str, has_docs: bool) -> str:
 # 而且 AI 爬虫和搜索引擎分开声明，将来要收紧训练类抓取时不会连带影响收录。
 ROBOTS_GROUPS = [
     ("搜索引擎", ["Googlebot", "Bingbot", "Baiduspider", "Sogou web spider", "360Spider", "YisouSpider", "YandexBot", "Applebot"]),
-    ("AI 检索类：回答中带来源链接，能带来回访", ["OAI-SearchBot", "ChatGPT-User", "Claude-SearchBot", "PerplexityBot", "DuckAssistBot"]),
-    ("AI 训练类：决定内容进不进模型长期记忆", ["GPTBot", "ClaudeBot", "anthropic-ai", "Google-Extended", "Bytespider", "CCBot", "Amazonbot"]),
+    ("AI 检索类：回答中带来源链接，能带来回访", ["OAI-SearchBot", "ChatGPT-User", "Claude-SearchBot", "PerplexityBot", "DuckAssistBot", "YouBot"]),
+    ("AI 训练类：决定内容进不进模型长期记忆", ["GPTBot", "ClaudeBot", "anthropic-ai", "Google-Extended", "Bytespider", "CCBot", "Amazonbot", "Applebot-Extended", "meta-externalagent", "cohere-ai", "Diffbot"]),
 ]
 
 
@@ -191,14 +192,17 @@ def write_verify_files(site: dict, out: Path) -> list[str]:
 
 
 def copy_brand_assets(src: Path, out: Path) -> None:
-    """公众号二维码不是条目封面，--no-images 时也要复制。"""
+    """公众号二维码不是条目封面，--no-images 时也要复制；顺带复制 Pages 的 _headers。"""
     img_dir = out / "images"
     img_dir.mkdir(parents=True, exist_ok=True)
     qr_src = src / "assets" / "qrcode_wc.png"
-    if not qr_src.is_file():
+    if qr_src.is_file():
+        (img_dir / "wechat-qr.png").write_bytes(qr_src.read_bytes())
+    else:
         print(f"警告：缺少二维码素材 {qr_src}，页面上的公众号二维码会显示为空白。")
-        return
-    (img_dir / "wechat-qr.png").write_bytes(qr_src.read_bytes())
+    headers_src = src / "_headers"
+    if headers_src.is_file():
+        (out / "_headers").write_bytes(headers_src.read_bytes())
 
 
 def make_images(entries: list[dict], root: Path, out: Path) -> int:
@@ -502,15 +506,23 @@ def llms_txt(entries: list[dict], docs: list[dict], site_url: str, updated: str,
 
 def robots_txt(site_url: str) -> str:
     """默认组已全放行，显式点名是为了：上游若改共享域通用规则，本站的收录与 AI 抓取组仍在；
-    且训练类与检索类分开声明，将来收紧训练抓取不会连带把收录一起关掉。"""
-    lines = ["# 全站开放抓取：无后台、无接口、无用户数据，页面内容即全部内容。", "User-agent: *", "Allow: /", ""]
+    且训练类与检索类分开声明，将来收紧训练抓取不会连带把收录一起关掉。
+    Crawl-delay 是给遵守它的爬虫的礼貌提示；Google 不读，真正的限速在 Cloudflare。"""
+    lines = ["# 全站开放抓取：无后台、无接口、无用户数据，页面内容即全部内容。", "User-agent: *", "Allow: /", "Crawl-delay: 1", ""]
     for label, agents in ROBOTS_GROUPS:
         lines.append(f"# {label}")
         for ua in agents:
-            lines += [f"User-agent: {ua}", "Allow: /", ""]
+            lines += [f"User-agent: {ua}", "Allow: /", "Crawl-delay: 1", ""]
     if site_url:
         lines.append(f"Sitemap: {site_url}/sitemap.xml")
     return "\n".join(lines).strip() + "\n"
+
+
+def bookmark_html(site_url: str) -> str:
+    if not site_url:
+        return ""
+    host = urlsplit(site_url).netloc or site_url
+    return f'<p class="bookmark">收藏本站 <a href="{esc(site_url)}/">{esc(host)}</a>，下次找工具直接访问。</p>'
 
 
 def chips_html(entries: list[dict]) -> str:
@@ -913,6 +925,7 @@ def detail_html(entry: dict, ctx: dict) -> str:
         .replace("{{ALSO_BLOCK}}", also_block_html(entry))
         .replace("{{RELATED_BLOCK}}", related_block_html(entry, peers, paths, root))
         .replace("{{UPDATED}}", esc(entry.get("updated") or ctx["updated"]))
+        .replace("{{BOOKMARK}}", bookmark_html(site_url))
     )
     ld = detail_json_ld(entry, paths[entry["slug"]], site_url, brand, faq)
     if site_url:
@@ -1007,6 +1020,7 @@ def build(args: argparse.Namespace) -> int:
             .replace("{{COUNT}}", count_line)
             .replace("{{UPDATED}}", updated)
             .replace("{{MAINTAINER}}", "HRX")
+            .replace("{{BOOKMARK}}", bookmark_html(site_url))
         )
     }
     for e in combined:

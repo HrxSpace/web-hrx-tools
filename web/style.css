@@ -286,6 +286,9 @@ dialog#lightbox img {
 }
 .foot-text { flex: 1 1 420px; min-width: 0; }
 .foot .fine { color: var(--muted); margin-top: 6px; max-width: 90ch; }
+.foot .bookmark { margin-top: 7px; }
+.foot .bookmark a { color: var(--brand); font-weight: 700; text-decoration: none; }
+.foot .bookmark a:hover { text-decoration: underline; }
 .contact-foot { padding: 10px 13px; }
 .contact-foot .qr { width: 96px; height: 96px; }
 
