@@ -17,8 +17,8 @@ def run(cmd: list[str]) -> None:
     subprocess.run(cmd, cwd=ROOT, check=True)
 
 
-def git(*args: str, check: bool = True) -> subprocess.CompletedProcess[str]:
-    return subprocess.run(["git", *args], cwd=ROOT, text=True, check=check)
+def git(*args: str, check: bool = True, capture: bool = True) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(["git", *args], cwd=ROOT, text=True, capture_output=capture, check=check)
 
 
 def main() -> int:
@@ -35,13 +35,13 @@ def main() -> int:
         return exc.returncode or 1
 
     paths = [p for p in SITE_PATHS if (ROOT / p).exists()]
-    git("add", "--", *paths)
+    git("add", "--", *paths, capture=False)
     staged = git("diff", "--cached", "--quiet", check=False)
     if staged.returncode == 0:
         print("没有可提交的站点改动。")
     elif staged.returncode == 1:
         try:
-            git("commit", "-m", args.message)
+            git("commit", "-m", args.message, capture=False)
         except subprocess.CalledProcessError as exc:
             print(f"提交失败（退出码 {exc.returncode}），未推送。")
             return exc.returncode or 1
@@ -59,7 +59,7 @@ def main() -> int:
         if git("remote", "get-url", remote, check=False).returncode != 0:
             print(f"远端不存在，跳过：{remote}")
             continue
-        if git("push", remote, branch, check=False).returncode != 0:
+        if git("push", remote, branch, check=False, capture=False).returncode != 0:
             failed.append(remote)
     if failed:
         print("推送失败：" + "、".join(failed) + "（其它远端已尝试；未使用强推）")
