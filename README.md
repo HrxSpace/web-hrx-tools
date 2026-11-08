@@ -123,7 +123,8 @@ python tools/publish.py -m "Feat: ..."      # 构建 + SEO 断言 + 提交 + 推
 ```
 
 `publish.py` 只暂存 `data/ site/ tools/ web/ README.md requirements.txt`，不会把无关改动带进去。
-推送完成后，再让 Qoder 把同一份 `web/` 发布到现有站点。Qoder Sites 没有 Git 集成，这一步不能由
+它会检查 `web/` 是否真的有变动：没有变动时只推代码，并明确提示无需发布 Qoder。
+有变动时，再让 Qoder 把同一份 `web/` 发布到现有站点。Qoder Sites 没有 Git 集成，这一步不能由
 `git push` 代替；只推送不发布，qoder.zone 不会更新。
 
 需要分开操作时，等价的手工命令：
