@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""构建、检查、提交并推送 Gitee/GitHub；只有 web/ 变动时才需要再发布 Qoder。"""
+"""构建、检查、提交并推送 Gitee/GitHub；GitHub 更新后自动 IndexNow 提交；只有 web/ 变动时才需要再发布 Qoder。"""
 from __future__ import annotations
 
 import argparse
@@ -98,6 +98,13 @@ def main() -> int:
         )
     else:
         print("没有新提交，Cloudflare 不会重新部署。")
+    if web_changed and "github" in pushed:
+        # 部署生效需要时间，脚本会轮询等全部 URL 200 再提交；失败不影响已完成的推送。
+        result = subprocess.run(
+            [sys.executable, "tools/submit_indexnow.py", "--wait", "180"], cwd=ROOT, check=False
+        )
+        if result.returncode != 0:
+            print("IndexNow 未提交成功（推送不受影响）；部署生效后手动重跑 python tools/submit_indexnow.py。")
     print("web/ 有变动，qoder.zone 仍需在 Qoder 里发布。" if web_changed else "web/ 无变动，qoder.zone 无需发布。")
     return 0
 

@@ -1,7 +1,20 @@
-# HRX 资源库 · 网盘分享站点
+# HRX 资源库
 
-本机能离线运行的 Windows 小工具目录站：卡片 + 关键词搜索 + 网盘分享链接。
-内容只由一份数据文件驱动，改数据 → 构建 → 发布，三步完成。
+**官方网站：<https://pcpan.top>**
+
+免费 Windows 离线小工具目录：绿色免安装、不需要联网、文件不上传。
+PDF 合并拆分、证件照制作、图片去水印、AI 缓存清理等常用操作全部在自己电脑上完成，
+经夸克网盘、UC 网盘等渠道分发，提取码在页面直接展示。
+
+> 本仓库是**站点的源码与发布管线**（数据驱动的静态站点生成器），不是各软件的源码。
+> 软件由个人开发者 HRX 独立开发，安装包经站点上的网盘渠道分发。
+
+- 网盘链接失效、软件问题反馈：请提 [Issue](https://github.com/HrxSpace/web-hrx-tools/issues)
+- 微信公众号：**HRX 资源库**（站点页脚有二维码，可提需求、接受定制开发）
+
+---
+
+以下为站点维护文档。内容只由一份数据文件驱动，改数据 → 构建 → 发布，三步完成。
 
 ## 目录结构
 
@@ -16,6 +29,7 @@ Z001_网盘站点/
 ├─ tools/scan_docs.py    扫描文档工程（^W\d{3}_）→ 维护 docs.yaml + 体检报告
 ├─ tools/build_site.py   两份数据 → 静态站点 web/
 ├─ tools/seo_check.py    发布前断言：canonical/sitemap/title/h1/JSON-LD 对齐才放行
+├─ tools/submit_indexnow.py  IndexNow 即时提交（确认线上 200 后推给 Bing/Yandex 等）
 └─ web/                  构建产物（pcpan.top + qoder.zone + pages.dev 共用发布源，已进版本库，不要手改）
 ```
 
@@ -127,6 +141,8 @@ python tools/publish.py -m "Feat: ..."      # 构建 + SEO 断言 + 提交 + 推
 
 `publish.py` 只暂存 `data/ site/ tools/ web/ README.md requirements.txt`，不会把无关改动带进去。
 它会检查 `web/` 是否真的有变动：没有变动时只推代码，并明确提示无需发布 Qoder。
+GitHub 推送成功且 web/ 有变动时，自动等 Cloudflare 部署生效（最长 180 秒）后做 IndexNow 提交；
+提交失败不影响推送，部署生效后手动重跑 `python tools/submit_indexnow.py` 即可。
 有变动时，再让 Qoder 把同一份 `web/` 发布到现有站点。Qoder Sites 没有 Git 集成，这一步不能由
 `git push` 代替；只推送不发布，qoder.zone 不会更新。
 
@@ -150,6 +166,8 @@ JSON-LD 都从这一处拼出来。
 - `robots.txt`：搜索引擎 / AI 检索 / AI 训练三组显式放行，每组带 `Crawl-delay: 1`（Google 不读它，真正限速靠 Cloudflare）；`Sitemap` 指向 `site.url`。
 - `site/_headers`：构建时复制到 `web/_headers`；HTML 5 分钟、图片/favicon 1 天；CSS/JS 由 Cloudflare Pages 默认缓存约 4 小时，减少重复抓取。
 - 站点是纯静态 + Cloudflare 边缘，爬虫压不垮源站；**不要开启 Bot Fight Mode / Under Attack Mode**，它们会把想放行的 AI 爬虫一起挑战掉。
+- `404.html`：构建器产出、noindex、不进 sitemap。Cloudflare Pages 对未知路径默认回首页内容且状态码 200（软 404），产物里有 404.html 才会返回真 404。
+- IndexNow：`site.indexnow_key` 配置（设计公开的凭据），构建器产出 `{key}.txt`；`tools/submit_indexnow.py` 先确认全部 URL 线上 200 再提交，避免把未部署/404 的页面推给引擎。`publish.py` 在 GitHub 推送后自动调用。
 - 真遇到异常高频请求，再在 Cloudflare 控制台加“速率限制”规则；阈值放宽（例如每 IP 每分钟 120 次以上），避免误伤共用出口 IP 的用户。
 - 换主域名后，去 Google Search Console / Bing / 百度重新验证 `pcpan.top` 并提交 `https://pcpan.top/sitemap.xml`；旧域名的验证文件不会自动验证新域名。
 

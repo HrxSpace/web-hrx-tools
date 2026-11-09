@@ -159,7 +159,7 @@ def resolve_site(site: dict, args: argparse.Namespace) -> tuple[str, str, str, i
     if not wechat:
         print("site.wechat_name 缺失：页面上「微信公众号 ·」后面那个名字得有出处。")
         print("  回落成站点名会写出与真实公众号不符的名字，读者扫码就对不上号——所以要必填。")
-        print("  修法：在 data/shares.yaml 顶部的 site: 段补一行 wechat_name: HRX 工具库")
+        print("  修法：在 data/shares.yaml 顶部的 site: 段补一行 wechat_name: HRX 资源库")
         return brand, "", "", 2
     if args.offline:
         # 本地预览故意不写线上域名：这种产物会被 seo_check 判不通过，正好挡住"预览包误发布"。
@@ -523,6 +523,49 @@ def bookmark_html(site_url: str) -> str:
         return ""
     host = urlsplit(site_url).netloc or site_url
     return f'<p class="bookmark">收藏本站 <a href="{esc(site_url)}/">{esc(host)}</a>，下次找工具直接访问。</p>'
+
+
+def notfound_html(brand: str) -> str:
+    """Cloudflare Pages 对未知路径默认回首页内容且状态码 200（软 404，实测），
+    只有产物里存在 404.html 才会改回真 404。noindex 防收录，不进 sitemap。"""
+    return f"""<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>页面不存在 - {esc(brand)}</title>
+<style>
+body {{ margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center;
+       font-family: "Microsoft YaHei", system-ui, sans-serif; background: #f6f8fb; color: #1c2430; }}
+.box {{ text-align: center; padding: 2rem; }}
+.code {{ font-size: 4rem; font-weight: 700; color: #1f4fd8; margin: 0; }}
+a {{ color: #1f4fd8; }}
+</style>
+</head>
+<body>
+<main class="box">
+  <p class="code">404</p>
+  <h1>这个页面不存在</h1>
+  <p>链接可能已失效，或者地址输错了。</p>
+  <p><a href="/">返回 {esc(brand)} 首页</a></p>
+</main>
+</body>
+</html>
+"""
+
+
+def write_indexnow_key(site: dict, out: Path) -> str:
+    """IndexNow key 是设计公开的凭据：文件本身需要被搜索引擎抓到以证明域名所有权，
+    所以随构建产出并进版本库。手工放进 web/ 会被下次构建清掉，验证文件同理。"""
+    key = str(site.get("indexnow_key") or "").strip()
+    if not key:
+        return ""
+    if not re.fullmatch(r"[A-Za-z0-9-]{8,128}", key):
+        print("警告：site.indexnow_key 含非法字符（只允许字母/数字/连字符，8~128 位），未产出 key 文件。")
+        return ""
+    (out / f"{key}.txt").write_text(key, encoding="utf-8")
+    return f"{key}.txt"
 
 
 def chips_html(entries: list[dict]) -> str:
@@ -1036,6 +1079,7 @@ def build(args: argparse.Namespace) -> int:
         target = out / rel
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(content, encoding="utf-8")
+    (out / "404.html").write_text(notfound_html(brand), encoding="utf-8")
 
     (out / "style.css").write_text((src / "style.css").read_text(encoding="utf-8"), encoding="utf-8")
     (out / "app.js").write_text((src / "app.js").read_text(encoding="utf-8"), encoding="utf-8")
@@ -1047,6 +1091,7 @@ def build(args: argparse.Namespace) -> int:
     (out / "robots.txt").write_text(robots_txt(site_url), encoding="utf-8")
     (out / "llms.txt").write_text(llms_txt(entries, docs, site_url, updated, brand, wechat, paths), encoding="utf-8")
     verify = write_verify_files(site, out)
+    indexnow_file = write_indexnow_key(site, out)
     if site_url:
         # 每条 URL 的 lastmod 用该条自己的 updated：
         # 全站写同一个日期，抓取器会把"这站在动"的信号当成噪声。
@@ -1087,6 +1132,8 @@ def build(args: argparse.Namespace) -> int:
         print("详情页缺用户手册正文（退到简介+功能清单，正文会偏薄）：" + "、".join(no_manual))
     if verify:
         print("站长验证文件已随构建产出：" + "、".join(verify))
+    if indexnow_file:
+        print(f"IndexNow key 文件已产出：{indexnow_file}（推送用 python tools/submit_indexnow.py）")
     if brand_fixes:
         print(f"提示：手册里有 {brand_fixes} 处旧品牌写法，已按 site.name 统一渲染；源头在各软件工程的 md 里，建议顺手改掉。")
     if wechat_fixes:

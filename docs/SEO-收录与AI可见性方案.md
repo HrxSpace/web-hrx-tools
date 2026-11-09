@@ -1,6 +1,6 @@
 # HRX 资源库 · SEO 与 AI 可见性方案
 
-适用站点：`https://hrx-tools-g1ldzszv60x.qoder.zone/`（Qoder Sites 静态托管）
+适用站点：主站 `https://pcpan.top/`（Cloudflare Pages），镜像 `web-hrx-tools.pages.dev` 与 `hrx-tools-g1ldzszv60x.qoder.zone`（三地址 canonical 均指主站）
 数据源：`data/shares.yaml` → 构建器：`tools/build_site.py` → 产物：`web/`
 
 > **2026-10-31 决策记录**：不购买域名、不做 ICP 备案，站点继续托管在 Qoder Sites（域名/HTTPS/托管由平台代管）。
@@ -28,6 +28,26 @@
 >    `llms.txt` 指向详情页，`tools/seo_check.py` 做发布前断言。实测 5 条资源 → 6 个页面，软件详情页正文 3750~4984 汉字。
 >    §1.2 里的两条 P0（整站 1 个 URL、JSON-LD 指向片段）与两条 P1（正文进不了 HTML、首页无 h1）至此关闭；
 >    §3.4 的 sitemap 拆分**暂未做**（6 条 URL 用单文件即可，>100 条再拆 index，避免拆了没法验证）；分类页按第 4 条阈值等条目长齐。
+
+> **2026-11-09 决策记录（域名与托管已变，本文旧结论以这条为准）**：
+> 1. **站点已迁到自有域名 `pcpan.top`**（腾讯云注册，NS 迁 Cloudflare）：GitHub `HrxSpace/web-hrx-tools`（已公开）
+>    push 后 Cloudflare Pages 自动部署，`web/` 进版本库、不在 CF 侧构建。`pages.dev` 与 `qoder.zone` 降为镜像，
+>    canonical/sitemap/llms/JSON-LD 全部只认 `site.url`。**§1.3 的平台约束（共享子域、无法备案、no-cache）与 §五 的方案 C 就此作废**；
+>    §六 里"百度需要备案才能做"的判断仍然成立——备案与否是国内路线的核心决策，截至当日未定。
+> 2. **国内路线不再一刀切放弃**：搜狗验证文件已接入（`site.verify`），robots 放行 Baiduspider/搜狗/360/神马。
+>    未备案状态下百度收录不稳定是已知天花板；备选路线是域名留腾讯云、静态站搬国内托管走备案后再做百度推送。
+>    另注意 Cloudflare 免费计划大陆访问质量不稳，国内动作前先实测可达性。
+> 3. **当日线上实测**：主站 200、www 已 301 到主域、三个验证文件可达（Google 文件经 308→200 内容正确）、
+>    详情页 canonical/title/description 规范、6 个可索引 URL。发现并修复两个缺口：
+>    **软 404**（未知路径回首页内容且 200）→ 构建器产出 `404.html`（noindex、不进 sitemap）；
+>    **IndexNow 缺失** → `site.indexnow_key` + 构建产出 key 文件 + `tools/submit_indexnow.py`（先验证线上 200 再提交），
+>    `publish.py` 在 GitHub 推送后自动调用。
+> 4. **品牌统一为「HRX 资源库」**：`site.wechat_name` 同步改为 HRX 资源库（公众号真名以微信平台改名为准，
+>    未完成改名前扫码会对不上号）；AI_SOFT 各工程 md 里的旧写法逐仓库清理，截图烧录的旧品牌需改 UI 重截、另立任务。
+> 5. **站外杠杆启动**：GitHub 仓库已公开，README 顶部放品牌 + 站点链接 + Issue 反馈指引；
+>    Gitee 保持私有备份（对 Google/AI 无增益，公开还要过内容审核）。剩余站外动作按 §4.3 执行。
+> 6. 后台待办（人工）：GSC 验证域名属性 + 提交 sitemap + 逐页请求编入索引；Bing WMT 提交 sitemap 并确认 IndexNow 生效；
+>    搜狗站长提交 sitemap。验收仍按 §八，另加一条：未知路径必须返回真 404。
 
 ---
 

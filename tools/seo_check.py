@@ -141,11 +141,20 @@ def check(out: Path, data_path: Path, verbose: bool) -> tuple[list[str], list[st
     pages = sorted(p.relative_to(out).as_posix() for p in out.rglob("*.html"))
     if not pages:
         return [f"{out} 下没有任何 HTML 产物"], []
-    # 站长验证文件也是 .html，但它不是页面：没有 title/h1，也绝不该进 sitemap
+    # 站长验证文件也是 .html，但它不是页面：没有 title/h1，也绝不该进 sitemap。
+    # 404.html 同理：它是错误页，noindex、无 canonical，Cloudflare Pages 靠它返回真 404。
     verify_names = {
         str(item.get("file") or "").strip() for item in (site.get("verify") or []) if isinstance(item, dict)
     }
-    pages = [rel for rel in pages if rel not in verify_names]
+    pages = [rel for rel in pages if rel not in verify_names and rel != "404.html"]
+
+    notfound = out / "404.html"
+    if not notfound.is_file():
+        problems.append("404.html 不存在：Cloudflare Pages 对未知路径会回首页内容且状态码 200（软 404）")
+    else:
+        nf_text = notfound.read_text(encoding="utf-8")
+        if 'name="robots"' not in nf_text or "noindex" not in nf_text:
+            problems.append("404.html 缺 noindex：错误页不该被收录")
 
     titles: dict[str, str] = {}
     for rel in pages:
@@ -210,6 +219,14 @@ def check(out: Path, data_path: Path, verbose: bool) -> tuple[list[str], list[st
             problems.append(f"站长验证文件不在产物里：{name}（手工放会被下次构建清掉，要写进 site.verify）")
         elif target.read_text(encoding="utf-8") != text:
             problems.append(f"站长验证文件内容与配置不一致：{name}")
+
+    key = str(site.get("indexnow_key") or "").strip()
+    if key:
+        key_file = out / f"{key}.txt"
+        if not key_file.is_file():
+            problems.append(f"IndexNow key 文件不在产物里：{key}.txt（搜索引擎抓不到它就无法确认推送权限）")
+        elif key_file.read_text(encoding="utf-8") != key:
+            problems.append(f"IndexNow key 文件内容与配置不一致：{key}.txt")
 
     return problems, pages
 
