@@ -413,8 +413,20 @@ def json_ld(entries: list[dict], site_url: str, desc: str, brand: str, title: st
     return json.dumps(doc, ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/")
 
 
-def head_extra(entries: list[dict], site_url: str, desc: str, brand: str, title: str, paths: dict[str, str]) -> str:
+def head_extra(
+    entries: list[dict],
+    site_url: str,
+    desc: str,
+    brand: str,
+    title: str,
+    paths: dict[str, str],
+    verify_meta: list[dict],
+) -> str:
     lines = [
+        f'<meta name="{esc(str(m["name"]))}" content="{esc(str(m["content"]))}">'
+        for m in verify_meta
+        if str(m.get("name") or "").strip() and str(m.get("content") or "").strip()
+    ] + [
         f'<meta property="og:site_name" content="{esc(brand)}">',
         '<meta property="og:locale" content="zh_CN">',
     ]
@@ -1055,13 +1067,14 @@ def build(args: argparse.Namespace) -> int:
         "updated": updated,
     }
     template = (src / "template.html").read_text(encoding="utf-8")
+    verify_meta = [m for m in (site.get("verify_meta") or []) if isinstance(m, dict)]
     pages: dict[str, str] = {
         "index.html": (
             template.replace("{{TITLE}}", esc(title))
             .replace("{{BRAND}}", esc(brand))
             .replace("{{WECHAT}}", esc(wechat))
             .replace("{{DESC}}", esc(desc))
-            .replace("{{HEAD}}", head_extra(combined, site_url, desc, brand, title, paths))
+            .replace("{{HEAD}}", head_extra(combined, site_url, desc, brand, title, paths, verify_meta))
             .replace("{{CHIPS}}", chips_html(combined))
             .replace("{{TASKS_ROW}}", tasks_row_html(site, paths))
             .replace("{{CARDS}}", "".join(card_html(e, i, paths) for i, e in enumerate(entries)))

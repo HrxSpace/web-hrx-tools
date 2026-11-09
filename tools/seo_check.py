@@ -220,6 +220,16 @@ def check(out: Path, data_path: Path, verbose: bool) -> tuple[list[str], list[st
         elif target.read_text(encoding="utf-8") != text:
             problems.append(f"站长验证文件内容与配置不一致：{name}")
 
+    for item in site.get("verify_meta") or []:
+        name = str(item.get("name") if isinstance(item, dict) else "").strip()
+        content = str(item.get("content") if isinstance(item, dict) else "").strip()
+        if not name or not content:
+            problems.append(f"site.verify_meta 有条目缺 name 或 content：{item}")
+            continue
+        tag = f'<meta name="{name}" content="{content}">'
+        if tag not in index_text:
+            problems.append(f"首页缺验证 meta：{tag}（写了配置却没渲染出来）")
+
     key = str(site.get("indexnow_key") or "").strip()
     if key:
         key_file = out / f"{key}.txt"
