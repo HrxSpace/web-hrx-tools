@@ -185,7 +185,7 @@ JSON-LD 都从这一处拼出来。
   Cloudflare Pages（pcpan.top / pages.dev）原样发布静态文件，不会改写 HTML；Qoder 托管会在 `</body>` 前注入水印脚本
   （实测首页 31 KB → 线上 88 KB），且会把纯文本验证文件一起注入。Google 站长验证应针对主站 pcpan.top 做
   （HTML 文件法可直接用）；qoder.zone 镜像受注入影响，不要拿它做文件验证。
-- 详情页：一条资源一个可索引 URL（软件 `/soft/{英文名}.html`、资料 `/doc/...`），URL 只用 ASCII 且按驼峰拆词（`PDFSuperToolbox` → `pdf-super-toolbox`）。正文在构建时从各软件的 `用户手册/*.md` 现取：功能详解、使用步骤、运行环境、常见问题、注意事项逐节渲染，**不抄进 `shares.yaml`**（两份内容必然漂移，而且人工真源会被 4000 字散文挤到读不动）。手册里的随文截图不入库，指向截图的「*图：…*」说明一并省略。
+- 详情页：一条资源一个可索引 URL（软件 `/soft/{英文名}`、资料 `/doc/...`），URL 只用 ASCII 且按驼峰拆词（`PDFSuperToolbox` → `pdf-super-toolbox`）。产物文件仍是 `.html`，但 Cloudflare Pages 会把 `.html` 308 到无后缀形式，所以 canonical/sitemap/llms.txt/JSON-LD 一律声明无后缀的最终地址，站内链接保留 `.html`（本地预览与 Qoder 镜像不做该重定向）。正文在构建时从各软件的 `用户手册/*.md` 现取：功能详解、使用步骤、运行环境、常见问题、注意事项逐节渲染，**不抄进 `shares.yaml`**（两份内容必然漂移，而且人工真源会被 4000 字散文挤到读不动）。手册里的随文截图不入库，指向截图的「*图：…*」说明一并省略。
 - 深链：卡片标题是真实的 `<a href="soft/xxx.html">`（抓取器与转发地址走这条）；卡片「详情」按钮仍是 `#slug` 锚点，点开是原位弹窗，体验没变。
 - 抓取与收录：`robots.txt` 按「搜索引擎 / AI 检索类 / AI 训练类」三组显式放行并带 `Crawl-delay: 1`；`sitemap.xml` 逐条列出全部页面，每条 `lastmod` 用该条自己的 `updated`；`llms.txt` 是给 AI 引擎读的纯文本目录，每行指向详情页而不是首页片段；发布前用 `python tools/seo_check.py` 断言，不过就别发。
 - 标题层级：首页唯一 `<h1>` 是品牌名，卡片标题为 `<h3>`；详情页唯一 `<h1>` 是资源名，章级标题 `<h2>`、手册小节 `<h3>`。

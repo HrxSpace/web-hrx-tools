@@ -456,7 +456,7 @@ def llms_row(e: dict, base: str, paths: dict[str, str]) -> str:
     )
     feats = "；".join(f for f in (e.get("features") or [])[:4] if f)
     alias = "、".join(a for a in (e.get("aliases") or [])[:5] if a)
-    row = f"- [{e.get('name')}]({base}/{paths[e['slug']]}): {e.get('summary') or ''}（{facts}）"
+    row = f"- [{e.get('name')}]({base}/{page_url_path(paths[e['slug']])}): {e.get('summary') or ''}（{facts}）"
     if feats:
         row += f" {'篇章：' if e.get('kind') == 'docs' else '功能：'}{feats}。"
     if alias:
@@ -620,9 +620,16 @@ def page_paths(entries: list[dict]) -> dict[str, str]:
     return paths
 
 
+def page_url_path(rel: str) -> str:
+    """产物路径 → 对外 URL 路径。Cloudflare Pages 会把 .html 308 到无后缀形式，
+    canonical/sitemap/llms/JSON-LD 必须直接声明最终 200 的地址，否则 canonical 与重定向互指成环。
+    文件名与站内 href 仍保留 .html：本地 http.server 预览和 Qoder 镜像不做 clean-URL 重定向。"""
+    return rel[:-5] if rel.endswith(".html") else rel
+
+
 def absolute(site_url: str, path: str) -> str:
     """对外绝对地址。没有站点域名时返回空串：结构化数据里的相对 URL 会被引擎当成无效声明。"""
-    return f"{site_url}/{path}" if site_url else ""
+    return f"{site_url}/{page_url_path(path)}" if site_url else ""
 
 
 def title_words(entry: dict, limit: int = 2) -> list[str]:
@@ -1046,7 +1053,7 @@ def build(args: argparse.Namespace) -> int:
         by_path = {paths[e["slug"]]: e for e in combined}
         rows = []
         for rel in pages:
-            loc = f"{site_url}/" if rel == "index.html" else f"{site_url}/{rel}"
+            loc = f"{site_url}/" if rel == "index.html" else f"{site_url}/{page_url_path(rel)}"
             rows.append(f'  <url><loc>{esc(loc)}</loc><lastmod>{esc(by_path.get(rel, {}).get("updated") or updated)}</lastmod></url>')
         urls = "\n".join(rows)
         (out / "sitemap.xml").write_text(

@@ -51,8 +51,11 @@ def display_width(text: str) -> int:
 
 
 def expected_url(site_url: str, rel: str) -> str:
-    """产物相对路径 → 对外 URL。index.html 就是站点根，其余按目录原样拼。"""
-    return f"{site_url}/" if rel == "index.html" else f"{site_url}/{rel}"
+    """产物相对路径 → 对外 URL。index.html 就是站点根；其余去掉 .html 后缀——
+    Cloudflare Pages 把 .html 308 到无后缀形式，收录信号必须指向最终 200 的地址。"""
+    if rel == "index.html":
+        return f"{site_url}/"
+    return f"{site_url}/{rel[:-5] if rel.endswith('.html') else rel}"
 
 
 def read_site(data_path: Path) -> dict:
