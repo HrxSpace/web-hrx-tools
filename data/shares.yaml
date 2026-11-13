@@ -71,9 +71,9 @@ site:
   - label: 图片去水印
     slug: 006_图片去除水印工具
   - label: 清理C盘
-    slug: 009_AI缓存清道夫
+    slug: 009_AI缓存专清
   - label: AI工具缓存
-    slug: 009_AI缓存清道夫
+    slug: 009_AI缓存专清
   - label: WorkBuddy实战教程
     slug: W000_WorkBuddy实战文档系列
   updated: '2026-11-05'
@@ -585,8 +585,8 @@ shares:
     artifact: ''
     image: resources/icon/app.png
     project_dir: 008_发票批量整理器
-- slug: 009_AI缓存清道夫
-  name: AI缓存清道夫
+- slug: 009_AI缓存专清
+  name: AI缓存专清
   name_en: AICacheSweeper
   exe_name: AI缓存清道夫
   version: 0.3.2
@@ -602,8 +602,8 @@ shares:
   share_url: ''
   share_code: ''
   platform: ''
-  summary: AI缓存清道夫是一款专门清理 AI 编程终端和包管理器残留的 Windows 桌面工具。
-  description: AI缓存清道夫是一款专门清理 AI 编程终端和包管理器残留的 Windows 桌面工具。它会把 Claude Code、Codex、Cursor、ZCode、Kimi、豆包、Qoder、TRAE
+  summary: AI缓存专清是一款专门清理 AI 编程终端和包管理器残留的 Windows 桌面工具。
+  description: AI缓存专清是一款专门清理 AI 编程终端和包管理器残留的 Windows 桌面工具。它会把 Claude Code、Codex、Cursor、ZCode、Kimi、豆包、Qoder、TRAE
     等 AI 工具留下的缓存、日志、会话历史、配置和更新包列成一张清单，按安全等级分类，让你先看清再决定删什么。 它适合经常使用 AI 编程工具、C 盘空间越来越紧张，但又担心“删错文件”的人。软件坚持三条原则：只清理本机、只读文件名/大小/修改时间（不打开文件内容）、不联网。
   features:
   - 扫描 AI 终端残留：自动找出用户目录和 AppData 里的 AI 工具缓存
@@ -654,13 +654,13 @@ shares:
   artifact: dist/AI缓存清道夫_v0.3.2.zip
   artifact_dir: dist/AI缓存清道夫
   size_mb: 46.2
-  copy_source: 用户手册/AI缓存清道夫使用说明.md
+  copy_source: 用户手册/AI缓存专清使用说明.md
   updated: '2026-10-31'
   discovered:
     version: 0.3.2
     artifact: dist/AI缓存清道夫_v0.3.2.zip
     image: 推广套件/images/01-主界面空态.png
-    project_dir: 009_AI缓存清道夫
+    project_dir: 009_AI缓存专清
 - slug: 010_头像工坊
   name: 头像工坊
   name_en: AvatarForge
