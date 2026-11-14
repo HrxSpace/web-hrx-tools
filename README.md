@@ -176,6 +176,7 @@ JSON-LD 都从这一处拼出来。
 | 字段 | 谁负责 | 说明 |
 | --- | --- | --- |
 | `site.name` `site.wechat_name` `site.url` `site.verify` | 人工 | 文件顶部 `site:` 段：品牌名、公众号真名、正式发布域名、站长验证文件清单（每项 `file` + `text`，构建时原样写进产物）。改名只动 `name`，公众号名只动 `wechat_name`；**验证文件不要手工丢进 `web/`**，构建会清空该目录，验证会悄悄失效 |
+| `site.baidu_analytics` | 人工 | 百度统计站点 ID（`hm.js?` 后面那串 32 位十六进制）。构建时注入所有页面 `<head>`，404 页与 `--offline` 预览不注入 |
 | `slug` | 脚本 | 主键=目录名，别手改 |
 | `name` `name_en` `exe_name` `version` | 脚本填、你可改 | 三者常不一致：`001` 目录叫证件照制作工具，商品名是证照快做，exe 是 idphotokit |
 | `summary` `description` `features` `keywords` | 脚本抽取、你可改写 | 抽取来源记在 `copy_source`；全部参与搜索 |

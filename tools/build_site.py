@@ -567,6 +567,27 @@ a {{ color: #1f4fd8; }}
 """
 
 
+def analytics_html(site: dict, site_url: str) -> str:
+    """百度统计：站点 ID 放在 site.baidu_analytics，构建时注入每个页面 <head>。
+    只在正式构建（有域名）时注入；--offline 本地预览不埋点，避免测试访问混进统计。"""
+    hid = str(site.get("baidu_analytics") or "").strip()
+    if not hid or not site_url:
+        return ""
+    if not re.fullmatch(r"[0-9a-fA-F]{32}", hid):
+        raise SystemExit("site.baidu_analytics 应为 32 位十六进制（hm.js? 后面那串），构建中止。")
+    return (
+        "<script>\n"
+        "var _hmt = _hmt || [];\n"
+        "(function() {\n"
+        '  var hm = document.createElement("script");\n'
+        f'  hm.src = "https://hm.baidu.com/hm.js?{hid}";\n'
+        '  var s = document.getElementsByTagName("script")[0];\n'
+        "  s.parentNode.insertBefore(hm, s);\n"
+        "})();\n"
+        "</script>"
+    )
+
+
 def write_indexnow_key(site: dict, out: Path) -> str:
     """IndexNow key 是设计公开的凭据：文件本身需要被搜索引擎抓到以证明域名所有权，
     所以随构建产出并进版本库。手工放进 web/ 会被下次构建清掉，验证文件同理。"""
@@ -1088,6 +1109,9 @@ def build(args: argparse.Namespace) -> int:
     }
     for e in combined:
         pages[paths[e["slug"]]] = detail_html(e, ctx)
+    analytics = analytics_html(site, site_url)
+    if analytics:
+        pages = {rel: html.replace("</head>", analytics + "\n</head>", 1) for rel, html in pages.items()}
     for rel, content in pages.items():
         target = out / rel
         target.parent.mkdir(parents=True, exist_ok=True)

@@ -42,6 +42,9 @@ site:
   # IndexNow key 是设计公开的凭据：构建器产出 {key}.txt 供搜索引擎抓取验证所有权，
   # 推送脚本 tools/submit_indexnow.py 用它向 Bing/Yandex 等即时提交 URL。不是秘密，可入库。
   indexnow_key: e66a8baeeb22b771bcb9cea810a710fc
+  # 百度统计：hm.js? 后面的 32 位站点 ID。构建时注入所有页面 <head>，
+  # --offline 本地预览不注入，避免把测试访问计进统计。
+  baidu_analytics: 644757071a55c85a4cf2b57332f751f0
   verify:
     - file: google8850a877dbfc1756.html
       text: 'google-site-verification: google8850a877dbfc1756.html'
