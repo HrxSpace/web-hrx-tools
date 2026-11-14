@@ -82,7 +82,7 @@ shares:
   name: PDF超级工具箱
   name_en: PDFSuperToolbox
   exe_name: PDFSuperToolbox
-  version: 3.1.0
+  version: 3.1.3
   status: live
   category: 文档处理
   downloads:
@@ -103,6 +103,10 @@ shares:
   - 密码管理：加打开密码、移除自有文档口令、设置权限位
   - 批量加解密：整个文件夹一次加密或解密，自动汇总结果
   - 水印 / 页码：文字、图片水印与多种页码格式
+  - 压缩 PDF：文字版无损瘦身，扫描件分档重采样
+  - 书签 / 目录：可视化增删改书签，支持逻辑页码
+  - 文档元数据：查看、编辑、一键清理（含隐藏信息）
+  - OCR 可搜索：扫描件变可搜索 PDF，原图像素不变，可导出 TXT
   keywords:
   - 拆分
   - 页面编辑
@@ -128,21 +132,21 @@ shares:
   - PDF转图片
   image: 推广套件/images/01-主界面.png
   image_kind: screenshot
-  artifact: dist/PDFSuperToolbox_v3.1.0.zip
-  artifact_dir: dist/PDFSuperToolbox
-  size_mb: 161.2
+  artifact: dist/PDF超级工具箱_v3.1.3_nuitka.zip
+  artifact_dir: dist/PDF超级工具箱_v3.1.3
+  size_mb: 131.7
   copy_source: 用户手册/PDF超级工具箱使用说明.md
   updated: '2026-11-14'
   discovered:
-    version: 3.1.2
-    artifact: dist/PDF超级工具箱_v3.1.2.zip
+    version: 3.1.3
+    artifact: dist/PDF超级工具箱_v3.1.3_nuitka.zip
     image: 推广套件/images/01-主界面.png
     project_dir: 000_PDF超级工具箱
 - slug: 001_证件照制作工具
   name: 证照快做
   name_en: IDPhotoKit
-  exe_name: idphotokit
-  version: 0.1.0
+  exe_name: 证照快做
+  version: 0.1.6
   status: live
   category: 证件证照
   downloads:
@@ -156,14 +160,16 @@ shares:
   description: 证照快做是一款在本地电脑上制作标准证件照的桌面工具。导入一张生活照，选好规格，软件自动完成抠图、换底和构图，按报名要求导出成品，还能自动拼版直接送印。 软件全程离线运行：照片只在你电脑的内存里处理，不上传、不联网、不保存原图；AI
     抠图模型随软件包内置，没有网络也能用。全程无水印、无广告。
   features:
-  - 照片导入：选择文件、拖拽、剪贴板粘贴三种方式
-  - 规格库：内置 25 项常用规格，覆盖一寸/二寸/身份证/护照等证件规格
+  - 照片导入：选择文件、拖拽、剪贴板粘贴三种方式，支持 JPG/PNG/BMP/WEBP/TIFF，自动记忆最近打开
+  - 规格库：内置 25 项常用规格，覆盖一寸/二寸/身份证/护照与考试报名、签证规格，支持自定义规格
   - AI 抠图：本地人像分割，自动保留头发和肩部边缘；配合擦除/恢复画笔手动精修
-  - 背景换色：红/白/蓝/浅蓝/灰一键切换，支持自定义颜色、白蓝渐变、柔和投影
+  - 背景换色：红/白/蓝/浅蓝/灰一键切换，支持自定义颜色、白蓝渐变、柔和投影、透明底
   - 智能构图：按规格自动对齐人脸位置，提供头顶留白、眼平、下巴辅助线
   - 美颜调整：磨皮、美白、亮度、对比度四项微调，一键应用自然档
   - 按需导出：指定 DPI 和像素、目标体积自动压缩、自定义命名规则、导出前预估体积
   - 质量自检：对清晰度、曝光、人脸占比给出参考提示
+  - 拼版打印：5 寸/6 寸/大 6 寸相纸与 A4/A5/A6 自动排版并标注裁切线，导出 JPG 或 PDF
+  - 偏好设置：默认导出目录、DPI、背景色可自定义并记住
   keywords:
   - 选好规格
   - 软件自动完成抠图
@@ -182,6 +188,7 @@ shares:
   - 报名照
   - 签证照
   - 回执
+  - idphotokit
   - '001'
   tags:
   - 证件照制作
@@ -190,14 +197,14 @@ shares:
   - 签证照
   image: 推广套件/images/01-导入页.png
   image_kind: screenshot
-  artifact: dist/idphotokit_v0.1.0.zip
-  artifact_dir: dist/idphotokit
+  artifact: dist/证照快做_v0.1.6.zip
+  artifact_dir: dist/证照快做
   size_mb: 119.1
   copy_source: 用户手册/证照快做使用说明.md
-  updated: '2026-10-29'
+  updated: '2026-11-14'
   discovered:
-    version: 0.1.5
-    artifact: dist/证照快做_v0.1.4.zip
+    version: 0.1.12
+    artifact: dist/证照快做_v0.1.6.zip
     image: 推广套件/images/01-导入页.png
     project_dir: 001_证件照制作工具
 - slug: 002_文件百宝箱
@@ -448,7 +455,7 @@ shares:
   name: 图片去水印
   name_en: WatermarkRemover
   exe_name: 图片去水印
-  version: 1.29.6
+  version: 1.29.10
   status: live
   category: 图片处理
   downloads:
@@ -465,14 +472,17 @@ shares:
   description: 图片去水印是一款本地运行的图片修复工具：打开一张带水印的图片，用鼠标把水印涂出来，AI 会自动把涂抹的区域修复成自然的画面，最后另存为新图片。整个过程在你的电脑上完成，图片不会被上传到任何服务器。
     典型场景：去掉照片上的文字水印、Logo、日期戳，或抹掉画面里不想要的小物件。
   features:
+  - 全程本地处理：AI 修复模型就在你的电脑上，图片不上传，断网也能用；状态栏会显示当前用的计算引擎
   - 一键去水印：涂抹水印区域，AI 自动修复成自然画面
   - 批量去水印：整批图片位置相同的水印，涂一次蒙版全部套用；也支持逐张涂抹
   - 快速预览：正式处理前先看修复效果，不满意可以继续调整
   - 灵活涂抹：左键涂抹、右键擦除，笔刷大小和边缘柔和度都可调
   - 画布缩放平移：滚轮缩放、中键拖动，小水印也能涂得精准
   - 撤销与重做：涂错了随时回退，也可一键清空全部涂抹
-  - 多种格式：支持打开 png / jpg / webp / bmp / ico /…
+  - 多种格式：支持打开 png / jpg / webp / bmp / ico / icns，保存为 png / jpg / webp / bmp
   - 自动命名：保存时自动加时间戳，不会覆盖你的原图
+  - 个性化：12 个快捷键全部可以自定义
+  - 自动选设备：有 NVIDIA 显卡时走显卡，没有则用 CPU，功能一样完整
   keywords:
   - 用鼠标把水印涂出来
   - Logo
@@ -496,16 +506,16 @@ shares:
   - 一键去水印
   - 涂抹修复
   - 抹除物体
-  image: 用户手册/images/01-主界面.png
+  image: 推广套件/images/01-主界面.png
   image_kind: screenshot
-  artifact: dist/图片去水印_v1.29.6.zip
-  artifact_dir: dist/图片去水印
-  size_mb: 489.9
+  artifact: ''
+  artifact_dir: ''
+  size_mb: 0.0
   copy_source: 用户手册/图片去水印使用说明.md
   updated: '2026-11-14'
   discovered:
-    version: 1.29.7
-    artifact: dist/图片去水印_v1.29.6.zip
+    version: 1.29.10
+    artifact: ''
     image: 推广套件/images/01-主界面.png
     project_dir: 006_图片去除水印工具
 - slug: 007_WIN文件去重工具
@@ -588,8 +598,8 @@ shares:
 - slug: 009_AI缓存专清
   name: AI缓存专清
   name_en: AICacheSweeper
-  exe_name: AI缓存清道夫
-  version: 0.3.2
+  exe_name: AI缓存专清
+  version: 0.4.7
   status: live
   category: 系统清理
   downloads:
@@ -607,13 +617,14 @@ shares:
     等 AI 工具留下的缓存、日志、会话历史、配置和更新包列成一张清单，按安全等级分类，让你先看清再决定删什么。 它适合经常使用 AI 编程工具、C 盘空间越来越紧张，但又担心“删错文件”的人。软件坚持三条原则：只清理本机、只读文件名/大小/修改时间（不打开文件内容）、不联网。
   features:
   - 扫描 AI 终端残留：自动找出用户目录和 AppData 里的 AI 工具缓存
-  - 四级安全分级：把每个条目标成 S（可放心清理）、A（需要你确认）
+  - 四级安全分级：S（可放心清理）、A（需要确认）、B（默认保护）、C（禁止清理），凭据和程序本体永远不能删
   - 清理前先试算：列出本次要删多少项、大概能回收多少、哪些会先归档
   - 直接删除并明确提示：删除不经过系统回收站，每次都会弹出三条固定警示
   - 归档与还原：会话历史和配置在删除前会先复制到归档区
   - 清理记录：每次清理都留下一条记录，写清估算回收、实际释放
   - 瘦身建议：只读提示哪些终端很久没用、哪个文件特别大、哪些缓存占用高。
   - SKILL/AGENT 盘点：把技能、命令、插件、规范文件列清楚，只看不动。
+  - 设置与报告：可调整归档保留天数、扫描线程数等；清理后可导出 JSON/CSV 报告。
   keywords:
   - AI 缓存
   - AI 编程工具
@@ -638,6 +649,8 @@ shares:
   - 大小
   aliases:
   - AI缓存清理
+  - AI缓存清道夫
+  - 缓存清道夫
   - 缓存清理
   - 清理C盘
   - AI工具缓存
@@ -649,16 +662,16 @@ shares:
   - AI工具缓存
   - 缓存清理
   - Claude Code缓存
-  image: 推广套件/images/01-主界面空态.png
+  image: 推广文章/images/01-主界面.png
   image_kind: screenshot
-  artifact: dist/AI缓存清道夫_v0.3.2.zip
-  artifact_dir: dist/AI缓存清道夫
-  size_mb: 46.2
+  artifact: dist/AI缓存专清_v0.4.7_nuitka.zip
+  artifact_dir: dist/AI缓存专清_v0.4.7
+  size_mb: 31.7
   copy_source: 用户手册/AI缓存专清使用说明.md
   updated: '2026-11-14'
   discovered:
-    version: 0.3.2
-    artifact: dist/AI缓存清道夫_v0.3.2.zip
+    version: 0.4.7
+    artifact: dist/AI缓存专清_v0.4.7_nuitka.zip
     image: 推广套件/images/01-主界面空态.png
     project_dir: 009_AI缓存专清
 - slug: 010_头像工坊
