@@ -192,7 +192,7 @@ web/sitemap-page.xml       → 首页/updates/about
 ## 软件
 - [PDF超级工具箱 v3.1.0](/soft/pdf-super-toolbox.html): 合并/拆分/OCR/压缩/水印，本机处理不上传
 - [证照快做 v0.1.0](/soft/idphotokit.html): 本地制作标准证件照
-- [AI缓存清道夫 v0.3.2](/soft/ai-cache-sweeper.html): 清理 AI 编程终端与包管理器残留缓存
+- [AI缓存专清 v0.3.2](/soft/ai-cache-sweeper.html): 清理 AI 编程终端与包管理器残留缓存
 
 ## 分类
 - [文档处理](/cat/doc.html) · [证件证照](/cat/idphoto.html) · ...
