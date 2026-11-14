@@ -87,7 +87,7 @@ shares:
   category: 文档处理
   downloads:
   - platform: 夸克网盘
-    url: https://pan.quark.cn/s/bf74be5b358b
+    url: https://pan.quark.cn/s/5da6630ec89c
     code: ''
   - platform: UC网盘
     url: https://drive.uc.cn/s/4316096f0e924?public=1
@@ -132,7 +132,7 @@ shares:
   artifact_dir: dist/PDFSuperToolbox
   size_mb: 161.2
   copy_source: 用户手册/PDF超级工具箱使用说明.md
-  updated: '2026-10-29'
+  updated: '2026-11-14'
   discovered:
     version: 3.1.2
     artifact: dist/PDF超级工具箱_v3.1.2.zip
@@ -453,7 +453,7 @@ shares:
   category: 图片处理
   downloads:
   - platform: 夸克网盘
-    url: https://pan.quark.cn/s/165cd872ae53
+    url: https://pan.quark.cn/s/3d0079b3f361
     code: ''
   - platform: UC网盘
     url: https://drive.uc.cn/s/dd4ebdb5991d4?public=1
@@ -502,7 +502,7 @@ shares:
   artifact_dir: dist/图片去水印
   size_mb: 489.9
   copy_source: 用户手册/图片去水印使用说明.md
-  updated: '2026-11-01'
+  updated: '2026-11-14'
   discovered:
     version: 1.29.7
     artifact: dist/图片去水印_v1.29.6.zip
@@ -594,7 +594,7 @@ shares:
   category: 系统清理
   downloads:
   - platform: 夸克网盘
-    url: https://pan.quark.cn/s/c665452e6c83
+    url: https://pan.quark.cn/s/51546c445e77
     code: ''
   - platform: UC网盘
     url: https://drive.uc.cn/s/d4ef13b9ee074?public=1
@@ -655,7 +655,7 @@ shares:
   artifact_dir: dist/AI缓存清道夫
   size_mb: 46.2
   copy_source: 用户手册/AI缓存清道夫使用说明.md
-  updated: '2026-10-31'
+  updated: '2026-11-14'
   discovered:
     version: 0.3.2
     artifact: dist/AI缓存清道夫_v0.3.2.zip
