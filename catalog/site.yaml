@@ -26,6 +26,8 @@ site:
     slug: 001_证件照制作工具
   - label: 图片去水印
     slug: 006_图片去除水印工具
+  - label: 视频压缩
+    slug: 003_音视频工具箱
   - label: 清理C盘
     slug: 009_AI缓存专清
   - label: AI工具缓存

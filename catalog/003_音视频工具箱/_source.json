@@ -2,10 +2,10 @@
   "origin": "legacy data/shares.yaml",
   "root": "AI_SOFT",
   "project_dir": "003_音视频工具箱",
-  "cover_from": "resources/icon/app.png",
-  "cover_sha1": "dc0167fef095f7e0f1baba5cd4ba752ae45f1197",
-  "manual_from": "",
-  "manual_sha1": "",
+  "cover_from": "推广套件/images/01-主界面.png",
+  "cover_sha1": "a57541fe6a42e8981621809ddbf2a6df8e8f1043",
+  "manual_from": "用户手册/音视频工具箱使用说明.md",
+  "manual_sha1": "5e7c76785b19f9975dfe6e5e09ef23f0f0054129",
   "intake_at": "2026-11-15",
-  "refreshed_at": "2026-11-15"
+  "refreshed_at": "2026-11-16"
 }
