@@ -27,7 +27,7 @@ from urllib.parse import urlsplit
 import yaml
 
 SITE_ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_DATA = SITE_ROOT / "data" / "shares.yaml"
+DEFAULT_DATA = SITE_ROOT / "catalog" / "site.yaml"
 DEFAULT_OUT = SITE_ROOT / "web"
 ENDPOINT = "https://api.indexnow.org/indexnow"
 LOC_RE = re.compile(r"<loc>([^<]+)</loc>")
@@ -106,7 +106,7 @@ def main() -> int:
     site_url = str(site.get("url") or "").strip().rstrip("/")
     key = str(site.get("indexnow_key") or "").strip()
     if not site_url or not key:
-        print("data/shares.yaml 的 site.url 或 site.indexnow_key 缺失，无法提交。")
+        print("catalog/site.yaml 的 site.url 或 site.indexnow_key 缺失，无法提交。")
         return 2
     sitemap = Path(args.out) / "sitemap.xml"
     if not sitemap.is_file():

@@ -24,7 +24,7 @@ import yaml
 
 SITE_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_OUT = SITE_ROOT / "web"
-DEFAULT_DATA = SITE_ROOT / "data" / "shares.yaml"
+DEFAULT_DATA = SITE_ROOT / "catalog" / "site.yaml"
 
 # 搜索结果里的标题按半角宽度截断，中文算 2、ASCII 算 1；超过这个宽度会被省略号砍掉。
 MAX_TITLE_WIDTH = 60
@@ -244,7 +244,7 @@ def check(out: Path, data_path: Path, verbose: bool) -> tuple[list[str], list[st
 def main() -> int:
     p = argparse.ArgumentParser(description="发布前 SEO 断言")
     p.add_argument("--out", default=str(DEFAULT_OUT), help="产物目录，默认 web/")
-    p.add_argument("--data", default=str(DEFAULT_DATA), help="站点配置来源，默认 data/shares.yaml")
+    p.add_argument("--data", default=str(DEFAULT_DATA), help="站点配置来源，默认 catalog/site.yaml")
     p.add_argument("--verbose", action="store_true", help="打印每页 title")
     args = p.parse_args()
 

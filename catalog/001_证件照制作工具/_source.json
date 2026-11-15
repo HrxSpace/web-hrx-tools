@@ -1,0 +1,10 @@
+{
+  "origin": "legacy data/shares.yaml",
+  "root": "AI_SOFT",
+  "project_dir": "001_证件照制作工具",
+  "cover_from": "推广套件/images/01-导入页.png",
+  "cover_sha1": "72144a8cca5b63815e511894dd4cd81a0060795a",
+  "manual_from": "用户手册/证照快做使用说明.md",
+  "manual_sha1": "e58569e7527aaf2e555d03e76dd0fe104df6edec",
+  "intake_at": "2026-11-15"
+}

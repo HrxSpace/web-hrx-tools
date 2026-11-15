@@ -1,0 +1,13 @@
+{
+  "origin": "legacy data/shares.yaml",
+  "root": "AI_SOFT",
+  "project_dir": "005_Win窗口管家",
+  "cover_from": "",
+  "cover_sha1": "",
+  "manual_from": "",
+  "manual_sha1": "",
+  "intake_at": "2026-11-15",
+  "merged_from": [
+    "005_WinButler窗口管家（2026-11-15 合并重复编号，原数据仅 status=hidden）"
+  ]
+}

@@ -8,7 +8,7 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-SITE_PATHS = ("data", "site", "tools", "web", "README.md", "requirements.txt")
+SITE_PATHS = ("catalog", "data", "site", "tools", "web", "docs", "README.md", "AGENTS.md", "requirements.txt")
 REMOTES = ("origin", "github")
 
 

@@ -1,0 +1,47 @@
+# 上架目录条目 —— 站点展示的唯一真源，人改这个文件
+#
+# slug           默认等于目录名，改名字段无效（目录名就是主键）
+# kind           soft 软件 / doc 资料
+# name/name_en   商品名（卡片主标题）/ 英文名（决定详情页 URL，别轻易改）
+# exe_name       进程名或发行包名，用户可能直接搜它
+# version        对外版本号
+# status         live 上架 / coming_soon 灰卡（两者必须有链接）/ draft 收着不上页 / hidden 不渲染
+# category       分类筛选栏就是它的去重结果
+# summary        卡片上一句话（30~60 字）
+# description    详情页简介段落
+# features       功能要点（列表，参与搜索，卡片取前 3 条做标签）
+# keywords/aliases  额外搜索词 / 用户可能的叫法
+# tags           卡片上的可点标签（3~4 个），脚本不生成也不覆盖
+# downloads      多网盘渠道，第一个是主渠道；提取码建议加引号，避免 0101 被当成数字
+# cover          卡片封面，相对本目录的文件名；没有就留空（卡片退成排版封面并标注待补）
+# detail_image   详情放大图（可选）
+# size_mb        发行包体积，仅用于核对
+# updated        进 sitemap 的 lastmod，只有这条真变了才改
+# local_artifact 本机发行包路径，只给人看，构建不读，跨机器失效也不报错
+# copy_source    简介抽取来源（留档用）
+#
+# 改完跑：python tools/catalog.py check && python tools/catalog.py index
+# 本文件的注释在你用 links in / link 子命令改写时会被重新生成，手写的额外注释请放进「notes」不合适的位置——直接写在字段旁边即可。
+slug: 014_Corpus
+kind: soft
+name: Corpus
+name_en: ''
+exe_name: ''
+version: 1.1.0
+status: draft
+category: ''
+summary: 本地优先、所见即所得（WYSIWYG）的 Windows 桌面 Markdown 编辑器。
+description: 本地优先、所见即所得（WYSIWYG）的 Windows 桌面 Markdown 编辑器。
+features:
+- 打开即写：编辑区直接呈现渲染后的排版，没有「左写右预览」的双栏割裂。
+- 一键导出：HTML / PDF / PNG 从同一文档模型生成。
+keywords:
+- 本地优先
+- PDF
+aliases: []
+downloads: []
+cover: cover.png
+image_kind: icon
+size_mb: 0.0
+updated: '2026-11-15'
+copy_source: README.md

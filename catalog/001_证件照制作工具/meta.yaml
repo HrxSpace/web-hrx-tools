@@ -1,0 +1,85 @@
+# 上架目录条目 —— 站点展示的唯一真源，人改这个文件
+#
+# slug           默认等于目录名，改名字段无效（目录名就是主键）
+# kind           soft 软件 / doc 资料
+# name/name_en   商品名（卡片主标题）/ 英文名（决定详情页 URL，别轻易改）
+# exe_name       进程名或发行包名，用户可能直接搜它
+# version        对外版本号
+# status         live 上架 / coming_soon 灰卡（两者必须有链接）/ draft 收着不上页 / hidden 不渲染
+# category       分类筛选栏就是它的去重结果
+# summary        卡片上一句话（30~60 字）
+# description    详情页简介段落
+# features       功能要点（列表，参与搜索，卡片取前 3 条做标签）
+# keywords/aliases  额外搜索词 / 用户可能的叫法
+# tags           卡片上的可点标签（3~4 个），脚本不生成也不覆盖
+# downloads      多网盘渠道，第一个是主渠道；提取码建议加引号，避免 0101 被当成数字
+# cover          卡片封面，相对本目录的文件名；没有就留空（卡片退成排版封面并标注待补）
+# detail_image   详情放大图（可选）
+# size_mb        发行包体积，仅用于核对
+# updated        进 sitemap 的 lastmod，只有这条真变了才改
+# local_artifact 本机发行包路径，只给人看，构建不读，跨机器失效也不报错
+# copy_source    简介抽取来源（留档用）
+#
+# 改完跑：python tools/catalog.py check && python tools/catalog.py index
+# 本文件的注释在你用 links in / link 子命令改写时会被重新生成，手写的额外注释请放进「notes」不合适的位置——直接写在字段旁边即可。
+slug: 001_证件照制作工具
+kind: soft
+name: 证照快做
+name_en: IDPhotoKit
+exe_name: 证照快做
+version: 0.1.6
+status: live
+category: 证件证照
+summary: 证照快做是一款在本地电脑上制作标准证件照的桌面工具。
+description: 证照快做是一款在本地电脑上制作标准证件照的桌面工具。导入一张生活照，选好规格，软件自动完成抠图、换底和构图，按报名要求导出成品，还能自动拼版直接送印。 软件全程离线运行：照片只在你电脑的内存里处理，不上传、不联网、不保存原图；AI 抠图模型随软件包内置，没有网络也能用。全程无水印、无广告。
+features:
+- 照片导入：选择文件、拖拽、剪贴板粘贴三种方式，支持 JPG/PNG/BMP/WEBP/TIFF，自动记忆最近打开
+- 规格库：内置 25 项常用规格，覆盖一寸/二寸/身份证/护照与考试报名、签证规格，支持自定义规格
+- AI 抠图：本地人像分割，自动保留头发和肩部边缘；配合擦除/恢复画笔手动精修
+- 背景换色：红/白/蓝/浅蓝/灰一键切换，支持自定义颜色、白蓝渐变、柔和投影、透明底
+- 智能构图：按规格自动对齐人脸位置，提供头顶留白、眼平、下巴辅助线
+- 美颜调整：磨皮、美白、亮度、对比度四项微调，一键应用自然档
+- 按需导出：指定 DPI 和像素、目标体积自动压缩、自定义命名规则、导出前预估体积
+- 质量自检：对清晰度、曝光、人脸占比给出参考提示
+- 拼版打印：5 寸/6 寸/大 6 寸相纸与 A4/A5/A6 自动排版并标注裁切线，导出 JPG 或 PDF
+- 偏好设置：默认导出目录、DPI、背景色可自定义并记住
+keywords:
+- 选好规格
+- 软件自动完成抠图
+- 换底和构图
+- 按报名要求导出成品
+- 不上传
+- 不联网
+- 不保存原图
+- 无广告
+- JPG
+- PNG
+- BMP
+- WEBP
+aliases:
+- 证件照
+- 报名照
+- 签证照
+- 回执
+- idphotokit
+- '001'
+tags:
+- 证件照制作
+- 证件照换底色
+- 报名照
+- 签证照
+downloads:
+- platform: 夸克网盘
+  url: https://pan.quark.cn/s/e845c890b95f
+  code: ''
+  note: ''
+- platform: UC网盘
+  url: https://drive.uc.cn/s/e1acf58f27344?public=1
+  code: ''
+  note: ''
+cover: cover.png
+image_kind: screenshot
+size_mb: 119.1
+updated: '2026-11-14'
+local_artifact: ../../../AI_SOFT/001_证件照制作工具/dist/证照快做_v0.1.6.zip
+copy_source: 用户手册/证照快做使用说明.md

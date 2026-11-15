@@ -1,0 +1,83 @@
+# 上架目录条目 —— 站点展示的唯一真源，人改这个文件
+#
+# slug           默认等于目录名，改名字段无效（目录名就是主键）
+# kind           soft 软件 / doc 资料
+# name/name_en   商品名（卡片主标题）/ 英文名（决定详情页 URL，别轻易改）
+# exe_name       进程名或发行包名，用户可能直接搜它
+# version        对外版本号
+# status         live 上架 / coming_soon 灰卡（两者必须有链接）/ draft 收着不上页 / hidden 不渲染
+# category       分类筛选栏就是它的去重结果
+# summary        卡片上一句话（30~60 字）
+# description    详情页简介段落
+# features       功能要点（列表，参与搜索，卡片取前 3 条做标签）
+# keywords/aliases  额外搜索词 / 用户可能的叫法
+# tags           卡片上的可点标签（3~4 个），脚本不生成也不覆盖
+# downloads      多网盘渠道，第一个是主渠道；提取码建议加引号，避免 0101 被当成数字
+# cover          卡片封面，相对本目录的文件名；没有就留空（卡片退成排版封面并标注待补）
+# detail_image   详情放大图（可选）
+# size_mb        发行包体积，仅用于核对
+# updated        进 sitemap 的 lastmod，只有这条真变了才改
+# local_artifact 本机发行包路径，只给人看，构建不读，跨机器失效也不报错
+# copy_source    简介抽取来源（留档用）
+#
+# 改完跑：python tools/catalog.py check && python tools/catalog.py index
+# 本文件的注释在你用 links in / link 子命令改写时会被重新生成，手写的额外注释请放进「notes」不合适的位置——直接写在字段旁边即可。
+slug: 006_图片去除水印工具
+kind: soft
+name: 图片去水印
+name_en: WatermarkRemover
+exe_name: 图片去水印
+version: 1.29.10
+status: live
+category: 图片处理
+summary: 本地 AI 图片修复：涂抹水印区域，一键修复成自然画面
+description: 图片去水印是一款本地运行的图片修复工具：打开一张带水印的图片，用鼠标把水印涂出来，AI 会自动把涂抹的区域修复成自然的画面，最后另存为新图片。整个过程在你的电脑上完成，图片不会被上传到任何服务器。 典型场景：去掉照片上的文字水印、Logo、日期戳，或抹掉画面里不想要的小物件。
+features:
+- 全程本地处理：AI 修复模型就在你的电脑上，图片不上传，断网也能用；状态栏会显示当前用的计算引擎
+- 一键去水印：涂抹水印区域，AI 自动修复成自然画面
+- 批量去水印：整批图片位置相同的水印，涂一次蒙版全部套用；也支持逐张涂抹
+- 快速预览：正式处理前先看修复效果，不满意可以继续调整
+- 灵活涂抹：左键涂抹、右键擦除，笔刷大小和边缘柔和度都可调
+- 画布缩放平移：滚轮缩放、中键拖动，小水印也能涂得精准
+- 撤销与重做：涂错了随时回退，也可一键清空全部涂抹
+- 多种格式：支持打开 png / jpg / webp / bmp / ico / icns，保存为 png / jpg / webp / bmp
+- 自动命名：保存时自动加时间戳，不会覆盖你的原图
+- 个性化：12 个快捷键全部可以自定义
+- 自动选设备：有 NVIDIA 显卡时走显卡，没有则用 CPU，功能一样完整
+keywords:
+- 用鼠标把水印涂出来
+- Logo
+- 日期戳
+- 逐张涂抹
+- 每张图各自的蒙版
+- 不满意可以继续调整
+- 右键擦除
+- 中键拖动
+- 小水印也能涂得精准
+- 也可一键清空全部涂抹
+- 打开 png
+- jpg
+aliases:
+- 去水印
+- 水印去除
+- 抹除物体
+- '006'
+tags:
+- 图片去水印
+- 一键去水印
+- 涂抹修复
+- 抹除物体
+downloads:
+- platform: 夸克网盘
+  url: https://pan.quark.cn/s/3d0079b3f361
+  code: ''
+  note: ''
+- platform: UC网盘
+  url: https://drive.uc.cn/s/dd4ebdb5991d4?public=1
+  code: ''
+  note: ''
+cover: cover.png
+image_kind: screenshot
+size_mb: 0.0
+updated: '2026-11-14'
+copy_source: 用户手册/图片去水印使用说明.md

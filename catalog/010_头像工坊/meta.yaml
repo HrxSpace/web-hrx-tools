@@ -1,0 +1,51 @@
+# 上架目录条目 —— 站点展示的唯一真源，人改这个文件
+#
+# slug           默认等于目录名，改名字段无效（目录名就是主键）
+# kind           soft 软件 / doc 资料
+# name/name_en   商品名（卡片主标题）/ 英文名（决定详情页 URL，别轻易改）
+# exe_name       进程名或发行包名，用户可能直接搜它
+# version        对外版本号
+# status         live 上架 / coming_soon 灰卡（两者必须有链接）/ draft 收着不上页 / hidden 不渲染
+# category       分类筛选栏就是它的去重结果
+# summary        卡片上一句话（30~60 字）
+# description    详情页简介段落
+# features       功能要点（列表，参与搜索，卡片取前 3 条做标签）
+# keywords/aliases  额外搜索词 / 用户可能的叫法
+# tags           卡片上的可点标签（3~4 个），脚本不生成也不覆盖
+# downloads      多网盘渠道，第一个是主渠道；提取码建议加引号，避免 0101 被当成数字
+# cover          卡片封面，相对本目录的文件名；没有就留空（卡片退成排版封面并标注待补）
+# detail_image   详情放大图（可选）
+# size_mb        发行包体积，仅用于核对
+# updated        进 sitemap 的 lastmod，只有这条真变了才改
+# local_artifact 本机发行包路径，只给人看，构建不读，跨机器失效也不报错
+# copy_source    简介抽取来源（留档用）
+#
+# 改完跑：python tools/catalog.py check && python tools/catalog.py index
+# 本文件的注释在你用 links in / link 子命令改写时会被重新生成，手写的额外注释请放进「notes」不合适的位置——直接写在字段旁边即可。
+slug: 010_头像工坊
+kind: soft
+name: 头像工坊
+name_en: AvatarForge
+version: 0.2.0
+status: draft
+summary: 纯本地离线的照片转风格头像工具。
+description: 纯本地离线的照片转风格头像工具。导入一张照片，自动定位人脸构图、抠图换底， 套用油画 / 动漫 / 素描 / 经典滤镜风格，导出圆形或方形的多尺寸头像。 照片全程只在本机内存中处理，不上传、不联网、不保存原图。 全部推理模型随软件 分发在 resources/models/，运行期间零下载、零外发。
+keywords:
+- 自动定位人脸构图
+- 抠图换底
+- 套用油画
+- 动漫
+- 素描
+- 经典滤镜风格
+- 不上传
+- 不联网
+- models
+- 运行期间零下载
+- 零外发
+- AvatarForge
+downloads: []
+cover: cover.png
+image_kind: icon
+size_mb: 0.0
+updated: '2026-11-02'
+copy_source: README.md

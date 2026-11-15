@@ -1,0 +1,96 @@
+# 上架目录条目 —— 站点展示的唯一真源，人改这个文件
+#
+# slug           默认等于目录名，改名字段无效（目录名就是主键）
+# kind           soft 软件 / doc 资料
+# name/name_en   商品名（卡片主标题）/ 英文名（决定详情页 URL，别轻易改）
+# exe_name       进程名或发行包名，用户可能直接搜它
+# version        对外版本号
+# status         live 上架 / coming_soon 灰卡（两者必须有链接）/ draft 收着不上页 / hidden 不渲染
+# category       分类筛选栏就是它的去重结果
+# summary        卡片上一句话（30~60 字）
+# description    详情页简介段落
+# features       功能要点（列表，参与搜索，卡片取前 3 条做标签）
+# keywords/aliases  额外搜索词 / 用户可能的叫法
+# tags           卡片上的可点标签（3~4 个），脚本不生成也不覆盖
+# downloads      多网盘渠道，第一个是主渠道；提取码建议加引号，避免 0101 被当成数字
+# cover          卡片封面，相对本目录的文件名；没有就留空（卡片退成排版封面并标注待补）
+# detail_image   详情放大图（可选）
+# size_mb        发行包体积，仅用于核对
+# updated        进 sitemap 的 lastmod，只有这条真变了才改
+# local_artifact 本机发行包路径，只给人看，构建不读，跨机器失效也不报错
+# copy_source    简介抽取来源（留档用）
+#
+# 改完跑：python tools/catalog.py check && python tools/catalog.py index
+# 本文件的注释在你用 links in / link 子命令改写时会被重新生成，手写的额外注释请放进「notes」不合适的位置——直接写在字段旁边即可。
+slug: 009_AI缓存专清
+kind: soft
+name: AI缓存专清
+name_en: AICacheSweeper
+exe_name: AI缓存专清
+version: 0.4.7
+status: live
+category: 系统清理
+summary: AI缓存专清是一款专门清理 AI 编程终端和包管理器残留的 Windows 桌面工具。
+description: AI缓存专清是一款专门清理 AI 编程终端和包管理器残留的 Windows 桌面工具。它会把 Claude Code、Codex、Cursor、ZCode、Kimi、豆包、Qoder、TRAE 等 AI 工具留下的缓存、日志、会话历史、配置和更新包列成一张清单，按安全等级分类，让你先看清再决定删什么。 它适合经常使用 AI 编程工具、C 盘空间越来越紧张，但又担心“删错文件”的人。软件坚持三条原则：只清理本机、只读文件名/大小/修改时间（不打开文件内容）、不联网。
+features:
+- 扫描 AI 终端残留：自动找出用户目录和 AppData 里的 AI 工具缓存
+- 四级安全分级：S（可放心清理）、A（需要确认）、B（默认保护）、C（禁止清理），凭据和程序本体永远不能删
+- 清理前先试算：列出本次要删多少项、大概能回收多少、哪些会先归档
+- 直接删除并明确提示：删除不经过系统回收站，每次都会弹出三条固定警示
+- 归档与还原：会话历史和配置在删除前会先复制到归档区
+- 清理记录：每次清理都留下一条记录，写清估算回收、实际释放
+- 瘦身建议：只读提示哪些终端很久没用、哪个文件特别大、哪些缓存占用高。
+- SKILL/AGENT 盘点：把技能、命令、插件、规范文件列清楚，只看不动。
+- 设置与报告：可调整归档保留天数、扫描线程数等；清理后可导出 JSON/CSV 报告。
+keywords:
+- AI 缓存
+- AI 编程工具
+- 缓存清理
+- C盘瘦身
+- 磁盘清理
+- 安全分级
+- 归档还原
+- Skill 盘点
+- 不联网
+- Codex
+- Cursor
+- ZCode
+- Kimi
+- 豆包
+- Qoder
+- 日志
+- 会话历史
+- 按安全等级分类
+- C 盘空间越来越紧张
+- 只读文件名
+- 大小
+aliases:
+- AI缓存清理
+- AI缓存清道夫
+- 缓存清道夫
+- 缓存清理
+- 清理C盘
+- AI工具缓存
+- Claude Code 缓存
+- AICacheSweeper
+- 009
+tags:
+- 清理C盘
+- AI工具缓存
+- 缓存清理
+- Claude Code缓存
+downloads:
+- platform: 夸克网盘
+  url: https://pan.quark.cn/s/51546c445e77
+  code: ''
+  note: ''
+- platform: UC网盘
+  url: https://drive.uc.cn/s/d4ef13b9ee074?public=1
+  code: ''
+  note: ''
+cover: cover.png
+image_kind: screenshot
+size_mb: 31.7
+updated: '2026-11-14'
+local_artifact: ../../../AI_SOFT/009_AI缓存专清/dist/AI缓存专清_v0.4.7_nuitka.zip
+copy_source: 用户手册/AI缓存专清使用说明.md

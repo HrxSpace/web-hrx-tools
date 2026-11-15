@@ -1,0 +1,10 @@
+{
+  "origin": "legacy data/shares.yaml",
+  "root": "AI_SOFT",
+  "project_dir": "006_图片去除水印工具",
+  "cover_from": "推广套件/images/01-主界面.png",
+  "cover_sha1": "16bfe9fe51d716f9e8a233145c4db2ecf5cf781a",
+  "manual_from": "用户手册/图片去水印使用说明.md",
+  "manual_sha1": "f0682c9b60700bc65a5cd1172acc22b0f7280d11",
+  "intake_at": "2026-11-15"
+}

@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
-"""把 data/shares.yaml 构建成可发布的静态站点（web/）。
+"""把 catalog/ 构建成可发布的静态站点（web/）。
 
 用法：
-    python tools/build_site.py                     # 构建到 web/（站点名与域名取 data/shares.yaml 的 site: 段）
+    python tools/build_site.py                     # 构建到 web/（品牌名与域名取 catalog/site.yaml）
     python tools/build_site.py --offline           # 本地预览：不产 canonical/og/JSON-LD/sitemap，这种产物别发布
     python tools/build_site.py --site-url https://新域名   # 换域名时临时覆盖配置，canonical/sitemap 跟着走
     python tools/build_site.py --no-images         # 跳过图片压缩，纯改文案时更快
 
+数据源只有一个：catalog/<数字_工程名>/。封面、正文、链接都在那一个目录里，
+构建不再读 ../AI_SOFT 与 ../AI_WORD —— 所以换机器、在构建机上重跑都能得到同样的产物。
+
 卡片正文会预渲染进 index.html（搜索引擎可抓取），同一份数据以 JSON 内嵌供前端检索，
 因此站点不依赖任何后端接口，也不额外发起网络请求。
-
-封面与发行包所在的根目录由 tools/paths.py 解析（相对本站点工程），数据文件里不存绝对路径：
-那种路径一换机器就失效，而且失效后构建不报错，只是悄悄产出一个没有封面的站点。
 """
 
 from __future__ import annotations
@@ -32,8 +32,8 @@ import paths as path_config
 from seo_check import display_width
 
 SITE_ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_DATA = SITE_ROOT / "data" / "shares.yaml"
-DEFAULT_DOCS = SITE_ROOT / "data" / "docs.yaml"
+DEFAULT_CATALOG = SITE_ROOT / "catalog"
+DEFAULT_SITE_CONFIG = DEFAULT_CATALOG / "site.yaml"
 DEFAULT_OUT = SITE_ROOT / "web"
 DEFAULT_SRC = SITE_ROOT / "site"
 MAX_WIDTH = 1280
@@ -128,23 +128,45 @@ def entry_links(entry: dict) -> list[dict]:
     ]
 
 
-def load_entries(path: Path, kind: str = "software") -> tuple[list[dict], dict]:
-    doc = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
-    rows = doc.get("shares") if kind == "software" else doc.get("docs")
-    entries = [e for e in (rows or []) if isinstance(e, dict)]
-    # 只有挂了网盘链接的条目才上架；没链接的留在数据里当待办，不占页面
-    visible = []
-    for e in entries:
-        if e.get("status") == "hidden":
+def load_catalog(catalog: Path) -> tuple[list[dict], list[dict], list[dict], list[dict], dict]:
+    """读 catalog/*/meta.yaml，返回 (软件, 资料, 排队草稿, 缺链接的上架条目, 站点配置)。
+
+    上架闸门是 status，不再是「有没有链接」——这是本次重构的核心：
+    live / coming_soon 必须有链接（缺了构建直接失败，不再静默从页面上消失）；
+    draft / hidden 一律不上页，采集进来的新工程因此不可能自己冒到线上。
+    """
+    soft: list[dict] = []
+    docs: list[dict] = []
+    queue: list[dict] = []
+    missing_links: list[dict] = []
+    for item in sorted(p for p in catalog.iterdir() if p.is_dir() and not p.name.startswith((".", "_"))):
+        meta_file = item / "meta.yaml"
+        if not meta_file.is_file():
             continue
-        links = entry_links(e)
+        meta = yaml.safe_load(meta_file.read_text(encoding="utf-8")) or {}
+        if not isinstance(meta, dict):
+            print(f"跳过格式不对的 {meta_file}（应为键值映射）。")
+            continue
+        meta["slug"] = item.name  # 目录名就是主键
+        meta["kind"] = "docs" if str(meta.get("kind") or "") == "doc" else "software"
+        status = str(meta.get("status") or "draft")
+        if status in ("hidden", "draft"):
+            queue.append(meta)
+            continue
+        links = entry_links(meta)
         if not links:
+            missing_links.append(meta)
             continue
-        e["_links"] = links
-        e["kind"] = kind
-        visible.append(e)
-    visible.sort(key=lambda e: (e.get("status") == "coming_soon", str(e.get("slug"))))
-    return visible, doc.get("site") or {}
+        meta["_links"] = links
+        (docs if meta["kind"] == "docs" else soft).append(meta)
+    for group in (soft, docs):
+        group.sort(key=lambda e: (e.get("status") == "coming_soon", str(e.get("slug"))))
+    site: dict = {}
+    site_file = catalog / "site.yaml"
+    if site_file.is_file():
+        doc = yaml.safe_load(site_file.read_text(encoding="utf-8")) or {}
+        site = doc.get("site") or doc or {}
+    return soft, docs, queue, missing_links, site
 
 
 def resolve_site(site: dict, args: argparse.Namespace) -> tuple[str, str, str, int]:
@@ -153,13 +175,13 @@ def resolve_site(site: dict, args: argparse.Namespace) -> tuple[str, str, str, i
     brand = str(site.get("name") or "").strip()
     if not brand:
         print("site.name 缺失：品牌名是页面标题、<h1>、og:site_name 与 llms.txt 首行的唯一来源。")
-        print("  修法：在 data/shares.yaml 顶部的 site: 段补一行 name: HRX 资源库")
+        print("  修法：在 catalog/site.yaml 的 site: 段补一行 name: HRX 资源库")
         return "", "", "", 2
     wechat = str(site.get("wechat_name") or "").strip()
     if not wechat:
         print("site.wechat_name 缺失：页面上「微信公众号 ·」后面那个名字得有出处。")
         print("  回落成站点名会写出与真实公众号不符的名字，读者扫码就对不上号——所以要必填。")
-        print("  修法：在 data/shares.yaml 顶部的 site: 段补一行 wechat_name: HRX 资源库")
+        print("  修法：在 catalog/site.yaml 的 site: 段补一行 wechat_name: HRX 资源库")
         return brand, "", "", 2
     if args.offline:
         # 本地预览故意不写线上域名：这种产物会被 seo_check 判不通过，正好挡住"预览包误发布"。
@@ -167,7 +189,7 @@ def resolve_site(site: dict, args: argparse.Namespace) -> tuple[str, str, str, i
     site_url = str(args.site_url or site.get("url") or "").strip().rstrip("/")
     if not site_url:
         print("site.url 未配置且没加 --offline：canonical、og、JSON-LD、sitemap 全都不会产出，这样的产物不要发布。")
-        print("  正式发布：在 data/shares.yaml 的 site: 段补一行 url: https://你的域名")
+        print("  正式发布：在 catalog/site.yaml 的 site: 段补一行 url: https://你的域名")
         print("  本地预览：python tools/build_site.py --offline")
         return brand, wechat, "", 2
     return brand, wechat, site_url, 0
@@ -205,10 +227,11 @@ def copy_brand_assets(src: Path, out: Path) -> None:
         (out / "_headers").write_bytes(headers_src.read_bytes())
 
 
-def make_images(entries: list[dict], root: Path, out: Path) -> int:
-    """按 root/条目目录/条目里的相对路径 取封面，返回「声明了封面却没取到」的条数。
+def make_images(entries: list[dict], catalog: Path, out: Path) -> int:
+    """按 catalog/<slug>/<cover> 取封面，返回「声明了封面却没取到」的条数。
 
-    这种失配不会报错，只会让卡片静默退化成排版封面，所以必须数出来打印给人看。
+    封面已经是站点自己的文件（不再是源工程里的相对路径），所以这里失配只可能是
+    文件名写错或文件被删；仍要数出来打印给人看，否则卡片会静默退成排版封面。
     """
     try:
         from PIL import Image
@@ -219,8 +242,8 @@ def make_images(entries: list[dict], root: Path, out: Path) -> int:
     img_dir.mkdir(parents=True, exist_ok=True)
     misses = 0
     for entry in entries:
-        rel = entry.get("image") or ""
-        src = (root / entry["slug"] / rel) if rel else None
+        rel = entry.get("cover") or ""
+        src = (catalog / entry["slug"] / rel) if rel else None
         entry["_asset_full"] = ""
         if not src or not src.is_file():
             entry["_asset"] = ""
@@ -632,20 +655,6 @@ def tasks_row_html(site: dict, paths: dict[str, str]) -> str:
             '<span class="tasks-label">常见需求</span>' + "".join(rows) + "</div>")
 
 
-def resolve_roots(args: argparse.Namespace) -> dict[str, path_config.Root]:
-    overrides = {k: str(v) for k, v in (("jobs_root", args.jobs_root), ("docs_root", args.docs_root)) if v}
-    return path_config.resolve_roots(overrides or None)
-
-
-def root_missing_error(root: path_config.Root, label: str) -> int:
-    """换机器后最常见的一课：路径不对就明确失败，别产出一个没有封面的站点。"""
-    print(f"{label}根目录不存在：{root.path.as_posix()}")
-    print(f"  取值 {root.value}（来源：{root.source}）")
-    print("  修法：改 data/paths.yaml，或 python tools/paths.py set --local 指定本机位置，或构建时加 --jobs-root/--docs-root。")
-    print("  查看全部取值来源：python tools/paths.py show")
-    return 2
-
-
 def docs_block_html(docs: list[dict], paths: dict[str, str]) -> str:
     """文档区块：没有可上架的条目时整段不出现，免得留下一个空标题。"""
     if not docs:
@@ -937,13 +946,16 @@ def detail_head(entry: dict, path: str, site_url: str, title: str, desc: str, br
     return "\n".join(lines)
 
 
-def load_manual(entry: dict, jobs_root: Path, brand: str, wechat: str) -> tuple[object, str]:
-    """按软件目录现取手册：正文留在手册里，不抄进 shares.yaml，
-    否则两份内容必然漂移，而人工真源会被 4000 字散文挤到读不动。"""
+def load_manual(entry: dict, catalog: Path, brand: str, wechat: str) -> tuple[object, str]:
+    """读 catalog/<slug>/manual.md：正文是站点的资产，随条目一起进版本库。
+
+    手册原稿在软件工程里；它更新了就由 `python tools/catalog.py refresh <slug> --manual`
+    显式拉一次，而不是每次构建都被源工程的改动牵着走。
+    """
     if entry.get("kind") == "docs":
         return None, ""
-    path = manual.find_manual(jobs_root / entry["slug"])
-    if not path:
+    path = catalog / entry["slug"] / "manual.md"
+    if not path.is_file():
         return None, ""
     return manual.parse(path, brand, wechat), path.as_posix()
 
@@ -1018,40 +1030,26 @@ def detail_html(entry: dict, ctx: dict) -> str:
 
 
 def build(args: argparse.Namespace) -> int:
-    data_path = Path(args.data)
-    if not data_path.is_file():
-        print(f"找不到数据文件：{data_path}\n先跑 python tools/scan_jobs.py 生成。")
+    catalog = Path(args.catalog).resolve()
+    if not catalog.is_dir():
+        print(f"找不到上架目录：{catalog}\n先跑 python tools/catalog.py import-legacy 或 intake 采集条目。")
         return 2
-    entries, site = load_entries(data_path)
-    docs_path = Path(args.docs_data)
-    docs: list[dict] = []
-    docs_site: dict = {}
-    if docs_path.is_file():
-        docs, docs_site = load_entries(docs_path, kind="docs")
+    entries, docs, queue, missing_links, site = load_catalog(catalog)
+    if missing_links:
+        print("以下条目 status 是 live/coming_soon，但没挂任何网盘渠道，先补齐或改成 draft：")
+        for meta in missing_links:
+            print(f"  · {meta['slug']}（{meta.get('name') or ''}）")
+        print("  补链接：python tools/catalog.py link <目录> --platform 夸克网盘 --url https://...")
+        return 2
     brand, wechat, site_url, config_error = resolve_site(site, args)
     if config_error:
         return config_error
     title = page_title(brand, bool(docs))
-    all_rows = [e for e in ((yaml.safe_load(data_path.read_text(encoding="utf-8")) or {}).get("shares") or [])]
-    all_docs = [e for e in ((yaml.safe_load(docs_path.read_text(encoding="utf-8")) or {}).get("docs") or [])] if docs_path.is_file() else []
-    backlog = [
-        e.get("name") or e.get("slug") or "?"
-        for e in all_rows + all_docs
-        if e.get("status") != "hidden" and not entry_links(e)
-    ]
     combined = entries + docs
     if not combined:
-        print("没有可上架的条目：所有条目都还没挂网盘链接。")
-        print(f"待挂链接 {len(backlog)} 条，填好数据文件里的 share_url 后重新构建。")
+        print("没有可上架的条目：catalog 里的条目要么是 draft，要么没有链接。")
+        print(f"排队中 {len(queue)} 条（draft/hidden），需要上架就把 status 改成 live 并挂链接。")
         return 0
-    roots = resolve_roots(args)
-    jobs_root = roots["jobs_root"].path
-    docs_root = roots["docs_root"].path
-    if not args.no_images:
-        if any(e.get("image") for e in entries) and not roots["jobs_root"].exists:
-            return root_missing_error(roots["jobs_root"], "软件")
-        if any(e.get("image") for e in docs) and not roots["docs_root"].exists:
-            return root_missing_error(roots["docs_root"], "文档")
     out = Path(args.out).resolve()
     out.mkdir(parents=True, exist_ok=True)
     for stale in out.rglob("*.html"):
@@ -1065,15 +1063,15 @@ def build(args: argparse.Namespace) -> int:
             e["_asset"] = ""
             e["_asset_full"] = ""
     else:
-        misses = make_images(entries, jobs_root, out) + make_images(docs, docs_root, out)
+        misses = make_images(entries, catalog, out) + make_images(docs, catalog, out)
 
     src = Path(args.src)
     copy_brand_assets(src, out)
     desc = PAGE_DESC_WITH_DOCS if docs else PAGE_DESC
-    updated = str(site.get("updated") or docs_site.get("updated") or date.today())
+    updated = str(site.get("updated") or date.today())
     count_line = f"共 {len(entries)} 款软件" + (f" · {len(docs)} 份资料" if docs else "")
     paths = page_paths(combined)
-    manuals = {e["slug"]: load_manual(e, jobs_root, brand, wechat) for e in combined}
+    manuals = {e["slug"]: load_manual(e, catalog, brand, wechat) for e in combined}
     no_manual = [e["name"] for e in entries if not manuals[e["slug"]][0]]
     brand_fixes = sum(m.brand_fixes for m, _ in manuals.values() if m)
     wechat_fixes = sum(m.wechat_fixes for m, _ in manuals.values() if m)
@@ -1146,21 +1144,18 @@ def build(args: argparse.Namespace) -> int:
         (out / "sitemap.xml").unlink()  # 不带域名构建时，别把旧域名的 sitemap 留在发布包里
 
     total = sum(f.stat().st_size for f in out.rglob("*") if f.is_file()) / 1048576
-    no_cover = [e["name"] for e in entries if e.get("image_kind") != "screenshot"]
-    no_doc_cover = [e["name"] for e in docs if not e.get("image")]
+    no_cover = [e["name"] for e in entries if not e.get("_asset")]
+    no_doc_cover = [e["name"] for e in docs if not e.get("_asset")]
     print(
         f"已上架 {len(entries)} 款软件"
         + (f" + {len(docs)} 份资料" if docs else "")
         + f"，{len(pages)} 个页面 → {path_config.display_path(out)}/  （{total:.2f} MB）"
     )
-    if entries:
-        print(f"软件根目录：{jobs_root.as_posix()}（来源：{roots['jobs_root'].source}）")
-    if docs:
-        print(f"文档根目录：{docs_root.as_posix()}（来源：{roots['docs_root'].source}）")
+    print(f"上架目录：{path_config.display_path(catalog)}/")
     if misses:
-        print(f"警告：{misses} 条声明了封面却没取到文件，卡片会退化成排版封面——请核对 image 相对路径与根目录配置。")
-    if backlog:
-        print(f"未挂链接、暂不显示 {len(backlog)} 条：" + "、".join(backlog))
+        print(f"警告：{misses} 条声明了封面却没取到文件，卡片会退化成排版封面——请核对 catalog/<目录>/ 里的 cover 文件名。")
+    if queue:
+        print(f"draft/hidden {len(queue)} 条（不上页）：" + "、".join(str(e.get("slug")) for e in queue))
     if no_cover:
         print("缺真实界面截图：" + "、".join(no_cover))
     if no_doc_cover:
@@ -1172,7 +1167,7 @@ def build(args: argparse.Namespace) -> int:
     if indexnow_file:
         print(f"IndexNow key 文件已产出：{indexnow_file}（推送用 python tools/submit_indexnow.py）")
     if brand_fixes:
-        print(f"提示：手册里有 {brand_fixes} 处旧品牌写法，已按 site.name 统一渲染；源头在各软件工程的 md 里，建议顺手改掉。")
+        print(f"提示：manual.md 里有 {brand_fixes} 处旧品牌写法，已按 site.name 统一渲染；源头在 catalog/<目录>/manual.md，建议顺手改掉。")
     if wechat_fixes:
         print(f"提示：手册里有 {wechat_fixes} 处提到公众号，已按 site.wechat_name 渲染（公众号名不跟着站点品牌走）。")
     thin = [rel for rel, content in pages.items() if rel != "index.html" and body_han(content) < MIN_PAGE_HAN]
@@ -1192,13 +1187,10 @@ def build(args: argparse.Namespace) -> int:
 
 def main() -> int:
     p = argparse.ArgumentParser(description="构建静态站点")
-    p.add_argument("--data", default=str(DEFAULT_DATA))
-    p.add_argument("--docs-data", default=str(DEFAULT_DOCS), help="文档数据文件（不存在则站点不含文档区块）")
+    p.add_argument("--catalog", default=str(DEFAULT_CATALOG), help="上架目录，默认 catalog/")
     p.add_argument("--out", default=str(DEFAULT_OUT))
     p.add_argument("--src", default=str(DEFAULT_SRC))
-    p.add_argument("--jobs-root", type=Path, default=None, help="软件根目录（默认取 data/paths.yaml 的 jobs_root）")
-    p.add_argument("--docs-root", type=Path, default=None, help="文档根目录（默认取 data/paths.yaml 的 docs_root）")
-    p.add_argument("--site-url", default="", help="临时覆盖 data/shares.yaml 的 site.url（换域名试构建用，正式值请写进配置）")
+    p.add_argument("--site-url", default="", help="临时覆盖 catalog/site.yaml 的 site.url（换域名试构建用，正式值请写进配置）")
     p.add_argument("--offline", action="store_true", help="本地预览：忽略 site.url，不产 canonical/og/JSON-LD/sitemap（这种产物 seo_check 判不通过）")
     p.add_argument("--no-images", action="store_true", help="跳过封面压缩")
     args = p.parse_args()

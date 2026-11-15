@@ -1,0 +1,35 @@
+# 站点级配置 —— 品牌名、公众号名、正式域名、站长验证文件、常见需求导航
+# 只有这里一份，页面标题/h1/og/canonical/sitemap/llms.txt/JSON-LD 全部从这里拼出来。
+# 缺 name/wechat_name/url 时构建直接失败：这三种沉默都曾在线上发生过。
+site:
+  name: HRX 资源库
+  wechat_name: HRX 资源库
+  url: https://pcpan.top
+  indexnow_key: e66a8baeeb22b771bcb9cea810a710fc
+  baidu_analytics: 644757071a55c85a4cf2b57332f751f0
+  verify:
+  - file: google8850a877dbfc1756.html
+    text: 'google-site-verification: google8850a877dbfc1756.html'
+  - file: BingSiteAuth.xml
+    text: "<?xml version=\"1.0\"?>\n<users>\n  <user>6967013A744D4A440318882383AD062F</user>\n  <user>D9B953C44BAD3819F5D8B70AD7E37A68</user>\n</users>\n"
+  - file: sogousiteverification.txt
+    text: SbMq0Lqbel
+  verify_meta:
+  - name: msvalidate.01
+    content: D9B953C44BAD3819F5D8B70AD7E37A68
+  tasks:
+  - label: PDF合并
+    slug: 000_PDF超级工具箱
+  - label: PDF拆分
+    slug: 000_PDF超级工具箱
+  - label: 证件照制作
+    slug: 001_证件照制作工具
+  - label: 图片去水印
+    slug: 006_图片去除水印工具
+  - label: 清理C盘
+    slug: 009_AI缓存专清
+  - label: AI工具缓存
+    slug: 009_AI缓存专清
+  - label: WorkBuddy实战教程
+    slug: W000_WorkBuddy实战文档系列
+  updated: '2026-11-05'
