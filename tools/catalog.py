@@ -730,16 +730,18 @@ def cmd_drift(args: argparse.Namespace) -> int:
         if not project.is_dir():
             rows.append(f"{d.name}：源工程已不存在 {project.as_posix()}")
             continue
-        for key, label in (("cover_from", "封面"), ("manual_from", "正文")):
-            rel = str(record.get(key) or "")
+        for rel_key, sha_key, label, hint in (
+            ("cover_from", "cover_sha1", "封面", "--cover"),
+            ("manual_from", "manual_sha1", "正文", "--manual"),
+        ):
+            rel = str(record.get(rel_key) or "")
             if not rel:
                 continue
             src = project / rel
             if not src.is_file():
                 rows.append(f"{d.name}：源{label}已删除 {rel}")
                 continue
-            if sha1(src) != str(record.get(key + "_sha1") or ""):
-                hint = "--cover" if key == "cover_from" else "--manual"
+            if sha1(src) != str(record.get(sha_key) or ""):
                 rows.append(f"{d.name}：源{label}有改动 {rel} → 需要就 refresh {d.name} {hint}")
     if not rows:
         print("没有漂移：catalog 里的封面与正文都和采集时的源文件一致。")
