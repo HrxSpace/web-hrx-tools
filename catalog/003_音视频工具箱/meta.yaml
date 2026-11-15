@@ -28,7 +28,7 @@ name: 音视频工具箱
 name_en: MediaToolbox
 exe_name: MediaToolbox
 version: 0.1.0
-status: draft
+status: live
 category: 音视频
 summary: 绿色免安装、纯本地运行的 Windows 音视频处理小工具
 description: 绿色免安装、纯本地运行的 Windows 音视频处理小工具：格式转换、视频压缩、视频裁剪、提取音频、批量截图、合并、转 GIF 七类高频操作封装成一键预设，自动调用显卡硬件加速。解压即用，可放 U 盘；不联网、不上传、无广告、无捆绑。
@@ -59,10 +59,23 @@ aliases:
 - 提取音频
 - 转GIF
 - '003'
-downloads: []
+tags:
+- 格式转换
+- 视频压缩
+- 提取音频
+- 转GIF
+downloads:
+- platform: 夸克网盘
+  url: https://pan.quark.cn/s/d1d15c743c6d
+  code: ''
+  note: ''
+- platform: UC网盘
+  url: https://drive.uc.cn/s/d083ae6a243e4?public=1
+  code: ''
+  note: ''
 cover: cover.png
 image_kind: icon
 size_mb: 223.3
-updated: '2026-10-29'
+updated: '2026-11-15'
 local_artifact: ../../../AI_SOFT/003_音视频工具箱/dist/MediaToolbox_v0.1.0.zip
 copy_source: README.txt
