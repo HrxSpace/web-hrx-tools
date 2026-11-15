@@ -2,9 +2,12 @@
   "origin": "legacy data/shares.yaml",
   "root": "AI_SOFT",
   "project_dir": "002_文件百宝箱",
-  "cover_from": "演示视频/images/01-主界面.png",
+  "cover_from": "推广文章/images/01-主界面-批量重命名.png",
   "cover_sha1": "f504e26ce2a5f665bb68cf7f086a74fe1aafb6ca",
-  "manual_from": "",
-  "manual_sha1": "",
-  "intake_at": "2026-11-15"
+  "manual_from": "用户手册/文件百宝箱使用说明.md",
+  "manual_sha1": "9e3cb4508af6a91229787d577194adc5f962e32b",
+  "intake_at": "2026-11-15",
+  "refreshed_at": "2026-11-15",
+  "version_seen": "0.15.0",
+  "artifact_from": "dist/文件百宝箱_v0.15.0_nuitka.zip"
 }

@@ -26,12 +26,12 @@ slug: 002_文件百宝箱
 kind: soft
 name: 文件百宝箱
 name_en: BoxBatch
-exe_name: BoxBatch
-version: 0.9.1
+exe_name: 文件百宝箱.exe
+version: 0.15.0
 status: live
 category: 文件批量
 summary: 纯本地、绿色免安装、全中文的 Windows 批量文件处理工具。
-description: 纯本地、绿色免安装、全中文的 Windows 批量文件处理工具。 一个软件覆盖六件事： 安全承诺：所有删除走系统回收站；所有批量操作可撤销；图片默认输出到新目录；全程不联网、不上传。
+description: 文件百宝箱是一款在你自己电脑上完成批量文件处理的 Windows 工具，四个页面各管一类活：批量重命名、图片批量处理、重复文件查重、文件夹智能整理。它在执行前先给出一张影响预览表，逐行列出原名、新名字和状态，执行按钮上的数字只算真的会写盘的条目；删除一律进系统回收站，批量操作可撤销，全程不联网、不上传。
 features:
 - 批量重命名
 - 改扩展名
@@ -68,7 +68,7 @@ downloads:
   note: ''
 cover: cover.png
 image_kind: screenshot
-size_mb: 54.7
+size_mb: 35.0
 updated: '2026-11-15'
-local_artifact: ../../../AI_SOFT/002_文件百宝箱/dist/BoxBatch_v0.9.1_win_x64.zip
-copy_source: README.md
+local_artifact: ../../../AI_SOFT/002_文件百宝箱/dist/文件百宝箱_v0.15.0_nuitka.zip
+copy_source: 用户手册/文件百宝箱使用说明.md（v0.15.0）
