@@ -28,7 +28,7 @@ name: 文件百宝箱
 name_en: BoxBatch
 exe_name: BoxBatch
 version: 0.9.1
-status: draft
+status: live
 category: 文件批量
 summary: 纯本地、绿色免安装、全中文的 Windows 批量文件处理工具。
 description: 纯本地、绿色免安装、全中文的 Windows 批量文件处理工具。 一个软件覆盖六件事： 安全承诺：所有删除走系统回收站；所有批量操作可撤销；图片默认输出到新目录；全程不联网、不上传。
@@ -57,10 +57,18 @@ aliases:
 - 去重
 - 整理文件夹
 - '002'
-downloads: []
+downloads:
+- platform: 夸克网盘
+  url: https://pan.quark.cn/s/bbea23517dea
+  code: ''
+  note: ''
+- platform: UC网盘
+  url: https://drive.uc.cn/s/17a0d1d73b384?public=1
+  code: ''
+  note: ''
 cover: cover.png
 image_kind: screenshot
 size_mb: 54.7
-updated: '2026-10-29'
+updated: '2026-11-15'
 local_artifact: ../../../AI_SOFT/002_文件百宝箱/dist/BoxBatch_v0.9.1_win_x64.zip
 copy_source: README.md
