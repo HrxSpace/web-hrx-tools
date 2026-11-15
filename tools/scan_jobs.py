@@ -1,14 +1,17 @@
 #!/usr/bin/env python3
-"""扫描编号软件目录，生成/增量维护 data/shares.yaml，并输出内容体检报告。
+"""扫描编号软件工程目录，输出内容体检报告。**只读，不写任何数据文件。**
 
 用法：
-    python tools/scan_jobs.py              # 扫描并写回 shares.yaml（只补空字段，不覆盖人工内容）
-    python tools/scan_jobs.py --check      # 只体检，不写文件
+    python tools/scan_jobs.py              # 体检 AI_SOFT 下的 ^\\d{3}_ 工程
     python tools/scan_jobs.py --root PATH  # 临时指定软件根目录（默认读 data/paths.yaml）
 
-条目以目录名（如 000_PDF超级工具箱）为唯一主键。人工维护的字段一旦填写就不再被脚本改动，
-脚本只负责发现新软件、填空缺字段，并把漂移（版本变化/发行包更换/缺链接/缺封面）报告出来。
-软件根目录不写进数据文件：那属于机器环境，跨机器会失效，统一由 tools/paths.py 解析。
+它回答的是「源工程里有什么、catalog 里跟到哪一步了」：新工程没采集、版本漂移、缺发行包、
+缺真实截图、上架了却没挂链接，都在这张表里。
+
+要动手改数据，走 catalog.py：
+    python tools/catalog.py intake 012_老照片修复工具   # 采集一条（默认 draft，不上页）
+    python tools/catalog.py refresh 012_老照片修复工具 --cover
+上架真源是 catalog/<数字_工程名>/，这里不再有任何「扫描一次就把工程推上线」的路径。
 """
 
 from __future__ import annotations
@@ -27,49 +30,9 @@ import yaml
 import paths as path_config
 
 SITE_ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_OUT = SITE_ROOT / "data" / "shares.yaml"
+CATALOG_DIR = SITE_ROOT / "catalog"
 NUM_DIR = re.compile(r"^\d{3}_")
 
-HEADER = """\
-# 网盘分享站点数据源 —— 唯一真源，人工维护
-#
-# 字段说明：
-#   slug            主键，等于软件目录名，不要手改（改了就等于删旧增新）
-#   name / name_en  商品名（卡片主标题）与英文名（搜索用）
-#   exe_name        发行包/进程名，用户搜索时可能直接搜它
-#   version         对外版本号
-#   status          live=上架 / coming_soon=即将上架（灰态卡片） / hidden=完全不渲染
-#   downloads       多网盘渠道列表，填了优先于下面的三件套（提取码建议加引号）：
-#                     - platform: 夸克网盘
-#                       url: https://pan.quark.cn/s/xxxx
-#                       code: '1A2B'        # 可留空
-#                       note: 无需登录        # 可留空
-#   share_url       单渠道快捷写法：网盘分享链接；留空则不下发到页面
-#   share_code      单渠道快捷写法：提取码/访问码，随链接展示并支持复制
-#   platform        单渠道快捷写法：网盘平台名
-#   category        分类标签，用于筛选栏
-#   summary         卡片上的一句话（建议 30~60 字）
-#   description     详情段落，建议直接取自用户手册的软件简介
-#   features        功能要点列表，参与搜索
-#   keywords        额外搜索词（用户可能的叫法、同义词）
-#   image           封面图路径，相对软件根目录；脚本会自动挑选真实界面截图
-#   artifact        发行包路径，相对软件根目录（你据此去建分享）
-#   size_mb         发行包体积（MB），仅用于分享前核对
-#   copy_source     简介抽取来源，人工改写后仍可保留作为出处
-#   discovered      脚本自动发现的值，仅供对照，不参与渲染
-#
-# 站点级配置在本文件顶部的 site: 段（扫描脚本只回写 updated，其余键原样保留）：
-#   name            站点品牌名，页面标题、<h1>、og:site_name、llms.txt 全部取它——改名只动这里
-#   url             正式发布域名，canonical/og/sitemap/JSON-LD 全部拼它。
-#                   缺了构建会直接失败，不再静默产出一个没有收录信号的裸页（本地预览请显式加 --offline）
-#   verify          站长验证文件清单（每项 file + text），构建时原样写进产物。
-#                   不要手工把 googleXXXX.html 丢进 web/：构建每次清空 web/，验证会悄悄失效
-#
-# 软件根目录不在本文件里：改 data/paths.yaml（相对站点工程），或 python tools/paths.py set。
-# 新增软件：把目录放进 AI_SOFT，跑 `python tools/scan_jobs.py`，再填链接。
-# 生成站点：`python tools/build_site.py`，产物在 web/。
-
-"""
 
 # 简介抽取优先级：越靠前越接近最终用户口径
 COPY_SOURCES = (
@@ -103,22 +66,6 @@ CONST_RE = re.compile(
 SENT_SPLIT = re.compile(r"(?<=[。！？])\s*")
 CLAUSE_SPLIT = re.compile(r"(?<=[。！？：、，;；])")
 
-# --force 会重新生成的字段（人工填写的 share_*/category/aliases/name/status 等永不动）
-AUTO_KEYS = (
-    "name_en",
-    "exe_name",
-    "version",
-    "artifact",
-    "artifact_dir",
-    "size_mb",
-    "summary",
-    "description",
-    "features",
-    "keywords",
-    "image",
-    "image_kind",
-    "copy_source",
-)
 
 
 @dataclass
@@ -499,127 +446,61 @@ def scan(project: Path) -> Found:
     return found
 
 
-def to_entry(found: Found) -> dict:
-    return {
-        "slug": found.slug,
-        "name": found.name,
-        "name_en": found.name_en,
-        "exe_name": found.exe_name,
-        "version": found.version,
-        "status": found.status,
-        "category": "",
-        "share_url": "",
-        "share_code": "",
-        "platform": "",
-        "summary": found.summary,
-        "description": found.description,
-        "features": found.features,
-        "keywords": found.keywords,
-        "aliases": [],
-        "image": found.image,
-        "image_kind": found.image_kind,
-        "artifact": found.artifact,
-        "artifact_dir": found.artifact_dir,
-        "size_mb": found.size_mb,
-        "copy_source": found.copy_source,
-        "updated": str(date.today()),
-    }
-
-
-def merge(
-    existing: list[dict],
-    founds: list[Found],
-    force: bool = False,
-    legacy_slugs: set[str] | None = None,
-) -> tuple[list[dict], list[str]]:
-    legacy_slugs = legacy_slugs or set()
-    by_slug = {e.get("slug"): e for e in existing if isinstance(e, dict)}
-    notes: list[str] = []
-    order = [e.get("slug") for e in existing if e.get("slug")] + [f.slug for f in founds if f.slug not in by_slug]
-    result = []
-    for found in founds:
-        entry = by_slug.get(found.slug)
-        if entry is None:
-            result.append(to_entry(found))
-            notes.append(f"新增 {found.slug}")
-            continue
-        draft = to_entry(found)
-        for key, value in draft.items():
-            if key in ("slug", "updated"):
-                continue
-            cur = entry.get(key)
-            if force and key in AUTO_KEYS and value and cur != value:
-                entry[key] = value
-                notes.append(f"刷新 {found.slug}.{key}")
-            elif cur in (None, "", []) and value:
-                entry[key] = value
-                notes.append(f"补全 {found.slug}.{key}")
-        entry["discovered"] = {
-            "version": found.version,
-            "artifact": found.artifact,
-            "image": found.image,
-            "project_dir": found.project_dir,
-        }
-        result.append(entry)
-    for slug in order:
-        if slug and not any(r.get("slug") == slug for r in result):
-            entry = by_slug[slug]
-            if slug in legacy_slugs:
-                # 目录还留在旧位置，只是没迁进软件根目录，不能当成下架
-                notes.append(f"仍在旧位置、未迁入软件根目录，保持原状态：{slug}")
-            else:
-                entry["status"] = "hidden"
-                notes.append(f"目录消失，置为 hidden：{slug}")
-            result.append(entry)
-    return sorted(result, key=lambda e: e.get("slug", "")), notes
-
-
-def entry_links(entry: dict) -> list[dict]:
-    raw = entry.get("downloads")
+def catalog_state(slug: str) -> tuple[str, bool, list[dict]]:
+    """看 catalog 里这条走到哪一步了：(status, 是否已采集, 渠道列表)。"""
+    d = CATALOG_DIR / slug
+    meta_file = d / "meta.yaml"
+    if not meta_file.is_file():
+        return "", False, []
+    meta = yaml.safe_load(read_text(meta_file)) or {}
+    raw = meta.get("downloads")
     if isinstance(raw, dict):
         raw = [raw]
     links = [i for i in raw or [] if isinstance(i, dict) and str(i.get("url") or "").strip()]
-    if not links and str(entry.get("share_url") or "").strip():
-        links = [{"url": entry["share_url"]}]
-    return links
+    if not links and str(meta.get("share_url") or "").strip():
+        links = [{"url": meta["share_url"]}]
+    return str(meta.get("status") or ""), True, links
 
 
-def report(founds: list[Found], entries: list[dict], notes: list[str], jobs_root: Path) -> None:
-    by_slug = {e.get("slug"): e for e in entries if isinstance(e, dict)}
-    pairs = [(f, by_slug.get(f.slug) or {}) for f in founds]
+def report(founds: list[Found], jobs_root: Path) -> None:
     print(f"\n扫描根目录：{jobs_root}")
-    print(f"{'目录':<26}{'商品名':<16}{'版本':<9}{'发行包':<10}{'封面':<12}链接")
-    print("-" * 100)
-    for found, entry in pairs:
+    print(f"{'目录':<26}{'商品名':<16}{'版本':<10}{'发行包':<10}{'封面':<10}{'catalog':<9}{'状态':<13}链接")
+    print("-" * 118)
+    todo: list[tuple[str, list[str]]] = []
+    collected = 0
+    for found in founds:
+        status, in_catalog, links = catalog_state(found.slug)
+        collected += 1 if in_catalog else 0
         pkg = f"{found.size_mb:.0f}MB" if found.artifact else ("onedir" if found.artifact_dir else "无")
-        img = found.image_kind or "无"
-        links = entry_links(entry)
-        link = f"已填（{len(links)} 渠道）" if links else "待建"
-        print(f"{found.slug:<26}{found.name:<16}{found.version or '-':<9}{pkg:<10}{img:<12}{link}")
-    print("-" * 100)
-    for found, entry in pairs:
+        where = "已采集" if in_catalog else "未采集"
+        link = f"{len(links)} 渠道" if links else "待建"
+        print(
+            f"{found.slug:<26}{found.name:<16}{found.version or '-':<10}{pkg:<10}"
+            f"{found.image_kind or '无':<10}{where:<9}{status or '-':<13}{link}"
+        )
         gaps = list(found.warnings)
-        if not entry_links(entry):
-            gaps.append("缺分享链接")
-        if not entry.get("category"):
-            gaps.append("缺分类")
+        if not in_catalog:
+            gaps.append(f"未采集：python tools/catalog.py intake {found.slug}")
+        elif status == "live" and not links:
+            gaps.append("已上架但缺链接")
+        elif status == "draft" and found.artifact:
+            gaps.append("草稿：已有发行包，可考虑上架")
         if gaps:
-            print(f"· {found.name}：{'；'.join(gaps)}")
-        share_src = entry.get("artifact") or entry.get("artifact_dir")
-        if share_src:
-            print(f"    分享用文件 → {(jobs_root / found.slug / share_src).as_posix()}")
-    if notes:
-        print("\n本次数据变更：")
-        for note in notes:
-            print(f"  {note}")
+            todo.append((found.name, gaps))
+        if found.artifact:
+            print(f"    {'':<10}分享用文件 → {(jobs_root / found.slug / found.artifact).as_posix()}")
+    print("-" * 118)
+    if todo:
+        print("\n逐条待办：")
+        for name, gaps in todo:
+            print(f"· {name}：{'；'.join(gaps)}")
+    print(f"\n共 {len(founds)} 个工程，catalog 已采集 {collected} 个。")
+    print("本脚本只读：改数据请用 catalog.py intake / refresh / link，上架真源在 catalog/。")
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="扫描软件目录并维护 shares.yaml")
+    parser = argparse.ArgumentParser(description="扫描软件工程目录，输出体检报告（只读，不改任何数据）")
     parser.add_argument("--root", type=Path, default=None, help="软件根目录（默认取 data/paths.yaml 的 jobs_root）")
-    parser.add_argument("--out", type=Path, default=DEFAULT_OUT, help="数据文件路径")
-    parser.add_argument("--check", action="store_true", help="只体检不写文件")
-    parser.add_argument("--force", action="store_true", help=f"重新生成自动字段 {', '.join(AUTO_KEYS)}（人工字段保留）")
     args = parser.parse_args()
 
     if sys.stdout.encoding and sys.stdout.encoding.lower() not in ("utf-8", "utf8"):
@@ -637,39 +518,15 @@ def main() -> int:
         print(f"{jobs_root} 下没有以三位数字开头的目录")
         return 2
 
-    founds = [scan(p) for p in projects]
-    existing = []
-    existing_site: dict = {}
-    if args.out.is_file():
-        loaded = yaml.safe_load(read_text(args.out)) or {}
-        existing = loaded.get("shares") or []
-        # 站点名与域名住在 site: 段里，构建器只读不写；重写整段会把它们抹掉，
-        # 而抹掉之后的构建仍然"成功"，只是 canonical/sitemap/JSON-LD 全没了。
-        existing_site = {k: v for k, v in (loaded.get("site") or {}).items() if k != "updated"}
+    report([scan(p) for p in projects], jobs_root)
 
-    # 站点同级目录是迁移前的老位置：那里的工程只是还没搬进软件根目录，不是下架，不能置 hidden
-    legacy_base = path_config.SITE_ROOT.parent
-    legacy_slugs = (
-        {p.name for p in legacy_base.iterdir() if p.is_dir() and NUM_DIR.match(p.name)} - {f.slug for f in founds}
-        if legacy_base.is_dir()
-        else set()
+    missing = sorted(
+        d.name
+        for d in (CATALOG_DIR.iterdir() if CATALOG_DIR.is_dir() else [])
+        if d.is_dir() and not d.name.startswith((".", "_")) and not (jobs_root / d.name).is_dir()
     )
-    entries, notes = merge(existing, founds, force=args.force, legacy_slugs=legacy_slugs)
-    payload = {
-        "site": {**existing_site, "updated": str(date.today())},
-        "shares": entries,
-    }
-    if args.check:
-        notes = []
-    else:
-        args.out.parent.mkdir(parents=True, exist_ok=True)
-        args.out.write_text(HEADER + yaml.safe_dump(payload, allow_unicode=True, sort_keys=False, width=100), encoding="utf-8")
-    report(founds, entries, notes, jobs_root)
-    if legacy_slugs:
-        print(f"\n警告：{len(legacy_slugs)} 个编号工程仍在站点同级目录、未迁入软件根目录，本次扫描看不到它们：")
-        for slug in sorted(legacy_slugs):
-            print(f"    {(legacy_base / slug).as_posix()} → 建议移入 {jobs_root.as_posix()}/{slug}")
-    print(f"\n条目 {len(entries)} 条" + ("（--check 未写文件）" if args.check else f"，已写入 {path_config.display_path(args.out)}"))
+    if missing:
+        print(f"\n提示：catalog 里这些目录在软件根目录已找不到（可能改名或移走，站点仍按 catalog 里的副本展示）：{'、'.join(missing)}")
     return 0
 
 
