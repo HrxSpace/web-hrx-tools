@@ -17,6 +17,7 @@
 - 工作区中不属于本次任务的改动（其他 AI 会话、他人未完成的工作）保持原样：不提交、不还原、不 stash、不删除
 - 不提交密钥/凭据与构建产物（`dist/`、`build/`、缓存、虚拟环境等，按 `.gitignore` 排除）
 - 例外：本仓库 `web/` 是 Qoder 站点与 Cloudflare Pages 共用的发布源，必须随内容更新一起提交（见 README「部署」）
+- `catalog/` 是站点的唯一内容真源（一条目一文件夹）：`catalog/` 一改就是内容变更，必须连同重建后的 `web/` 一起提交；`catalog/index.csv`、`catalog/links.csv` 是它的导出视图，也不进 `.gitignore`（改完就重新导出再提交，保证仓库里的表与 meta 一致）
 
 ### 3. 提交信息
 

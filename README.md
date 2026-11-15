@@ -14,30 +14,42 @@ PDF 合并拆分、证件照制作、图片去水印、AI 缓存清理等常用�
 
 ---
 
-以下为站点维护文档。内容只由一份数据文件驱动，改数据 → 构建 → 发布，三步完成。
+以下为站点维护文档。内容只由**上架目录 `catalog/`** 驱动：改一个条目的文件夹 → 构建 → 发布，三步完成。
 
 ## 目录结构
 
 ```
 Z001_网盘站点/
-├─ data/shares.yaml      软件真源，人工维护（脚本只填空、不覆盖你写的内容）
-├─ data/docs.yaml        文档资料真源，同上（由 scan_docs.py 维护）
-├─ data/paths.yaml       扫描根目录配置（相对本站点工程）
-├─ site/                 前端源文件：template.html / style.css / app.js（assets/ 放二维码等固定素材）
-├─ tools/paths.py        解析/校验/改写两个扫描根目录
-├─ tools/scan_jobs.py    扫描软件目录（^\d{3}_）→ 维护 shares.yaml + 体检报告
-├─ tools/scan_docs.py    扫描文档工程（^W\d{3}_）→ 维护 docs.yaml + 体检报告
-├─ tools/build_site.py   两份数据 → 静态站点 web/
-├─ tools/seo_check.py    发布前断言：canonical/sitemap/title/h1/JSON-LD 对齐才放行
-├─ tools/submit_indexnow.py  IndexNow 即时提交（确认线上 200 后推给 Bing/Yandex 等）
-└─ web/                  构建产物（pcpan.top + qoder.zone + pages.dev 共用发布源，已进版本库，不要手改）
+├─ catalog/                     上架目录：站点展示的唯一真源（一条目一个文件夹）
+│  ├─ site.yaml                 站点级配置：品牌名 / 公众号名 / 域名 / 验证文件 / 常见需求导航
+│  ├─ index.csv                 自动导出的总清单（只读视图，Excel 直接打开）
+│  ├─ links.csv                 链接往返表（links out 产出、links in 写回）
+│  └─ 000_PDF超级工具箱/         目录名 = slug，别改（改了等于换 URL）
+│     ├─ meta.yaml              名称 / 版本 / 分类 / 状态 / 网盘渠道（人改这个）
+│     ├─ manual.md              详情页正文（原用户手册的副本，可以直接改）
+│     ├─ cover.png              卡片封面原图（构建转 webp）
+│     ├─ detail.png             详情放大图（可选）
+│     └─ _source.json           采集来源与 sha1（人不用动）
+├─ data/paths.yaml              源工程根目录配置（只给采集与体检用，构建不读）
+├─ site/                        前端源文件：template.html / style.css / app.js（assets/ 放二维码等固定素材）
+├─ tools/catalog.py             catalog 维护：采集 / 体检 / 导出 / 链接 / 漂移提醒
+├─ tools/build_site.py          catalog → 静态站点 web/（零外部依赖）
+├─ tools/seo_check.py           发布前断言：canonical/sitemap/title/h1/JSON-LD 对齐才放行
+├─ tools/submit_indexnow.py     IndexNow 即时提交（确认线上 200 后推给 Bing/Yandex 等）
+├─ tools/scan_jobs.py           只读体检：AI_SOFT 下的 ^\d{3}_ 工程现状
+├─ tools/scan_docs.py           只读体检：AI_WORD 下的 ^W\d{3}_ 工程现状
+├─ tools/paths.py               解析/校验两个源工程根目录（采集与体检用）
+└─ web/                         构建产物（pcpan.top + qoder.zone + pages.dev 共用发布源，已进版本库，不要手改）
 ```
 
 ## 换机器 / 目录布局不同
 
-软件与文档的根目录**不写进数据文件**（那是机器环境，跨机器会失效），统一由 `data/paths.yaml` 以
-相对本站点工程的路径表达，默认 `../AI_SOFT`（软件）与 `../AI_WORD`（文档）。整包挪到别的盘、别的机器，
-只要相对关系没变就不用改任何东西。
+**构建零依赖**：封面、正文、链接都在 `catalog/<条目>/` 里，所以换机器、换盘符、在根本没有 AI_SOFT 的机器上
+（比如构建机）重跑 `build_site.py`，产物逐字节一致——这条已实测：把整个工程复制到没有源工程的临时目录重建，29 个产物文件哈希全等。
+
+源工程只在三件事上还需要：采集新条目（`catalog.py intake`）、体检（`scan_jobs.py` / `scan_docs.py`）、
+漂移比对（`catalog.py drift`）。它们的根目录**不写进数据文件**（那是机器环境，跨机器会失效），
+统一由 `data/paths.yaml` 以相对本站点工程的路径表达，默认 `../AI_SOFT`（软件）与 `../AI_WORD`（文档）。
 
 ```bash
 python tools/paths.py show     # 打印每个根的取值、来源层与解析结果
@@ -48,60 +60,74 @@ python tools/paths.py set --local --jobs-root E:/Other/AI_SOFT            # 只�
 
 优先级：命令行 `--jobs-root/--docs-root` > 环境变量 `HRX_JOBS_ROOT`/`HRX_DOCS_ROOT` >
 `data/paths.local.yaml`（本机例外，已被 `.gitignore` 排除）> `data/paths.yaml` > 内置默认。
-根目录解析不到时构建会**直接失败并告诉你取值来源**，不会静默产出一个没有封面的站点。
+源目录解析不到时采集与体检会**直接失败并告诉你取值来源**；构建不受影响（它已经不读源工程了）。
+
 
 ## 日常维护
 
-**1. 新增软件**（把工程目录放进软件根目录即可，无需登记）
+**1. 新增一条**（软件或文档工程放进对应根目录后采集）
 
 ```bash
-python tools/scan_jobs.py          # 自动发现新条目、填空缺字段，并打印体检报告
+python tools/catalog.py intake 012_老照片修复工具      # 软件：拷封面+手册，自动填名称/版本/简介
+python tools/catalog.py intake W001_某文档 --doc       # 资料
 ```
 
-脚本按目录名（`^\d{3}_`）发现软件，自动挖：商品名/英文名/版本/exe 名/发行包体积/用户向简介/封面截图/搜索关键词。
+采集进来的条目一律 `status: draft`，要上架再自己改 `live` 并挂链接。
+想看源工程里还有哪些没采集、版本是否漂移：`python tools/scan_jobs.py` / `python tools/scan_docs.py`（都只读）。
 
-**2. 新增文档资料**（把工程目录放进文档根目录，目录名以 `W` + 三位编号开头）
+**2. 挂网盘链接**（三选一：命令行 / 改 meta / Excel 批量）。一个资源可以挂多个渠道，第一个是主渠道（卡片按钮直达），其余在详情里按顺序列出：
 
 ```bash
-python tools/scan_docs.py          # 同样只填空缺字段，不覆盖你写过的内容
+python tools/catalog.py link 009_AI缓存专清 --platform 夸克网盘 --url https://pan.quark.cn/s/xxxx --code 1A2B
+python tools/catalog.py link 009_AI缓存专清 --platform UC网盘 --url https://drive.uc.cn/s/yyyy    # 追加
+python tools/catalog.py links out            # 导出 catalog/links.csv（一条渠道一行）→ Excel 改 → links in
 ```
 
-文档工程的目录约定与软件不同（发布包 zip 在工程根、正文在同名子目录的 `docs/` 里），所以是独立一份数据、
-独立一个扫描器：自动挖显示名/篇数/发布包体积/简介/篇章清单/封面（宣传海报优先，退到正文插图）。
-`--check` 只体检不写文件，`--force` 重新生成自动字段，语义与 `scan_jobs.py` 一致。
-
-**3. 挂网盘链接**：编辑 `data/shares.yaml`（文档改 `data/docs.yaml`）。一个资源可以挂多个网盘渠道，第一个是主渠道（卡片按钮直达），其余在详情里按顺序列出：
+也可以直接编辑 `catalog/009_AI缓存专清/meta.yaml` 的 `downloads` 段：
 
 ```yaml
 downloads:
   - platform: 夸克网盘
     url: https://pan.quark.cn/s/xxxx
-    code: '1A2B'          # 提取码，没有就留空；建议加引号，避免 0101 被当成数字
+    code: '1A2B'          # 提取码，没有就留空；引号别省，0101 会被当成数字
     note: 无需登录          # 可选，详情里显示一句说明
   - platform: 百度网盘
     url: https://pan.baidu.com/s/yyyy
     code: abcd
 ```
 
-只挂一个渠道时可以用快捷写法，效果一样：
-
-```yaml
-share_url: https://pan.example.com/s/xxxx
-share_code: 1A2B          # 提取码，没有就留空
-platform: 夸克网盘         # 显示在卡片和按钮上
-```
-
-**4. 构建 + 发布前检查 + 本地预览**
+**3. 换封面 / 换正文**
 
 ```bash
-python tools/build_site.py                    # 站点名与域名取 data/shares.yaml 的 site: 段
+# 最省事：把新截图直接覆盖成 catalog/001_证件照制作工具/cover.png
+python tools/catalog.py refresh 001_证件照制作工具 --cover     # 或从源工程重取
+python tools/catalog.py refresh 009_AI缓存专清 --manual        # 重取用户手册正文
+python tools/catalog.py drift                                 # 源工程改了、目录没跟 → 只提示，不自动覆盖
+```
+
+封面规范：16:9、宽度 ≥1280（构建按 1280 出卡片图、1920 出详情图，统一转 webp；小于 1280 只缩放不放大）。
+
+**4. 看一眼全站清单**
+
+```bash
+python tools/catalog.py list      # 命令行总览：状态 / 主渠道 / 封面有没有
+python tools/catalog.py index     # 导出 catalog/index.csv，Excel 打开，按「状态」「主链接」筛
+python tools/catalog.py check     # 体检：缺链接 / 缺封面 / 缺正文 / 重名 / URL 冲突
+```
+
+`index.csv` 是**只读视图**，手改会被下次导出覆盖；批量改链接走 `links.csv` 那张窄表（它才是往返的）。
+
+**5. 构建 + 发布前检查 + 本地预览**
+
+```bash
+python tools/build_site.py                    # 品牌名与域名取 catalog/site.yaml
 python tools/seo_check.py                     # 发布前断言：canonical/sitemap/title/h1/JSON-LD 一致性
 python -m http.server 4173 --bind 127.0.0.1 --directory web
 ```
 
 浏览器打开 <http://127.0.0.1:4173/> 确认无误后提交并推送（Cloudflare 自动部署），再把同一份 `web/` 发布到 Qoder 站点。
 
-站点品牌名与正式发布域名只有一份，写在 `data/shares.yaml` 顶部的 `site:` 段（`name` / `wechat_name` / `url`）：
+站点品牌名与正式发布域名只有一份，写在 `catalog/site.yaml` 的 `site:` 段（`name` / `wechat_name` / `url`）：
 页面标题、`<h1>`、`og:site_name`、`llms.txt` 取 `name`，`canonical`/`og:url`/`sitemap`/JSON-LD 拼 `url`。
 `wechat_name` 是**公众号的真名**，页面上"微信公众号 ·"与手册里"公众号「…」"都取它——公众号改名要走平台流程，
 站点品牌改了它不会跟着变，写错了读者扫码就发现对不上号。**缺 `url` 或 `wechat_name` 时构建直接失败**——过去靠命令行传 `--site-url`，忘传就静默产出一个没有收录信号的裸页，
@@ -117,7 +143,7 @@ python -m http.server 4173 --bind 127.0.0.1 --directory web
 | <https://web-hrx-tools.pages.dev> | 镜像/备份 | 同一 Pages 项目，GitHub push 自动部署 |
 | <https://hrx-tools-g1ldzszv60x.qoder.zone> | 镜像 | Qoder 发布流程（把 `web/` 发布到现有站点） |
 
-canonical、sitemap、llms.txt、JSON-LD 只认 `data/shares.yaml` 的 `site.url`（当前是 pcpan.top）。
+canonical、sitemap、llms.txt、JSON-LD 只认 `catalog/site.yaml` 的 `site.url`（当前是 pcpan.top）。
 qoder.zone 与 pages.dev 上的页面也声明 pcpan.top 为 canonical，搜索权重集中到主站，三个地址不会互相抢排名。
 
 构建依赖本机的 `../AI_SOFT`、`../AI_WORD`（封面与用户手册），GitHub 构建机上没有这两个目录，
@@ -139,7 +165,7 @@ python -m pip install -r requirements.txt   # 首次或换机器时
 python tools/publish.py -m "Feat: ..."      # 构建 + SEO 断言 + 提交 + 推送 Gitee/GitHub
 ```
 
-`publish.py` 只暂存 `data/ site/ tools/ web/ README.md requirements.txt`，不会把无关改动带进去。
+`publish.py` 只暂存 `catalog/ data/ site/ tools/ docs/ web/ README.md AGENTS.md requirements.txt`，不会把无关改动带进去。
 它会检查 `web/` 是否真的有变动：没有变动时只推代码，并明确提示无需发布 Qoder。
 GitHub 推送成功且 web/ 有变动时，自动等 Cloudflare 部署生效（最长 180 秒）后做 IndexNow 提交；
 提交失败不影响推送，部署生效后手动重跑 `python tools/submit_indexnow.py` 即可。
@@ -151,13 +177,13 @@ GitHub 推送成功且 web/ 有变动时，自动等 Cloudflare 部署生效（�
 ```bash
 python tools/build_site.py
 python tools/seo_check.py                   # 不过就别发布
-git add data/ site/ tools/ web/             # web/ 是两边共用的发布源
+git add catalog/ data/ site/ tools/ docs/ web/   # web/ 是两边共用的发布源
 git commit -m "Feat: ..."
 git push origin master                      # Gitee 代码备份
 git push github master                      # Cloudflare 自动部署
 ```
 
-换域名只改 `data/shares.yaml` 的 `site.url`，然后重建 + 跑 `seo_check.py`；canonical、sitemap、llms.txt、
+换域名只改 `catalog/site.yaml` 的 `site.url`，然后重建 + 跑 `seo_check.py`；canonical、sitemap、llms.txt、
 JSON-LD 都从这一处拼出来。
 
 ## 爬虫与缓存
@@ -173,25 +199,27 @@ JSON-LD 都从这一处拼出来。
 
 ## 字段与状态
 
-| 字段 | 谁负责 | 说明 |
+一个条目 = `catalog/<目录名>/` 里的四个文件。目录名就是主键（`slug`），改它等于下架旧条、新增一条，URL 也会跟着变。
+
+| 位置 | 谁负责 | 说明 |
 | --- | --- | --- |
-| `site.name` `site.wechat_name` `site.url` `site.verify` | 人工 | 文件顶部 `site:` 段：品牌名、公众号真名、正式发布域名、站长验证文件清单（每项 `file` + `text`，构建时原样写进产物）。改名只动 `name`，公众号名只动 `wechat_name`；**验证文件不要手工丢进 `web/`**，构建会清空该目录，验证会悄悄失效 |
+| `site.name` `site.wechat_name` `site.url` `site.verify` | 人工 | `catalog/site.yaml` 的 `site:` 段：品牌名、公众号真名、正式发布域名、站长验证文件清单（每项 `file` + `text`，构建时原样写进产物）。改名只动 `name`，公众号名只动 `wechat_name`；**验证文件不要手工丢进 `web/`**，构建会清空该目录，验证会悄悄失效 |
 | `site.baidu_analytics` | 人工 | 百度统计站点 ID（`hm.js?` 后面那串 32 位十六进制）。构建时注入所有页面 `<head>`，404 页与 `--offline` 预览不注入 |
-| `slug` | 脚本 | 主键=目录名，别手改 |
-| `name` `name_en` `exe_name` `version` | 脚本填、你可改 | 三者常不一致：`001` 目录叫证件照制作工具，商品名是证照快做，exe 是 idphotokit |
-| `summary` `description` `features` `keywords` | 脚本抽取、你可改写 | 抽取来源记在 `copy_source`；全部参与搜索 |
-| `category` `aliases` | 人工 | 分类筛选栏来自 `category` 去重；`aliases` 放用户可能的叫法 |
-| `tags` | 人工 | 卡片上的可点标签（3~4 个），渲染成指向本条详情页的真 `<a>`——抓取器据此把搜索词与工具对上。脚本不生成也不覆盖；词必须是该详情页回答得了的（`keywords` 里"用鼠标把水印涂出来"这类噪声不能当标签） |
 | `site.tasks` | 人工 | 搜索框下方「常见需求」导航：`label`（用户会搜的任务词）+ `slug`（回答它的条目）。只渲染已上架条目，`seo_check.py` 会断言配了几个就渲染几个、目标页必须存在 |
-| `downloads` | 人工 | 多网盘渠道列表，第一个为主渠道；填了它就不再读下面的三件套 |
-| `share_url` `share_code` `platform` | 人工 | 单渠道快捷写法；`downloads` 为空时生效。**没有任何渠道的条目不会出现在页面上**，只留在数据文件里当待办 |
-| `status` | 人工 | `live` 上架 / `coming_soon` 灰态「即将上架」 / `hidden` 不渲染 |
-| `image` `image_kind` | 脚本 | 优先真实界面截图（`推广套件/images` > `用户手册` > `推广文章` > `演示视频` > `docs` 验收图），退到应用图标 |
-| `artifact` `artifact_dir` `size_mb` | 脚本 | 你要拿去建分享的发行包路径与体积（`size_mb` 显示在卡片与详情里） |
+| 目录名（`slug`） | 人工 | 主键，沿用源工程的 `数字_工程名`；`005` 这类重号已经合并，别再拆回来 |
+| `kind` | 人工 | `soft` 软件 / `doc` 资料（`W` 开头的目录采集时自动判为 doc） |
+| `name` `name_en` `exe_name` `version` | intake 填、你可改 | 三者常不一致：`001` 目录叫证件照制作工具，商品名是证照快做，exe 是 idphotokit。`name_en` 决定详情页 URL（`/soft/id-photo-kit`），改它等于换 URL |
+| `summary` `description` `features` `keywords` | intake 抽取、你可改写 | 抽取来源记在 `copy_source`；全部参与搜索 |
+| `category` `aliases` `tags` | 人工 | 分类筛选栏来自 `category` 去重；`aliases` 是用户可能的叫法；`tags` 是卡片上的 3~4 个可点标签，渲染成指向本条详情页的真 `<a>`，词必须是该详情页正文真回答得了的 |
+| `downloads` | 人工 | 多网盘渠道列表，第一个为主渠道。提取码建议加引号（`'0101'`） |
+| `cover` `detail_image` | 人工 | 相对本条目目录的文件名；`cover` 留空则卡片退成排版封面并标注「截图待补」，`detail_image` 可选 |
+| `status` | 人工 | `live` 上架 / `coming_soon` 灰卡（两者都必须有渠道）/ `draft` 收着不上页 / `hidden` 完全不渲染 |
+| `size_mb` `local_artifact` | intake 填 | 本机发行包路径与体积，**只给人核对，构建不读**，跨机器失效也不报错 |
+| `updated` | 人工 | 进 sitemap 的 `lastmod`，只有这条真变了才改 |
+| `manual.md` | 人工 | 详情页正文（原 `用户手册/*使用说明.md` 的副本）。软件条目缺这个文件时正文退成简介+功能清单，会偏薄；资料条目不需要 |
+| `_source.json` | 脚本 | 采集时记的源工程、源文件与 sha1，`catalog.py drift` 据此判断源工程有没有改 |
 
-**`--check`** 只体检不写文件；**`--force`** 会重新生成自动字段（`name_en/exe_name/version/artifact/size_mb/summary/description/features/keywords/image/copy_source`），**你手工改过的这几项会被覆盖**，`downloads`/`share_*`/`category`/`aliases`/`name`/`status` 不受影响。定稿后请不要再跑 `--force`。
-
-**文档条目**（`data/docs.yaml`）字段同名同义，差别在三处：没有 `name_en`/`exe_name`/`version`（文档没有可执行文件与版本号），多出 `chapters`（正文篇数，显示在卡片与详情里），`image_kind` 取 `poster`（宣传海报）或 `screenshot`（正文插图）。上架门槛与软件一致：没挂任何渠道的条目只留在数据文件里当待办，页面上看不到。
+`catalog/index.csv` 是这些字段的**只读导出**（17 列，Excel 直接打开）；`catalog/links.csv` 才是能往返的窄表（5 列，一条渠道一行）。
 
 ## 站点行为
 
@@ -199,12 +227,12 @@ JSON-LD 都从这一处拼出来。
 - 卡片：16:9 封面 + 版本/体积/分类/主渠道 + 一句话 + 功能短标签；`获取安装包` 直接打开主渠道，有提取码时卡片上会显示码、点击按钮顺手复制；多渠道时平台标签显示 `夸克网盘 +2` 这样的角标，其余渠道在详情里选。
 - 详情：界面截图可点击放大（支持点击空白/`Esc` 关闭）；下载渠道按顺序列出，主渠道高亮并标「推荐」；提取码点一下就复制，打开链接时也会顺手复制提取码，页面底部有 toast 提示；不再提供重复的「复制完整链接」。
 - 文档资料区块：与软件共用同一份搜索索引、同一套 `#slug` 深链与详情面板，也一起进分类筛选栏、`llms.txt` 和结构化数据（文档用 `CreativeWork`，软件用 `SoftwareApplication`）；卡片按钮是「获取资料」，详情里「篇章清单」替代「功能要点」。一条资料都没挂上链接时整段不渲染，搜索筛空后区块标题一并收起。
-- 上架门槛：只有至少挂了一个渠道（`downloads` 或 `share_url`）的条目会渲染，其余留在数据文件里，页面上看不到。`coming_soon` 目前也要求先挂一个占位渠道才会显示灰卡，否则只留在待办列表里。
+- 上架门槛：`status` 是 `live` / `coming_soon` 且至少挂了一个渠道的条目才渲染；`draft` 与 `hidden` 一律不上页。`live` 却忘了挂链接时**构建直接失败并列出是哪些条目**，不再静默消失。
 - 无后端、无外部请求：数据以 JSON 内嵌页面，卡片正文与详情页正文都预渲染进 HTML，搜索引擎可收录。
   Cloudflare Pages（pcpan.top / pages.dev）原样发布静态文件，不会改写 HTML；Qoder 托管会在 `</body>` 前注入水印脚本
   （实测首页 31 KB → 线上 88 KB），且会把纯文本验证文件一起注入。Google 站长验证应针对主站 pcpan.top 做
   （HTML 文件法可直接用）；qoder.zone 镜像受注入影响，不要拿它做文件验证。
-- 详情页：一条资源一个可索引 URL（软件 `/soft/{英文名}`、资料 `/doc/...`），URL 只用 ASCII 且按驼峰拆词（`PDFSuperToolbox` → `pdf-super-toolbox`）。产物文件仍是 `.html`，但 Cloudflare Pages 会把 `.html` 308 到无后缀形式，所以 canonical/sitemap/llms.txt/JSON-LD 一律声明无后缀的最终地址，站内链接保留 `.html`（本地预览与 Qoder 镜像不做该重定向）。正文在构建时从各软件的 `用户手册/*.md` 现取：功能详解、使用步骤、运行环境、常见问题、注意事项逐节渲染，**不抄进 `shares.yaml`**（两份内容必然漂移，而且人工真源会被 4000 字散文挤到读不动）。手册里的随文截图不入库，指向截图的「*图：…*」说明一并省略。
+- 详情页：一条资源一个可索引 URL（软件 `/soft/{英文名}`、资料 `/doc/...`），URL 只用 ASCII 且按驼峰拆词（`PDFSuperToolbox` → `pdf-super-toolbox`）。产物文件仍是 `.html`，但 Cloudflare Pages 会把 `.html` 308 到无后缀形式，所以 canonical/sitemap/llms.txt/JSON-LD 一律声明无后缀的最终地址，站内链接保留 `.html`（本地预览与 Qoder 镜像不做该重定向）。正文构建期从 `catalog/<条目>/manual.md` 渲染（采集时已从源工程的 `用户手册/*.md` 冻结一份副本）：功能详解、使用步骤、运行环境、常见问题、注意事项逐节渲染。**正文只在 catalog 里存一份**：以前是构建期现取源手册，源工程一改、站点跟着漂，而且取不到时只 print 一句 miss。手册里的随文截图不入库，指向截图的「*图：…*」说明一并省略。
 - 深链：卡片标题是真实的 `<a href="soft/xxx.html">`（抓取器与转发地址走这条）；卡片「详情」按钮仍是 `#slug` 锚点，点开是原位弹窗，体验没变。
 - 抓取与收录：`robots.txt` 按「搜索引擎 / AI 检索类 / AI 训练类」三组显式放行并带 `Crawl-delay: 1`；`sitemap.xml` 逐条列出全部页面，每条 `lastmod` 用该条自己的 `updated`；`llms.txt` 是给 AI 引擎读的纯文本目录，每行指向详情页而不是首页片段；发布前用 `python tools/seo_check.py` 断言，不过就别发。
 - 标题层级：首页唯一 `<h1>` 是品牌名，卡片标题为 `<h3>`；详情页唯一 `<h1>` 是资源名，章级标题 `<h2>`、手册小节 `<h3>`。
@@ -216,14 +244,16 @@ JSON-LD 都从这一处拼出来。
 ## 待办怎么看
 
 ```bash
-python tools/paths.py check           # 两个扫描根是否存在（不存在时退出码 2）
-python tools/scan_jobs.py --check     # 软件侧：不写文件，只报现状
-python tools/scan_docs.py --check     # 文档侧：缺发布包、缺封面、缺链接
-python tools/build_site.py            # 构建后也会打印「未挂链接、暂不显示 N 条」
+python tools/catalog.py check         # 全站体检：live 缺链接 / 缺封面 / 缺正文 / 重名 / URL 冲突
+python tools/catalog.py list          # 16 条一张表：状态、主渠道、封面有没有
+python tools/catalog.py drift         # 源工程改过、catalog 没跟上的条目
+python tools/scan_jobs.py             # 软件侧只读报告：目录/商品名/版本/发行包/封面/已采集？/渠道数
+python tools/scan_docs.py             # 文档侧只读报告：篇数/发布包/海报/已采集？/渠道数
+python tools/build_site.py            # 构建后打印「draft/hidden N 条不上页」的清单
 python tools/seo_check.py             # 发布前断言：收录信号齐不齐，不过就别发布
 ```
 
-体检报告会逐条列出：缺分享链接（附要上传的 `dist/*.zip` 绝对路径）、缺真实界面截图、未打包、版本漂移、发行包名与 spec 不一致。这些都不会让页面出错，只是告诉你还差什么。
+报告会逐条列出：没采集（附可直接跑的 `catalog.py intake` 命令）、缺分享链接、缺真实界面截图、未打包、版本漂移、发行包名与 spec 不一致。这些都不让页面出错，只是告诉你还差什么。两个 `scan_*.py` 只读，不再写任何数据文件。
 
 ## 合规提醒
 
