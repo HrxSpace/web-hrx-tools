@@ -20,8 +20,8 @@ import argparse
 import html
 import json
 import re
+import subprocess
 import sys
-from datetime import date
 from pathlib import Path
 from urllib.parse import urlsplit
 
@@ -128,6 +128,28 @@ def entry_links(entry: dict) -> list[dict]:
     ]
 
 
+def entry_updated(catalog: Path, slug: str, meta: dict) -> str:
+    """条目的「最后更新」：优先取 git 里 catalog/<slug>/ 的真实提交日期。
+
+    手填的 updated 靠人记得改，漏一次页面上就永远是个旧日期；而内容到底哪天动过，
+    git 是最客观的记录，sitemap 的 lastmod 协议本意也正是「内容最后变更时间」。
+    取不到 git（未纳入版本库、无 git、浅克隆）时退回 meta.yaml 里手填的值；
+    两者都没有就返回空串——**绝不退回 date.today()**，那会让每次重建都刷新 lastmod，
+    等于告诉搜索引擎「这页天天在变」，是个比没有 lastmod 更糟的假信号。"""
+    try:
+        out = subprocess.run(
+            ["git", "log", "-1", "--format=%ad", "--date=short", "--", str(Path("catalog") / slug)],
+            cwd=str(catalog.parent), capture_output=True, text=True, timeout=10,
+        )
+        if out.returncode == 0:
+            stamp = out.stdout.strip()
+            if re.fullmatch(r"\d{4}-\d{2}-\d{2}", stamp):
+                return stamp
+    except (OSError, subprocess.SubprocessError):
+        pass  # 没有 git 就不算错，退回手填值
+    return str(meta.get("updated") or "").strip()
+
+
 def load_catalog(catalog: Path) -> tuple[list[dict], list[dict], list[dict], list[dict], dict]:
     """读 catalog/*/meta.yaml，返回 (软件, 资料, 排队草稿, 缺链接的上架条目, 站点配置)。
 
@@ -149,6 +171,8 @@ def load_catalog(catalog: Path) -> tuple[list[dict], list[dict], list[dict], lis
             continue
         meta["slug"] = item.name  # 目录名就是主键
         meta["kind"] = "docs" if str(meta.get("kind") or "") == "doc" else "software"
+        # 用 git 里的真实提交日期覆盖手填值，见 entry_updated 的说明
+        meta["updated"] = entry_updated(catalog, item.name, meta)
         status = str(meta.get("status") or "draft")
         if status in ("hidden", "draft"):
             queue.append(meta)
@@ -362,9 +386,11 @@ def card_html(entry: dict, index: int, paths: dict[str, str]) -> str:
         )
     else:
         cta = '<button class="btn" type="button" disabled>暂未开放下载</button>'
+    # 只放「不会过期」或「一定会更新」的事实：分类、渠道、提取码。
+    # 版本号与体积曾经在这里，但它们要手工跟住网盘里的包，一漏就是错信息；
+    # 体积在网盘页面本来就有且实时准确。信息少一个精确数字，换来不会说假话。
     facts = [
-        entry.get("chapters") and f"共 {entry['chapters']} 篇" if docs else entry.get("version") and f"v{entry['version']}",
-        entry.get("size_mb") and f"{entry['size_mb']} MB",
+        entry.get("chapters") and f"共 {entry['chapters']} 篇" if docs else "",
         entry.get("category"),
         platform_label,
         primary_code and f"提取码 {primary_code}",
@@ -395,7 +421,7 @@ def card_html(entry: dict, index: int, paths: dict[str, str]) -> str:
 def json_payload(entries: list[dict]) -> str:
     """内嵌给前端的数据。封面一律用相对路径：站点部署在域名根目录，
     绝对地址会随域名变化而失效，只有 og:image 需要绝对 URL。"""
-    keep = ("slug", "name", "name_en", "exe_name", "version", "size_mb", "status", "category", "summary",
+    keep = ("slug", "name", "name_en", "exe_name", "status", "category", "summary",
             "description", "features", "keywords", "aliases", "tags", "chapters")
     rows = []
     for e in entries:
@@ -432,9 +458,8 @@ def app_item(entry: dict, url: str, site_url: str) -> dict:
     else:
         item["operatingSystem"] = "Windows 10 / Windows 11 64 位"
         item["applicationCategory"] = "UtilitiesApplication"
-        item["softwareVersion"] = entry.get("version") or ""
-    if entry.get("size_mb"):
-        item["fileSize"] = f"{entry['size_mb']} MB"
+    # softwareVersion / fileSize 不再声明：这两个值要手工跟住网盘里的包，
+    # 一旦过期就是对搜索引擎声明了错误事实，而代码里没有任何机制能发现。
     if entry.get("updated"):
         item["dateModified"] = entry["updated"]
     if entry.get("status") != "coming_soon" and links:
@@ -520,8 +545,6 @@ def llms_row(e: dict, base: str, paths: dict[str, str]) -> str:
         t for t in [
             e.get("category") or "",
             f"共 {e['chapters']} 篇" if e.get("chapters") else "",
-            f"v{e['version']}" if e.get("version") else "",
-            f"{e['size_mb']} MB" if e.get("size_mb") else "",
             f"下载渠道：{plats}" + (f"（{codes}）" if codes else ""),
         ] if t
     )
@@ -873,9 +896,7 @@ def detail_desc(entry: dict) -> str:
     docs = entry.get("kind") == "docs"
     bits = [
         entry.get("summary") or entry.get("description") or "",
-        f"v{entry['version']}" if entry.get("version") else "",
         f"共 {entry['chapters']} 篇" if entry.get("chapters") else "",
-        f"{entry['size_mb']} MB" if entry.get("size_mb") else "",
     ]
     tail = (
         "解压后离线阅读，不需要联网"
@@ -1093,9 +1114,10 @@ def detail_html(entry: dict, ctx: dict) -> str:
     docs = entry.get("kind") == "docs"
     faq = list(man.faq) if man else []
 
+    # 详情页保留「更新日期」：这是用户判断要不要重新下载的唯一依据，
+    # 而它由 git 派生出真实提交时间，不靠人记。版本号与体积同样从 pill 里去掉。
     facts = [
-        entry.get("chapters") and f"共 {entry['chapters']} 篇" if docs else entry.get("version") and f"v{entry['version']}",
-        entry.get("size_mb") and f"{entry['size_mb']} MB",
+        entry.get("chapters") and f"共 {entry['chapters']} 篇" if docs else "",
         entry.get("category"),
         entry.get("updated") and f"更新 {entry['updated']}",
     ]
@@ -1187,7 +1209,9 @@ def build(args: argparse.Namespace) -> int:
     src = Path(args.src)
     copy_brand_assets(src, out)
     desc = PAGE_DESC_WITH_DOCS if docs else PAGE_DESC
-    updated = str(site.get("updated") or date.today())
+    # 不再用 date.today() 兜底：那会让每次重建都换一个「今天更新」，是假信号。
+    # 没配 site.updated 时就用 git 推出的最新条目日期，再没有就留空。
+    updated = str(site.get("updated") or max((str(e.get("updated") or "") for e in combined), default=""))
     count_line = f"共 {len(entries)} 款软件" + (f" · {len(docs)} 份资料" if docs else "")
     paths = page_paths(combined)
     manuals = {e["slug"]: load_manual(e, catalog, brand, wechat) for e in combined}
@@ -1250,13 +1274,16 @@ def build(args: argparse.Namespace) -> int:
     verify = write_verify_files(site, out)
     indexnow_file = write_indexnow_key(site, out)
     if site_url:
-        # 每条 URL 的 lastmod 用该条自己的 updated：
+        # 每条 URL 的 lastmod 用该条自己的 updated（git 推导）：
         # 全站写同一个日期，抓取器会把"这站在动"的信号当成噪声。
+        # 取不到日期就整段省略 lastmod——协议允许，且比写一个空标签或假日期更干净。
         by_path = {paths[e["slug"]]: e for e in combined}
         rows = []
         for rel in pages:
             loc = f"{site_url}/" if rel == "index.html" else f"{site_url}/{page_url_path(rel)}"
-            rows.append(f'  <url><loc>{esc(loc)}</loc><lastmod>{esc(by_path.get(rel, {}).get("updated") or updated)}</lastmod></url>')
+            stamp = str(by_path.get(rel, {}).get("updated") or updated or "").strip()
+            lastmod = f"<lastmod>{esc(stamp)}</lastmod>" if stamp else ""
+            rows.append(f"  <url><loc>{esc(loc)}</loc>{lastmod}</url>")
         urls = "\n".join(rows)
         (out / "sitemap.xml").write_text(
             f'<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n{urls}\n</urlset>\n',

@@ -27,7 +27,6 @@ kind: soft
 name: 文件百宝箱
 name_en: BoxBatch
 exe_name: 文件百宝箱.exe
-version: 0.15.0
 status: live
 category: 文件批量
 summary: 纯本地、绿色免安装、全中文的 Windows 批量文件处理工具。
@@ -68,7 +67,6 @@ downloads:
   note: ''
 cover: cover.png
 image_kind: screenshot
-size_mb: 35.0
 updated: '2026-11-15'
 local_artifact: ../../../AI_SOFT/002_文件百宝箱/dist/文件百宝箱_v0.15.0_nuitka.zip
 copy_source: 用户手册/文件百宝箱使用说明.md（v0.15.0）

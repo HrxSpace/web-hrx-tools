@@ -25,7 +25,7 @@ Z001_网盘站点/
 │  ├─ index.csv                 自动导出的总清单（只读视图，Excel 直接打开）
 │  ├─ links.csv                 链接往返表（links out 产出、links in 写回）
 │  └─ 000_PDF超级工具箱/         目录名 = slug，别改（改了等于换 URL）
-│     ├─ meta.yaml              名称 / 版本 / 分类 / 状态 / 网盘渠道（人改这个）
+│     ├─ meta.yaml              名称 / 分类 / 状态 / 网盘渠道（人改这个）
 │     ├─ manual.md              详情页正文（原用户手册的副本，可以直接改）
 │     ├─ cover.png              卡片封面原图（构建转 webp）
 │     ├─ detail.png             详情放大图（可选）
@@ -68,7 +68,7 @@ python tools/paths.py set --local --jobs-root E:/Other/AI_SOFT            # 只�
 **1. 新增一条**（软件或文档工程放进对应根目录后采集）
 
 ```bash
-python tools/catalog.py intake 012_老照片修复工具      # 软件：拷封面+手册，自动填名称/版本/简介
+python tools/catalog.py intake 012_老照片修复工具      # 软件：拷封面+手册，自动填名称/简介
 python tools/catalog.py intake W001_某文档 --doc       # 资料
 ```
 
@@ -209,14 +209,15 @@ JSON-LD 都从这一处拼出来。
 | `site.tasks` | 人工 | 搜索框下方「常见需求」导航：`label`（用户会搜的任务词）+ `slug`（回答它的条目）。只渲染已上架条目，`seo_check.py` 会断言配了几个就渲染几个、目标页必须存在 |
 | 目录名（`slug`） | 人工 | 主键，沿用源工程的 `数字_工程名`；`005` 这类重号已经合并，别再拆回来 |
 | `kind` | 人工 | `soft` 软件 / `doc` 资料（`W` 开头的目录采集时自动判为 doc） |
-| `name` `name_en` `exe_name` `version` | intake 填、你可改 | 三者常不一致：`001` 目录叫证件照制作工具，商品名是证照快做，exe 是 idphotokit。`name_en` 决定详情页 URL（`/soft/id-photo-kit`），改它等于换 URL |
+| `name` `name_en` `exe_name` | intake 填、你可改 | 三者常不一致：`001` 目录叫证件照制作工具，商品名是证照快做，exe 是 idphotokit。`name_en` 决定详情页 URL（`/soft/id-photo-kit`），改它等于换 URL |
 | `summary` `description` `features` `keywords` | intake 抽取、你可改写 | 抽取来源记在 `copy_source`；全部参与搜索 |
 | `category` `aliases` `tags` | 人工 | 分类筛选栏来自 `category` 去重；`aliases` 是用户可能的叫法；`tags` 是卡片上的 3~4 个可点标签，渲染成指向本条详情页的真 `<a>`，词必须是该详情页正文真回答得了的 |
 | `downloads` | 人工 | 多网盘渠道列表，第一个为主渠道。提取码建议加引号（`'0101'`） |
 | `cover` `detail_image` | 人工 | 相对本条目目录的文件名；`cover` 留空则卡片退成排版封面并标注「截图待补」，`detail_image` 可选 |
 | `status` | 人工 | `live` 上架 / `coming_soon` 灰卡（两者都必须有渠道）/ `draft` 收着不上页 / `hidden` 完全不渲染 |
-| `size_mb` `local_artifact` | intake 填 | 本机发行包路径与体积，**只给人核对，构建不读**，跨机器失效也不报错 |
-| `updated` | 人工 | 进 sitemap 的 `lastmod`，只有这条真变了才改 |
+| ~~`version`~~ `size_mb` | **已废弃** | **不再展示版本号与体积。** 它们必须手工跟住网盘里那个包，发版一快就漏，而漏了就是对用户和搜索引擎（JSON-LD `softwareVersion`/`fileSize`、`llms.txt`）声明错误事实，代码里没有任何机制能发现。体积在网盘页面本来就有且实时准确；版本对用户的真正价值只是「是不是新版」，已由下面的更新日期承担。字段已从 16 个 `meta.yaml` 中移除，构建器不再渲染 |
+| `local_artifact` | intake 填 | 本机发行包路径，**只给人核对，构建不读**，跨机器失效也不报错；`catalog.py drift` 靠它比对源工程 |
+| `updated` | **自动** | 构建时取 `git log -1 --date=short -- catalog/<目录>` 的真实提交日期，进 sitemap 的 `lastmod`、详情页「更新 YYYY-MM-DD」和 JSON-LD `dateModified`。手填值只在取不到 git 时兜底；两者都没有就不输出 `lastmod`（协议允许），**绝不退回 `date.today()`** ——那会让每次重建都刷新日期，等于告诉搜索引擎「这页天天在变」 |
 | `manual.md` | 人工 | 详情页正文（原 `用户手册/*使用说明.md` 的副本）。软件条目缺这个文件时正文退成简介+功能清单，会偏薄；资料条目不需要 |
 | `_source.json` | 脚本 | 采集时记的源工程、源文件与 sha1，`catalog.py drift` 据此判断源工程有没有改 |
 
@@ -225,7 +226,7 @@ JSON-LD 都从这一处拼出来。
 ## 站点行为
 
 - 搜索：多关键词空格分隔取「与」，命中名称/英文名/exe/分类/简介/功能/关键词/别名，命中处高亮；`/` 聚焦搜索框，`Esc` 清空；无结果时给出可点的建议词。
-- 卡片：16:9 封面 + 版本/体积/分类/主渠道 + 一句话 + 功能短标签；`获取安装包` 直接打开主渠道，有提取码时卡片上会显示码、点击按钮顺手复制；多渠道时平台标签显示 `夸克网盘 +2` 这样的角标，其余渠道在详情里选。
+- 卡片：16:9 封面 + 分类/主渠道（+提取码）+ 一句话 + 功能短标签；`获取安装包` 直接打开主渠道，有提取码时卡片上会显示码、点击按钮顺手复制；多渠道时平台标签显示 `夸克网盘 +2` 这样的角标，其余渠道在详情里选。**卡片不显示版本号与体积**：这两个值要手工跟住网盘里的包，一漏就成了错信息，稳定性不如少给一个精确数字。详情页保留「更新 YYYY-MM-DD」，由 git 自动派生。
 - 详情：界面截图可点击放大（支持点击空白/`Esc` 关闭）；下载渠道按顺序列出，主渠道高亮并标「推荐」；提取码点一下就复制，打开链接时也会顺手复制提取码，页面底部有 toast 提示；不再提供重复的「复制完整链接」。
 - 文档资料区块：与软件共用同一份搜索索引、同一套 `#slug` 深链与详情面板，也一起进分类筛选栏、`llms.txt` 和结构化数据（文档用 `CreativeWork`，软件用 `SoftwareApplication`）；卡片按钮是「获取资料」，详情里「篇章清单」替代「功能要点」。一条资料都没挂上链接时整段不渲染，搜索筛空后区块标题一并收起。
 - 上架门槛：`status` 是 `live` / `coming_soon` 且至少挂了一个渠道的条目才渲染；`draft` 与 `hidden` 一律不上页。`live` 却忘了挂链接时**构建直接失败并列出是哪些条目**，不再静默消失。
@@ -242,7 +243,7 @@ JSON-LD 都从这一处拼出来。
   采集器由 `tracker_js()` 生成、随统计代码注入 `<head>`，因此详情页（不加载 `app.js`）也有埋点；`window.__tjOn` 为 false 时（镜像站、离线构建）整段静默。
 - 详情页：一条资源一个可索引 URL（软件 `/soft/{英文名}`、资料 `/doc/...`），URL 只用 ASCII 且按驼峰拆词（`PDFSuperToolbox` → `pdf-super-toolbox`）。产物文件仍是 `.html`，但 Cloudflare Pages 会把 `.html` 308 到无后缀形式，所以 canonical/sitemap/llms.txt/JSON-LD 一律声明无后缀的最终地址，站内链接保留 `.html`（本地预览与 Qoder 镜像不做该重定向）。正文构建期从 `catalog/<条目>/manual.md` 渲染（采集时已从源工程的 `用户手册/*.md` 冻结一份副本）：功能详解、使用步骤、运行环境、常见问题、注意事项逐节渲染。**正文只在 catalog 里存一份**：以前是构建期现取源手册，源工程一改、站点跟着漂，而且取不到时只 print 一句 miss。手册里的随文截图不入库，指向截图的「*图：…*」说明一并省略。
 - 深链：卡片标题是真实的 `<a href="soft/xxx.html">`（抓取器与转发地址走这条）；卡片「详情」按钮仍是 `#slug` 锚点，点开是原位弹窗，体验没变。
-- 抓取与收录：`robots.txt` 按「搜索引擎 / AI 检索类 / AI 训练类」三组显式放行并带 `Crawl-delay: 1`；`sitemap.xml` 逐条列出全部页面，每条 `lastmod` 用该条自己的 `updated`；`llms.txt` 是给 AI 引擎读的纯文本目录，每行指向详情页而不是首页片段；发布前用 `python tools/seo_check.py` 断言，不过就别发。
+- 抓取与收录：`robots.txt` 按「搜索引擎 / AI 检索类 / AI 训练类」三组显式放行并带 `Crawl-delay: 1`；`sitemap.xml` 逐条列出全部页面，每条 `lastmod` 用该条目录在 git 里的真实提交日期（取不到就省略该标签）；`llms.txt` 是给 AI 引擎读的纯文本目录，每行指向详情页而不是首页片段；发布前用 `python tools/seo_check.py` 断言，不过就别发。
 - 标题层级：首页唯一 `<h1>` 是品牌名，卡片标题为 `<h3>`；详情页唯一 `<h1>` 是资源名，章级标题 `<h2>`、手册小节 `<h3>`。
 - 分类页 `/cat/*.html` **暂未生成**：同类 ≥3 条才值得做，现在 5 类各 1 条，一页一条与详情页内容雷同，是典型 doorway page。
 - 缺截图的条目用排版封面并标注「界面截图待补」，不放假图。

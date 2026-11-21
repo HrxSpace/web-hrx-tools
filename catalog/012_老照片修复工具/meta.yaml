@@ -27,7 +27,6 @@ kind: soft
 name: 老照片修复
 name_en: Photo Restorer
 exe_name: 老照片修复
-version: 0.3.0
 status: draft
 category: ''
 summary: 本地老照片修复工具：把褪色、有划痕、有噪点、分辨率低的老照片，在不联网的情况下修复成清晰、干净、可打印的图。
@@ -43,7 +42,6 @@ aliases: []
 downloads: []
 cover: cover.png
 image_kind: screenshot
-size_mb: 635.5
 updated: '2026-11-15'
 local_artifact: ../../../AI_SOFT/012_老照片修复工具/dist/老照片修复_v0.2.5.zip
 copy_source: README.md

@@ -27,7 +27,6 @@ kind: soft
 name: 证照快做
 name_en: IDPhotoKit
 exe_name: 证照快做
-version: 0.1.6
 status: live
 category: 证件证照
 summary: 证照快做是一款在本地电脑上制作标准证件照的桌面工具。
@@ -79,7 +78,6 @@ downloads:
   note: ''
 cover: cover.png
 image_kind: screenshot
-size_mb: 119.1
 updated: '2026-11-14'
 local_artifact: ../../../AI_SOFT/001_证件照制作工具/dist/证照快做_v0.1.6.zip
 copy_source: 用户手册/证照快做使用说明.md

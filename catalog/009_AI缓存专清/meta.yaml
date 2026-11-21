@@ -27,7 +27,6 @@ kind: soft
 name: AI缓存专清
 name_en: AICacheSweeper
 exe_name: AI缓存专清
-version: 0.4.7
 status: live
 category: 系统清理
 summary: AI缓存专清是一款专门清理 AI 编程终端和包管理器残留的 Windows 桌面工具。
@@ -90,7 +89,6 @@ downloads:
   note: ''
 cover: cover.png
 image_kind: screenshot
-size_mb: 31.7
 updated: '2026-11-14'
 local_artifact: ../../../AI_SOFT/009_AI缓存专清/dist/AI缓存专清_v0.4.7_nuitka.zip
 copy_source: 用户手册/AI缓存专清使用说明.md

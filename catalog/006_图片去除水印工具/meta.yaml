@@ -27,7 +27,6 @@ kind: soft
 name: 图片去水印
 name_en: WatermarkRemover
 exe_name: 图片去水印
-version: 1.29.10
 status: live
 category: 图片处理
 summary: 本地 AI 图片修复：涂抹水印区域，一键修复成自然画面
@@ -78,6 +77,5 @@ downloads:
   note: ''
 cover: cover.png
 image_kind: screenshot
-size_mb: 0.0
 updated: '2026-11-14'
 copy_source: 用户手册/图片去水印使用说明.md

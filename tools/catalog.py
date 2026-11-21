@@ -62,9 +62,9 @@ STATUSES = ("live", "coming_soon", "draft", "hidden")
 IMAGE_SUFFIXES = (".png", ".jpg", ".jpeg", ".webp", ".gif", ".bmp")
 DOC_DIR = re.compile(r"^W\d{3}_")
 ITEM_META_ORDER = (
-    "slug", "kind", "name", "name_en", "exe_name", "version", "status", "category",
+    "slug", "kind", "name", "name_en", "exe_name", "status", "category",
     "summary", "description", "features", "keywords", "aliases", "tags", "downloads",
-    "cover", "detail_image", "image_kind", "size_mb", "updated", "chapters",
+    "cover", "detail_image", "image_kind", "updated", "chapters",
     "local_artifact", "copy_source",
 )
 
@@ -75,7 +75,6 @@ META_HEADER = """\
 # kind           soft 软件 / doc 资料
 # name/name_en   商品名（卡片主标题）/ 英文名（决定详情页 URL，别轻易改）
 # exe_name       进程名或发行包名，用户可能直接搜它
-# version        对外版本号
 # status         live 上架 / coming_soon 灰卡（两者必须有链接）/ draft 收着不上页 / hidden 不渲染
 # category       分类筛选栏就是它的去重结果
 # summary        卡片上一句话（30~60 字）
@@ -86,10 +85,14 @@ META_HEADER = """\
 # downloads      多网盘渠道，第一个是主渠道；提取码建议加引号，避免 0101 被当成数字
 # cover          卡片封面，相对本目录的文件名；没有就留空（卡片退成排版封面并标注待补）
 # detail_image   详情放大图（可选）
-# size_mb        发行包体积，仅用于核对
-# updated        进 sitemap 的 lastmod，只有这条真变了才改
+# updated        手填值仅作兜底：构建时优先用 git 里本目录的真实提交日期，
+#                因为手填靠人记得改，漏一次页面上就永远是旧日期。
+#                取不到 git 才用它，两者都没有就不输出 lastmod，绝不写「今天」。
 # local_artifact 本机发行包路径，只给人看，构建不读，跨机器失效也不报错
 # copy_source    简介抽取来源（留档用）
+#
+# 版本号与体积不再是条目字段：它们要手工跟住网盘里的包，一漏就是对用户
+# 和搜索引擎说假话，而代码里没有任何机制能发现。体积在网盘页面本来就有且实时准确。
 #
 # 改完跑：python tools/catalog.py check && python tools/catalog.py index
 # 本文件的注释在你用 links in / link 子命令改写时会被重新生成，手写的额外注释请放进「notes」不合适的位置——直接写在字段旁边即可。
@@ -225,8 +228,8 @@ def unprotect(value: str) -> str:
 
 
 INDEX_COLUMNS = (
-    "目录", "类型", "名称", "英文名", "版本", "分类", "状态", "渠道数", "主渠道",
-    "主链接", "主提取码", "封面", "详情图", "手册", "体积MB", "更新时间", "简介",
+    "目录", "类型", "名称", "英文名", "分类", "状态", "渠道数", "主渠道",
+    "主链接", "主提取码", "封面", "详情图", "手册", "更新时间", "简介",
 )
 
 
@@ -242,7 +245,6 @@ def index_row(meta: dict) -> list[str]:
         "软件" if meta["kind"] == "soft" else "资料",
         str(meta.get("name") or ""),
         str(meta.get("name_en") or ""),
-        str(meta.get("version") or ""),
         str(meta.get("category") or ""),
         str(meta.get("status") or ""),
         str(len(links)),
@@ -252,7 +254,6 @@ def index_row(meta: dict) -> list[str]:
         cover if cover and (d / cover).is_file() else (f"缺 {cover}" if cover else "无"),
         detail if detail and (d / detail).is_file() else "",
         "有" if manual_file.is_file() else ("不需要" if meta["kind"] == "doc" else "缺"),
-        str(meta.get("size_mb") or ""),
         str(meta.get("updated") or ""),
         str(meta.get("summary") or ""),
     ]
@@ -530,7 +531,6 @@ def cmd_intake(args: argparse.Namespace) -> int:
             "chapters": found_doc.chapters,
             "keywords": found_doc.keywords,
             "aliases": [],
-            "size_mb": found_doc.size_mb,
             "downloads": [],
             "updated": date.today().isoformat(),
             "image_kind": found_doc.image_kind,
@@ -546,14 +546,12 @@ def cmd_intake(args: argparse.Namespace) -> int:
             "name": found.name,
             "name_en": found.name_en,
             "exe_name": found.exe_name,
-            "version": found.version,
             "category": "",
             "summary": found.summary,
             "description": found.description,
             "features": found.features,
             "keywords": found.keywords,
             "aliases": [],
-            "size_mb": found.size_mb,
             "downloads": [],
             "updated": date.today().isoformat(),
             "image_kind": found.image_kind,

@@ -27,7 +27,6 @@ kind: soft
 name: 表格加工厂
 name_en: TableWorks
 exe_name: TableWorks
-version: 1.0.2
 status: draft
 category: 表格数据
 summary: 纯本地、免装 Office/WPS 的 Windows 桌面软件
@@ -62,7 +61,6 @@ aliases:
 downloads: []
 cover: cover.png
 image_kind: screenshot
-size_mb: 122.3
 updated: '2026-10-29'
 local_artifact: ../../../AI_SOFT/004_表格加工厂/dist/TableWorks_v1.0.2.zip
 copy_source: README.md

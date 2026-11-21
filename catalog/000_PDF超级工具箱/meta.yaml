@@ -27,7 +27,6 @@ kind: soft
 name: PDF超级工具箱
 name_en: PDFSuperToolbox
 exe_name: PDFSuperToolbox
-version: 3.1.3
 status: live
 category: 文档处理
 summary: 合并、拆分、OCR、压缩、水印——装在自己电脑里的 PDF 工具箱
@@ -79,7 +78,6 @@ downloads:
   note: ''
 cover: cover.png
 image_kind: screenshot
-size_mb: 131.7
 updated: '2026-11-14'
 local_artifact: ../../../AI_SOFT/000_PDF超级工具箱/dist/PDF超级工具箱_v3.1.3_nuitka.zip
 copy_source: 用户手册/PDF超级工具箱使用说明.md

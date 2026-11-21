@@ -27,7 +27,6 @@ kind: soft
 name: 音视频工具箱
 name_en: MediaToolbox
 exe_name: 音视频工具箱.exe
-version: 0.15.0
 status: live
 category: 音视频
 summary: 绿色免安装、纯本地运行的 Windows 音视频处理小工具
@@ -75,7 +74,6 @@ downloads:
   note: ''
 cover: cover.png
 image_kind: screenshot
-size_mb: 200.2
 updated: '2026-11-16'
 local_artifact: ../../../AI_SOFT/003_音视频工具箱/dist/音视频工具箱_v0.15.0_nuitka.zip
 copy_source: 用户手册/音视频工具箱使用说明.md（v0.15.0）

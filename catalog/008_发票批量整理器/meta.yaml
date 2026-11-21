@@ -27,7 +27,6 @@ kind: soft
 name: 发票批量整理器
 name_en: InvoiceBatch
 exe_name: 发票批量整理器
-version: 0.1.0
 status: draft
 category: 办公票据
 summary: 纯本地、绿色免安装、全中文的 Windows 发票批量整理工具。
@@ -57,7 +56,6 @@ aliases:
 downloads: []
 cover: cover.png
 image_kind: icon
-size_mb: 0.0
 updated: '2026-10-29'
 local_artifact: ../../../AI_SOFT/008_发票批量整理器/dist/发票批量整理器_v0.1.0.zip
 copy_source: README.md

@@ -27,7 +27,6 @@ kind: soft
 name: 视频去水印工具
 name_en: ''
 exe_name: ''
-version: ''
 status: draft
 category: ''
 summary: 纯本地、离线的视频水印修复工具：用户导入自己拥有版权的视频，框选水印区域，逐帧修复后重编码输出。
@@ -42,6 +41,5 @@ aliases: []
 downloads: []
 cover: ''
 image_kind: ''
-size_mb: 0.0
 updated: '2026-11-15'
 copy_source: README.md

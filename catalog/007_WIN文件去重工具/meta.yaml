@@ -26,7 +26,6 @@ slug: 007_WIN文件去重工具
 kind: soft
 name: 重复文件清理大师
 exe_name: DupCleaner
-version: 1.0.0
 status: draft
 category: 文件批量
 summary: 重复文件查找与清理工具（开发中）
@@ -39,6 +38,5 @@ aliases:
 downloads: []
 cover: cover.png
 image_kind: icon
-size_mb: 0.0
 updated: '2026-10-29'
 local_artifact: ../../../AI_SOFT/007_WIN文件去重工具/dist/重复文件清理大师_v1.6.1.zip

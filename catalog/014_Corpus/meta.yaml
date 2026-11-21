@@ -27,7 +27,6 @@ kind: soft
 name: Corpus
 name_en: ''
 exe_name: ''
-version: 1.1.0
 status: draft
 category: ''
 summary: 本地优先、所见即所得（WYSIWYG）的 Windows 桌面 Markdown 编辑器。
@@ -42,6 +41,5 @@ aliases: []
 downloads: []
 cover: cover.png
 image_kind: icon
-size_mb: 0.0
 updated: '2026-11-15'
 copy_source: README.md

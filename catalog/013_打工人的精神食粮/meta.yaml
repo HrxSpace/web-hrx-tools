@@ -27,7 +27,6 @@ kind: soft
 name: 打工人的精神食粮
 name_en: Paypulse
 exe_name: ''
-version: 1.0.1
 status: draft
 category: ''
 summary: 打工人的精神食粮：右下角常驻、每 500 毫秒跳动一次的已赚金额悬浮窗
@@ -39,6 +38,5 @@ aliases: []
 downloads: []
 cover: cover.png
 image_kind: icon
-size_mb: 0.0
 updated: '2026-11-15'
 copy_source: pyproject.toml description

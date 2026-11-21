@@ -27,7 +27,6 @@ kind: soft
 name: 窗口管家
 name_en: Chuangkouguanjia
 exe_name: 窗口管家
-version: 1.0.3
 status: draft
 category: 系统效率
 summary: Windows 桌面窗口效率工具：置顶、分屏吸附、隐私速藏、剪贴板历史、快捷启动、取色、标尺、定时任务
@@ -62,7 +61,6 @@ aliases:
 - 窗口置顶
 downloads: []
 cover: ''
-size_mb: 72.2
 updated: '2026-10-31'
 local_artifact: ../../../AI_SOFT/005_Win窗口管家/dist/窗口管家_v1.0.0.zip
 copy_source: README.md
