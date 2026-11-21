@@ -282,6 +282,38 @@ def chip_label(feature: str) -> str:
     return label
 
 
+# 虚拟 PV 的路径必须收敛成有限枚举：/_x/{slug}/{动作}/{参数} 里的动作与参数
+# 都只能是这些固定值，否则「受访页面」会被无限组合撑爆。
+PLATFORM_SLUG = {
+    "夸克网盘": "quark",
+    "UC网盘": "uc",
+    "百度网盘": "baidu",
+    "阿里云盘": "aliyun",
+    "123网盘": "123pan",
+    "天翼云盘": "189",
+    "迅雷网盘": "xunlei",
+}
+
+
+def link_arg(link: dict) -> str:
+    """网盘平台名转成统计路径里的 ASCII 段。没登记的平台一律并进 other，
+    宁可少一个区分维度，也不要让中文或用户可控字符串进 URL。"""
+    platform = str((link or {}).get("platform") or "").strip()
+    return PLATFORM_SLUG.get(platform, "other")
+
+
+def track_attr(kind: str, slug: str, arg: str = "") -> str:
+    """生成 data-track 属性。kind 只能是 detail / dl / code 这三个动作。"""
+    arg_attr = f' data-track-arg="{esc(arg)}"' if arg else ""
+    return f' data-track="{esc(kind)}" data-track-id="{esc(slug)}"{arg_attr}'
+
+
+def track_id(entry: dict) -> str:
+    """统计路径里用 ASCII slug（和详情页 URL 同一个来源），别用中文目录名：
+    /x/002_文件百宝箱/detail 进报表会变成一串 %E5%BC%80 的乱码，没法看也没法对。"""
+    return ascii_slug(entry)
+
+
 def card_html(entry: dict, index: int, paths: dict[str, str]) -> str:
     slug = entry["slug"]
     docs = entry.get("kind") == "docs"
@@ -324,7 +356,10 @@ def card_html(entry: dict, index: int, paths: dict[str, str]) -> str:
         cta = '<button class="btn" type="button" disabled>即将上架</button>'
     elif primary:
         code_attr = f' data-code="{esc(primary_code)}"' if primary_code else ""
-        cta = f'<a class="btn" href="{esc(primary["url"])}" target="_blank" rel="noopener"{code_attr}>{cta_label}</a>'
+        cta = (
+            f'<a class="btn" href="{esc(primary["url"])}" target="_blank" rel="noopener"{code_attr}'
+            f'{track_attr("dl", track_id(entry), link_arg(primary))}>{cta_label}</a>'
+        )
     else:
         cta = '<button class="btn" type="button" disabled>暂未开放下载</button>'
     facts = [
@@ -366,6 +401,7 @@ def json_payload(entries: list[dict]) -> str:
     for e in entries:
         row = {k: e.get(k) or ([] if k in ("features", "keywords", "aliases", "tags") else "") for k in keep}
         row["id"] = e["slug"]
+        row["tid"] = ascii_slug(e)  # 统计路径用：中文 slug 进 URL 会变成一串转义，报表读不了
         row["kind"] = e.get("kind") or "software"
         row["cover"] = e.get("_asset") or ""
         row["cover_full"] = e.get("_asset_full") or ""
@@ -590,22 +626,91 @@ a {{ color: #1f4fd8; }}
 """
 
 
+def analytics_hosts(site: dict, site_url: str) -> list[str]:
+    """只有主站域名该上报。同一份 web/ 还发布到 pages.dev 与 qoder.zone 镜像，
+    不加主机判断的话三处流量会全部计进同一个 ID，连自己上线调试的访问也算进来。"""
+    host = (urlsplit(site_url).hostname or "").lower()
+    if not host:
+        return []
+    hosts = [host]
+    if not host.startswith("www."):
+        hosts.append("www." + host)  # 主域名往往连带 www 一起解析，两个都算主站
+    for extra in site.get("analytics_hosts") or []:
+        extra = str(extra).strip().lower()
+        if extra and extra not in hosts:
+            hosts.append(extra)
+    return hosts
+
+
 def analytics_html(site: dict, site_url: str) -> str:
     """百度统计：站点 ID 放在 site.baidu_analytics，构建时注入每个页面 <head>。
-    只在正式构建（有域名）时注入；--offline 本地预览不埋点，避免测试访问混进统计。"""
+    只在正式构建（有域名）时注入；--offline 本地预览不埋点，避免测试访问混进统计。
+    只在主站主机名上报（见 analytics_hosts）：镜像站共用一份产物，不该污染主站数据。"""
     hid = str(site.get("baidu_analytics") or "").strip()
     if not hid or not site_url:
         return ""
     if not re.fullmatch(r"[0-9a-fA-F]{32}", hid):
         raise SystemExit("site.baidu_analytics 应为 32 位十六进制（hm.js? 后面那串），构建中止。")
+    hosts = analytics_hosts(site, site_url)
+    if not hosts:
+        raise SystemExit(f"site.url 里取不到主机名（{site_url}），无法生成统计主机白名单，构建中止。")
+    host_js = json.dumps(hosts, ensure_ascii=False)
     return (
         "<script>\n"
         "var _hmt = _hmt || [];\n"
         "(function() {\n"
+        f"  var hosts = {host_js};\n"
+        '  if (hosts.indexOf(location.hostname.toLowerCase()) < 0) return;\n'
+        "  window.__tjOn = true;  // 采集器据此决定发不发，镜像站保持静默\n"
         '  var hm = document.createElement("script");\n'
         f'  hm.src = "https://hm.baidu.com/hm.js?{hid}";\n'
         '  var s = document.getElementsByTagName("script")[0];\n'
         "  s.parentNode.insertBefore(hm, s);\n"
+        "})();\n"
+        "</script>"
+    )
+
+
+def tracker_js() -> str:
+    """点击采集器：各渲染点只打 data-track-* 属性，发不发、怎么发都在这里决定。
+
+    分两档，因为百度统计免费版已经看不到「事件分析」报表（2024-02-29 迁进付费分析模块）：
+      · 有分析价值的动作走虚拟 PV（_trackPageview），落进「受访页面」报表，按软件拆得开；
+      · 搜索、筛选这类高频低价值动作走 _trackEvent，只在设了事件转化时看数量趋势，
+        否则会把「受访页面」冲成几百行。
+    hm.js 是外部脚本，被拦截器拦掉时 _hmt 只是个空数组，push 进去等于丢弃，不会报错。"""
+    return (
+        "<script>\n"
+        "(function() {\n"
+        "  function on() { return window.__tjOn === true; }\n"
+        "  function pv(path) {\n"
+        "    if (on() && window._hmt) window._hmt.push([\"_trackPageview\", path]);\n"
+        "  }\n"
+        "  function ev(category, action, label) {\n"
+        "    if (!on() || !window._hmt) return;\n"
+        "    var args = [\"_trackEvent\", category, action];\n"
+        "    if (label != null && label !== \"\") args.push(String(label));\n"
+        "    window._hmt.push(args);\n"
+        "  }\n"
+        "  window.__tj = { pv: pv, ev: ev, on: on };\n"
+        "  // 捕获阶段跑：同标签页跳转前也来得及入队\n"
+        "  document.addEventListener(\"click\", function (e) {\n"
+        "    var el = e.target;\n"
+        "    if (!el || el.nodeType !== 1) return;\n"
+        "    var hit = el.closest ? el.closest(\"[data-track]\") : null;\n"
+        "    if (!hit) return;\n"
+        "    var id = hit.getAttribute(\"data-track-id\") || \"\";\n"
+        "    var kind = hit.getAttribute(\"data-track\") || \"\";\n"
+        "    if (kind === \"event\") {\n"
+        "      ev(hit.getAttribute(\"data-track-cat\") || \"other\",\n"
+        "         hit.getAttribute(\"data-track-act\") || \"click\",\n"
+        "         hit.getAttribute(\"data-track-label\") || \"\");\n"
+        "      return;\n"
+        "    }\n"
+        "    if (!id || !kind) return;\n"
+        "    var arg = hit.getAttribute(\"data-track-arg\") || \"\";\n"
+        "    pv(\"/x/\" + id + \"/\" + kind + (arg ? \"/\" + arg : \"\"));\n"
+        "  }, true);\n"
         "})();\n"
         "</script>"
     )
@@ -624,6 +729,16 @@ def write_indexnow_key(site: dict, out: Path) -> str:
     return f"{key}.txt"
 
 
+def ev_attr(category: str, action: str, label: str = "") -> str:
+    """事件类追踪：只发 _trackEvent，不进 PV。用于搜索、筛选这类高频动作——
+    它们一旦写成虚拟 PV，「受访页面」会被冲成几百行，反而没法看。"""
+    label_attr = f' data-track-label="{esc(label)}"' if label else ""
+    return (
+        f' data-track="event" data-track-cat="{esc(category)}"'
+        f' data-track-act="{esc(action)}"{label_attr}'
+    )
+
+
 def chips_html(entries: list[dict]) -> str:
     cats: list[str] = []
     for e in entries:
@@ -633,9 +748,12 @@ def chips_html(entries: list[dict]) -> str:
     counts: dict[str, int] = {}
     for e in entries:
         counts[e.get("category") or ""] = counts.get(e.get("category") or "", 0) + 1
-    parts = ['<button class="chip" type="button" data-cat="全部" aria-pressed="true">全部<span class="n">%d</span></button>' % len(entries)]
+    parts = ['<button class="chip" type="button" data-cat="全部" aria-pressed="true"'
+             + ev_attr("筛选", "分类", "全部") + '>全部<span class="n">%d</span></button>' % len(entries)]
     for c in cats:
-        parts.append(f'<button class="chip" type="button" data-cat="{esc(c)}" aria-pressed="false">{esc(c)}<span class="n">{counts[c]}</span></button>')
+        parts.append(f'<button class="chip" type="button" data-cat="{esc(c)}" aria-pressed="false"'
+                     + ev_attr("筛选", "分类", c)
+                     + f'>{esc(c)}<span class="n">{counts[c]}</span></button>')
     return "".join(parts)
 
 
@@ -648,7 +766,7 @@ def tasks_row_html(site: dict, paths: dict[str, str]) -> str:
         slug = str((item or {}).get("slug") or "").strip()
         if not label or slug not in paths:
             continue
-        rows.append(f'<a class="task" href="{esc(paths[slug])}">{esc(label)}</a>')
+        rows.append(f'<a class="task" href="{esc(paths[slug])}"{ev_attr("导航", "常见需求", label)}>{esc(label)}</a>')
     if not rows:
         return ""
     return ('<div class="tasks" aria-label="常见需求">'
@@ -828,7 +946,8 @@ def downloads_block_html(entry: dict) -> str:
             side.append(f'<span class="dl-code">提取码 <b>{esc(link["code"])}</b></span>')
         side.append(
             f'<a class="btn dl-open{"" if primary else " ghost"}" href="{esc(link["url"])}"'
-            f' target="_blank" rel="noopener">{esc("打开" + platform)}</a>'
+            f' target="_blank" rel="noopener"{track_attr("dl", track_id(entry), link_arg(link))}>'
+            f'{esc("打开" + platform)}</a>'
         )
         rows.append(
             f'      <div class="dl-item{" primary" if primary else ""}">'
@@ -1109,6 +1228,9 @@ def build(args: argparse.Namespace) -> int:
         pages[paths[e["slug"]]] = detail_html(e, ctx)
     analytics = analytics_html(site, site_url)
     if analytics:
+        # 采集器跟在统计代码后面注入：它只定义函数、不自己发请求，
+        # 是否上报仍由 __tjOn 决定，所以镜像站与离线产物都不会产生数据。
+        analytics += "\n" + tracker_js()
         pages = {rel: html.replace("</head>", analytics + "\n</head>", 1) for rel, html in pages.items()}
     for rel, content in pages.items():
         target = out / rel

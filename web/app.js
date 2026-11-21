@@ -20,6 +20,11 @@
   let toastTimer = 0;
 
   const norm = (s) => (s || "").toLowerCase().replace(/\s+/g, "");
+
+  // 统计：采集器在 <head> 里由构建器注入，镜像站与离线产物不会有它。
+  // 详情面板是 dialog，不产生 PV——不在这里补记，后台就永远看不见「谁被点开了」。
+  const pv = (path) => { if (window.__tj) window.__tj.pv(path); };
+  const ev = (cat, act, label) => { if (window.__tj) window.__tj.ev(cat, act, label); };
   const hasDocs = DATA.some((d) => d.kind === "docs");
   const softCount = DATA.filter((d) => d.kind !== "docs").length;
   const docCount = DATA.length - softCount;
@@ -74,6 +79,23 @@
     }
     emptyEl.hidden = shown !== 0;
     if (!shown) renderSuggest();
+    trackSearch(words, shown);
+  }
+
+  // 搜索事件：防抖 1.2 秒，否则每敲一个字就报一次，事件量爆炸还没信息量。
+  // 只报「结果档位 + 命中数」，不报搜索词原文——既避开 _trackEvent 的参数多样性
+  // 上限（乘积不能超过 10000），也不把用户输入原样送进第三方。
+  let searchTimer = 0;
+  let lastSearchKey = "";
+  function trackSearch(words, shown) {
+    clearTimeout(searchTimer);
+    const key = words.join(" ");
+    if (!key) return; // 清空搜索框不算一次检索意图
+    searchTimer = setTimeout(() => {
+      if (key === lastSearchKey) return; // 同一个词反复触发只记第一次
+      lastSearchKey = key;
+      ev("搜索", shown === 0 ? "零结果" : shown <= 3 ? "少结果" : "有结果", String(shown));
+    }, 1200);
   }
 
   function renderSuggest() {
@@ -107,7 +129,7 @@
       const b = document.createElement("button");
       b.type = "button";
       b.textContent = word;
-      b.onclick = () => { input.value = word; apply(); input.focus(); };
+      b.onclick = () => { input.value = word; apply(); input.focus(); ev("搜索", "建议词", word); };
       suggestEl.append(b);
     }
   }
@@ -155,7 +177,23 @@
     });
   }
 
-  function linkRow(link, primary, total) {
+  // 平台名 → 统计路径里的 ASCII 段。虚拟 PV 的路径必须收敛成有限枚举，
+  // 中文平台名和任意字符串都不能直接拼进 URL。
+  const PLATFORM_SLUG = {
+    "夸克网盘": "quark",
+    "UC网盘": "uc",
+    "百度网盘": "baidu",
+    "阿里云盘": "aliyun",
+    "123网盘": "123pan",
+    "天翼云盘": "189",
+    "迅雷网盘": "xunlei",
+  };
+  const platformSlug = (name) => PLATFORM_SLUG[name] || "other";
+
+  // 统计路径统一用构建器给的 ASCII id（d.tid），退回中文 slug 会让报表出现转义乱码。
+  const tidOf = (d) => (d && (d.tid || d.slug)) || "";
+
+  function linkRow(link, primary, total, id) {
     const item = document.createElement("div");
     item.className = "dl-item" + (primary ? " primary" : "");
     const main = Object.assign(document.createElement("div"), { className: "dl-main" });
@@ -178,7 +216,10 @@
       });
       code.append("提取码 ");
       code.append(Object.assign(document.createElement("b"), { textContent: link.code }));
-      code.addEventListener("click", () => copyCode(link.code));
+      code.addEventListener("click", () => {
+        copyCode(link.code);
+        pv(`/x/${id}/code`);
+      });
       side.append(code);
     }
     const open = Object.assign(document.createElement("a"), {
@@ -190,12 +231,15 @@
     });
     if (link.code) {
       open.addEventListener("click", () => {
+        pv(`/x/${id}/dl/${platformSlug(link.platform)}`); // 新标签页打开，不会打断这次上报
         copyText(link.code).then((ok) => {
           showToast(ok
             ? `提取码 ${link.code} 已复制，正在打开${link.platform || "下载页"}`
             : `提取码 ${link.code}，请在新页面手动输入`);
         });
       });
+    } else {
+      open.addEventListener("click", () => pv(`/x/${id}/dl/${platformSlug(link.platform)}`));
     }
     side.append(open);
     item.append(main, side);
@@ -218,7 +262,7 @@
       return;
     }
     countEl.textContent = links.length > 1 ? `共 ${links.length} 个` : "";
-    links.forEach((link, i) => box.append(linkRow(link, i === 0, links.length)));
+    links.forEach((link, i) => box.append(linkRow(link, i === 0, links.length, tidOf(d))));
     if (!links.length) {
       box.append(Object.assign(document.createElement("p"), {
         className: "dl-empty",
@@ -268,6 +312,7 @@
     pageToastEl.classList.remove("show");
     if (!dialog.open) dialog.showModal();
     sheetBody.scrollTop = 0;
+    pv(`/x/${tidOf(d)}/detail`); // 弹窗打开本身不产生 PV，这里补记一次
   }
 
   function openLightbox() {

@@ -25,10 +25,46 @@
 <script>
 var _hmt = _hmt || [];
 (function() {
+  var hosts = ["pcpan.top", "www.pcpan.top"];
+  if (hosts.indexOf(location.hostname.toLowerCase()) < 0) return;
+  window.__tjOn = true;  // 采集器据此决定发不发，镜像站保持静默
   var hm = document.createElement("script");
   hm.src = "https://hm.baidu.com/hm.js?644757071a55c85a4cf2b57332f751f0";
   var s = document.getElementsByTagName("script")[0];
   s.parentNode.insertBefore(hm, s);
+})();
+</script>
+<script>
+(function() {
+  function on() { return window.__tjOn === true; }
+  function pv(path) {
+    if (on() && window._hmt) window._hmt.push(["_trackPageview", path]);
+  }
+  function ev(category, action, label) {
+    if (!on() || !window._hmt) return;
+    var args = ["_trackEvent", category, action];
+    if (label != null && label !== "") args.push(String(label));
+    window._hmt.push(args);
+  }
+  window.__tj = { pv: pv, ev: ev, on: on };
+  // 捕获阶段跑：同标签页跳转前也来得及入队
+  document.addEventListener("click", function (e) {
+    var el = e.target;
+    if (!el || el.nodeType !== 1) return;
+    var hit = el.closest ? el.closest("[data-track]") : null;
+    if (!hit) return;
+    var id = hit.getAttribute("data-track-id") || "";
+    var kind = hit.getAttribute("data-track") || "";
+    if (kind === "event") {
+      ev(hit.getAttribute("data-track-cat") || "other",
+         hit.getAttribute("data-track-act") || "click",
+         hit.getAttribute("data-track-label") || "");
+      return;
+    }
+    if (!id || !kind) return;
+    var arg = hit.getAttribute("data-track-arg") || "";
+    pv("/x/" + id + "/" + kind + (arg ? "/" + arg : ""));
+  }, true);
 })();
 </script>
 </head>
@@ -63,8 +99,8 @@ var _hmt = _hmt || [];
     <section class="block" id="download">
       <h2>下载渠道</h2>
 <div class="dl-list">
-      <div class="dl-item primary"><div class="dl-main"><span class="dl-platform">夸克网盘</span><span class="dl-tag">推荐</span></div><div class="dl-side"><a class="btn dl-open" href="https://pan.quark.cn/s/e845c890b95f" target="_blank" rel="noopener">打开夸克网盘</a></div></div>
-      <div class="dl-item"><div class="dl-main"><span class="dl-platform">UC网盘</span></div><div class="dl-side"><a class="btn dl-open ghost" href="https://drive.uc.cn/s/e1acf58f27344?public=1" target="_blank" rel="noopener">打开UC网盘</a></div></div>
+      <div class="dl-item primary"><div class="dl-main"><span class="dl-platform">夸克网盘</span><span class="dl-tag">推荐</span></div><div class="dl-side"><a class="btn dl-open" href="https://pan.quark.cn/s/e845c890b95f" target="_blank" rel="noopener" data-track="dl" data-track-id="id-photo-kit" data-track-arg="quark">打开夸克网盘</a></div></div>
+      <div class="dl-item"><div class="dl-main"><span class="dl-platform">UC网盘</span></div><div class="dl-side"><a class="btn dl-open ghost" href="https://drive.uc.cn/s/e1acf58f27344?public=1" target="_blank" rel="noopener" data-track="dl" data-track-id="id-photo-kit" data-track-arg="uc">打开UC网盘</a></div></div>
       </div>
       <p class="dl-tip">下载后解压即用，不需要装运行库；软件全程在本机运行，文件不上传。</p>
     </section>

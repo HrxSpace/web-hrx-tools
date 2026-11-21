@@ -204,7 +204,8 @@ JSON-LD 都从这一处拼出来。
 | 位置 | 谁负责 | 说明 |
 | --- | --- | --- |
 | `site.name` `site.wechat_name` `site.url` `site.verify` | 人工 | `catalog/site.yaml` 的 `site:` 段：品牌名、公众号真名、正式发布域名、站长验证文件清单（每项 `file` + `text`，构建时原样写进产物）。改名只动 `name`，公众号名只动 `wechat_name`；**验证文件不要手工丢进 `web/`**，构建会清空该目录，验证会悄悄失效 |
-| `site.baidu_analytics` | 人工 | 百度统计站点 ID（`hm.js?` 后面那串 32 位十六进制）。构建时注入所有页面 `<head>`，404 页与 `--offline` 预览不注入 |
+| `site.baidu_analytics` | 人工 | 百度统计站点 ID（`hm.js?` 后面那串 32 位十六进制）。构建时注入所有页面 `<head>`，404 页与 `--offline` 预览不注入；**只在 `site.url` 的主机名上报**（可用 `site.analytics_hosts` 追加），镜像站共用同一份产物但保持静默 |
+| `site.analytics_hosts` | 可选 | 额外允许上报的主机名列表。默认已包含 `site.url` 的主机名及其 `www.` 变体，通常不用配 |
 | `site.tasks` | 人工 | 搜索框下方「常见需求」导航：`label`（用户会搜的任务词）+ `slug`（回答它的条目）。只渲染已上架条目，`seo_check.py` 会断言配了几个就渲染几个、目标页必须存在 |
 | 目录名（`slug`） | 人工 | 主键，沿用源工程的 `数字_工程名`；`005` 这类重号已经合并，别再拆回来 |
 | `kind` | 人工 | `soft` 软件 / `doc` 资料（`W` 开头的目录采集时自动判为 doc） |
@@ -228,10 +229,17 @@ JSON-LD 都从这一处拼出来。
 - 详情：界面截图可点击放大（支持点击空白/`Esc` 关闭）；下载渠道按顺序列出，主渠道高亮并标「推荐」；提取码点一下就复制，打开链接时也会顺手复制提取码，页面底部有 toast 提示；不再提供重复的「复制完整链接」。
 - 文档资料区块：与软件共用同一份搜索索引、同一套 `#slug` 深链与详情面板，也一起进分类筛选栏、`llms.txt` 和结构化数据（文档用 `CreativeWork`，软件用 `SoftwareApplication`）；卡片按钮是「获取资料」，详情里「篇章清单」替代「功能要点」。一条资料都没挂上链接时整段不渲染，搜索筛空后区块标题一并收起。
 - 上架门槛：`status` 是 `live` / `coming_soon` 且至少挂了一个渠道的条目才渲染；`draft` 与 `hidden` 一律不上页。`live` 却忘了挂链接时**构建直接失败并列出是哪些条目**，不再静默消失。
-- 无后端、无外部请求：数据以 JSON 内嵌页面，卡片正文与详情页正文都预渲染进 HTML，搜索引擎可收录。
+- 无后端：数据以 JSON 内嵌页面，卡片正文与详情页正文都预渲染进 HTML，搜索引擎可收录。除百度统计外不发起任何外部请求
+  （`--offline` 构建连统计也不注入）。
   Cloudflare Pages（pcpan.top / pages.dev）原样发布静态文件，不会改写 HTML；Qoder 托管会在 `</body>` 前注入水印脚本
   （实测首页 31 KB → 线上 88 KB），且会把纯文本验证文件一起注入。Google 站长验证应针对主站 pcpan.top 做
   （HTML 文件法可直接用）；qoder.zone 镜像受注入影响，不要拿它做文件验证。
+- 统计埋点：详情面板是 `<dialog>`，打开它**不产生 PV**，所以点击要靠埋点补记，否则后台看不见「谁被点开了」。
+  百度统计免费版已看不到「事件分析」报表（2024-02-29 迁进付费分析模块），因此分两档：
+  - **虚拟 PV**（`_trackPageview`）→ 落「受访页面」报表，能按条目拆开：`/x/{ascii-slug}/detail`、`/x/{ascii-slug}/dl/{quark|uc}`、`/x/{ascii-slug}/code`；
+  - **`_trackEvent`** → 只在高频低价值动作上用（搜索、分类筛选、常见需求导航），否则「受访页面」会被冲成几百行。搜索只报「零结果/少结果/有结果 + 命中数」，不报原文。
+  路径一律用 `ascii_slug()`（与详情页 URL 同源），中文 slug 进 URL 会变成一串转义；网盘平台名走 `PLATFORM_SLUG` 固定枚举，没登记的平台并进 `other`。
+  采集器由 `tracker_js()` 生成、随统计代码注入 `<head>`，因此详情页（不加载 `app.js`）也有埋点；`window.__tjOn` 为 false 时（镜像站、离线构建）整段静默。
 - 详情页：一条资源一个可索引 URL（软件 `/soft/{英文名}`、资料 `/doc/...`），URL 只用 ASCII 且按驼峰拆词（`PDFSuperToolbox` → `pdf-super-toolbox`）。产物文件仍是 `.html`，但 Cloudflare Pages 会把 `.html` 308 到无后缀形式，所以 canonical/sitemap/llms.txt/JSON-LD 一律声明无后缀的最终地址，站内链接保留 `.html`（本地预览与 Qoder 镜像不做该重定向）。正文构建期从 `catalog/<条目>/manual.md` 渲染（采集时已从源工程的 `用户手册/*.md` 冻结一份副本）：功能详解、使用步骤、运行环境、常见问题、注意事项逐节渲染。**正文只在 catalog 里存一份**：以前是构建期现取源手册，源工程一改、站点跟着漂，而且取不到时只 print 一句 miss。手册里的随文截图不入库，指向截图的「*图：…*」说明一并省略。
 - 深链：卡片标题是真实的 `<a href="soft/xxx.html">`（抓取器与转发地址走这条）；卡片「详情」按钮仍是 `#slug` 锚点，点开是原位弹窗，体验没变。
 - 抓取与收录：`robots.txt` 按「搜索引擎 / AI 检索类 / AI 训练类」三组显式放行并带 `Crawl-delay: 1`；`sitemap.xml` 逐条列出全部页面，每条 `lastmod` 用该条自己的 `updated`；`llms.txt` 是给 AI 引擎读的纯文本目录，每行指向详情页而不是首页片段；发布前用 `python tools/seo_check.py` 断言，不过就别发。

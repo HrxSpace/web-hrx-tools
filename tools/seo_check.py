@@ -37,7 +37,9 @@ DESC_RE = re.compile(r'<meta\s+name="description"\s+content="([^"]*)"')
 LD_JSON_RE = re.compile(r'<script\s+type="application/ld\+json">(.*?)</script>', re.S)
 LOC_RE = re.compile(r"<loc>([^<]+)</loc>")
 
-TASK_LINK_RE = re.compile(r'<a class="task" href="([^"]+)">([^<]+)</a>')
+# 断言的是「配了几个任务词、首页就渲染出几个」，别把属性顺序写进正则：
+# 埋点或 aria 属性一加，这里就会误报成「少渲染了 N 个」。
+TASK_LINK_RE = re.compile(r'<a class="task" href="([^"]+)"[^>]*>([^<]+)</a>')
 
 # 「微信公众号 · X」这类写法里的 X 是外部事实（公众号名），不能拿站点品牌顶替：
 # 名字对不上，读者扫码就会发现。构建改对了也得防着下次被人改回去。
