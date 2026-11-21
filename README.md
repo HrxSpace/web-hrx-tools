@@ -203,7 +203,7 @@ JSON-LD 都从这一处拼出来。
 
 | 位置 | 谁负责 | 说明 |
 | --- | --- | --- |
-| `site.name` `site.wechat_name` `site.url` `site.verify` | 人工 | `catalog/site.yaml` 的 `site:` 段：品牌名、公众号真名、正式发布域名、站长验证文件清单（每项 `file` + `text`，构建时原样写进产物）。改名只动 `name`，公众号名只动 `wechat_name`；**验证文件不要手工丢进 `web/`**，构建会清空该目录，验证会悄悄失效 |
+| `site.name` `site.wechat_name` `site.url` `site.verify` | 人工 | `catalog/site.yaml` 的 `site:` 段：品牌名、公众号真名、正式发布域名、站长验证文件清单（每项 `file` + `text`，构建时原样写进产物）。改名只动 `name`，公众号名只动 `wechat_name`；**验证文件不要手工丢进 `web/`**，构建会清空该目录，验证会悄悄失效。`text` 原样写出、**不补换行**，所以百度 `baidu_verify_*.html`（32 位哈希、无换行）要写成不带 `\n` 的单行；`.html` 类验证文件线上会被 Cloudflare 308 到无后缀地址，跟随重定向后内容一致，不影响验证 |
 | `site.baidu_analytics` | 人工 | 百度统计站点 ID（`hm.js?` 后面那串 32 位十六进制）。构建时注入所有页面 `<head>`，404 页与 `--offline` 预览不注入；**只在 `site.url` 的主机名上报**（可用 `site.analytics_hosts` 追加），镜像站共用同一份产物但保持静默 |
 | `site.analytics_hosts` | 可选 | 额外允许上报的主机名列表。默认已包含 `site.url` 的主机名及其 `www.` 变体，通常不用配 |
 | `site.tasks` | 人工 | 搜索框下方「常见需求」导航：`label`（用户会搜的任务词）+ `slug`（回答它的条目）。只渲染已上架条目，`seo_check.py` 会断言配了几个就渲染几个、目标页必须存在 |

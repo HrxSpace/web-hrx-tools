@@ -14,6 +14,9 @@ site:
     text: "<?xml version=\"1.0\"?>\n<users>\n  <user>6967013A744D4A440318882383AD062F</user>\n  <user>D9B953C44BAD3819F5D8B70AD7E37A68</user>\n</users>\n"
   - file: sogousiteverification.txt
     text: SbMq0Lqbel
+  - file: baidu_verify_codeva-IO4SvxdajN.html
+    # 加引号：纯数字的哈希会被 YAML 当成整数，写成字符串才不会丢前导零/被转义
+    text: 'c6a9869ea54dd6708b990aa32b3c5c36'
   verify_meta:
   - name: msvalidate.01
     content: D9B953C44BAD3819F5D8B70AD7E37A68
