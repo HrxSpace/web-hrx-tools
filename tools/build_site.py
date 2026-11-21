@@ -129,24 +129,31 @@ def entry_links(entry: dict) -> list[dict]:
 
 
 def entry_updated(catalog: Path, slug: str, meta: dict) -> str:
-    """条目的「最后更新」：优先取 git 里 catalog/<slug>/ 的真实提交日期。
+    """条目的「最后更新」：取**内容文件**在 git 里的真实提交日期。
 
-    手填的 updated 靠人记得改，漏一次页面上就永远是个旧日期；而内容到底哪天动过，
-    git 是最客观的记录，sitemap 的 lastmod 协议本意也正是「内容最后变更时间」。
-    取不到 git（未纳入版本库、无 git、浅克隆）时退回 meta.yaml 里手填的值；
-    两者都没有就返回空串——**绝不退回 date.today()**，那会让每次重建都刷新 lastmod，
-    等于告诉搜索引擎「这页天天在变」，是个比没有 lastmod 更糟的假信号。"""
-    try:
-        out = subprocess.run(
-            ["git", "log", "-1", "--format=%ad", "--date=short", "--", str(Path("catalog") / slug)],
-            cwd=str(catalog.parent), capture_output=True, text=True, timeout=10,
-        )
-        if out.returncode == 0:
-            stamp = out.stdout.strip()
-            if re.fullmatch(r"\d{4}-\d{2}-\d{2}", stamp):
-                return stamp
-    except (OSError, subprocess.SubprocessError):
-        pass  # 没有 git 就不算错，退回手填值
+    只看 manual.md 与封面/详情图，不看 meta.yaml 本身，也不看整个目录——
+    否则改一次字段结构或注释，全部条目的 lastmod 会一起跳到今天，
+    等于告诉搜索引擎「全站天天在变」，比没有 lastmod 更糟。这是实测踩出来的：
+    删 version/size_mb 那次提交把 16 条的日期全刷成了同一天。
+
+    手填的 updated 靠人记得改，漏一次页面上就永远是旧日期，所以只作兜底；
+    两者都没有就返回空串——**绝不退回 date.today()**，那会让每次重建都刷新日期。"""
+    content = [n for n in ("manual.md", "cover.png", "cover.jpg", "cover.webp",
+                           "detail_image.png", "detail_image.jpg", "detail_image.webp")
+               if (catalog / slug / n).is_file()]
+    if content:
+        paths = [str(Path("catalog") / slug / n) for n in content]
+        try:
+            out = subprocess.run(
+                ["git", "log", "-1", "--format=%ad", "--date=short", "--", *paths],
+                cwd=str(catalog.parent), capture_output=True, text=True, timeout=10,
+            )
+            if out.returncode == 0:
+                stamp = out.stdout.strip()
+                if re.fullmatch(r"\d{4}-\d{2}-\d{2}", stamp):
+                    return stamp
+        except (OSError, subprocess.SubprocessError):
+            pass  # 没有 git 就不算错，退回手填值
     return str(meta.get("updated") or "").strip()
 
 
