@@ -292,6 +292,11 @@ dialog#lightbox img {
 .contact-foot { padding: 10px 13px; }
 .contact-foot .qr { width: 96px; height: 96px; }
 
+/* 页脚两张推广卡横排：公众号在左、闲鱼在右，窄屏再换行堆叠 */
+.foot-cards {
+  display: flex; align-items: flex-start; gap: clamp(16px, 3vw, 40px); flex-wrap: wrap;
+}
+
 /* 闲鱼推广名片：竖版图，缩略进页脚，点击放大（首页复用 lightbox，详情页直接开大图） */
 .contact-xianyu { align-items: flex-start; }
 .xy-thumb {
@@ -388,7 +393,7 @@ hr { border: 0; border-top: 1px solid var(--line); margin: 14px 0; }
   .contact .qr { width: 96px; height: 96px; }
   .masthead .scan-hint { display: block; }
   .contact-inline { margin-top: 20px; max-width: none; }
-  .contact-xianyu { margin-top: 14px; }
+  .contact-xianyu { margin-top: 0; }
 }
 @media (max-width: 620px) {
   .wordmark { font-size: 21px; }
