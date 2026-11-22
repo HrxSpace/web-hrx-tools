@@ -57,6 +57,13 @@ h1, h2, h3, p { margin: 0; }
 }
 .brief { margin-top: 10px; color: var(--ink-2); max-width: 72ch; }
 
+/* 二维码可点击放大：按钮/链接两种形态通用，样式与原 img 完全一致 */
+.qr-zoom {
+  flex: none; display: block; padding: 0; margin: 0; cursor: zoom-in;
+  border: 0; background: none; font: inherit; line-height: 0;
+}
+.qr-zoom:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; border-radius: 8px; }
+
 /* 公众号二维码：只放在站头/空态/页脚这些非信息区，不覆盖检索与卡片 */
 .contact {
   flex: 0 1 auto; margin: 0; display: flex; align-items: center; gap: 13px;

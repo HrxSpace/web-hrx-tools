@@ -345,16 +345,16 @@
   document.getElementById("detail-close").onclick = () => dialog.close();
   dialog.addEventListener("click", (e) => { if (e.target === dialog) dialog.close(); });
   coverBtn.addEventListener("click", openLightbox);
-  // 页脚闲鱼名片：同一张 lightbox 放大，不复制封面那套按钮结构
-  const xyBtn = document.getElementById("xy-open");
-  if (xyBtn) {
-    xyBtn.addEventListener("click", () => {
-      const img = xyBtn.querySelector("img");
+  // 可点击放大的二维码/名片（公众号 + 闲鱼）：同一张 lightbox 放大
+  document.querySelectorAll(".qr-zoom").forEach((el) => {
+    el.addEventListener("click", () => {
+      const img = el.querySelector("img");
+      if (!img) return;
       lightboxImg.src = img.src;
       lightboxImg.alt = img.alt;
       lightbox.showModal();
     });
-  }
+  });
   document.getElementById("lightbox-close").onclick = () => lightbox.close();
   lightbox.addEventListener("click", (e) => { if (e.target === lightbox) lightbox.close(); });
   input.addEventListener("input", apply);

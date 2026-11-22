@@ -20,7 +20,7 @@
 <meta name="twitter:description" content="纯本地、绿色免安装、全中文的 Windows 批量文件处理工具。。解压即用，全程在本机运行、文件不上传；夸克网盘、UC网盘 分发。">
 <link rel="icon" href="../favicon.svg" type="image/svg+xml">
 <link rel="alternate" type="text/plain" href="../llms.txt">
-<link rel="stylesheet" href="../style.css?v=9c21f979">
+<link rel="stylesheet" href="../style.css?v=d9f56f6a">
 <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"SoftwareApplication","name":"文件百宝箱","alternateName":"BoxBatch","description":"纯本地、绿色免安装、全中文的 Windows 批量文件处理工具。","featureList":["批量重命名","改扩展名","图片批量处理","文件名清单导出","重复文件查重","文件夹智能整理"],"offers":{"@type":"Offer","price":"0","priceCurrency":"CNY"},"url":"https://pcpan.top/soft/box-batch","operatingSystem":"Windows 10 / Windows 11 64 位","applicationCategory":"UtilitiesApplication","dateModified":"2026-11-15","downloadUrl":"https://pan.quark.cn/s/bbea23517dea","image":"https://pcpan.top/images/002-full.webp"},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"HRX 资源库","item":"https://pcpan.top/"},{"@type":"ListItem","position":2,"name":"文件百宝箱","item":"https://pcpan.top/soft/box-batch"}]},{"@type":"FAQPage","mainEntity":[{"@type":"Question","name":"添加了文件夹，为什么列表里看不到文件夹本身？","acceptedAnswer":{"@type":"Answer","text":"原因 ：文件夹只作为「来源」记录，软件只会把里面的文件加入处理范围，所以预览表里不会出现目录行。 解决 ：看范围条右侧的【来源(N)】，点开能看到加了哪些目录；不需要某个目录就点它的 × 移除。"}},{"@type":"Question","name":"执行按钮上的数字为什么比列表条数少？","acceptedAnswer":{"@type":"Answer","text":"原因 ：按钮数字只统计真的会写盘的条目，「不变」「冲突」「跳过」「失败」都不算。比如改名规则没改动某个文件，它就不进这个数。 解决 ：把过滤切到【只看将改动】核对一遍，剩下的行才是这次真正会被改的。"}},{"@type":"Question","name":"「统一扩展名」和图片页的「转格式」有什么区别？","acceptedAnswer":{"@type":"Answer","text":"原因 ：统一扩展名只改文件名的后缀字符，文件内容还是原样；转格式会重新编码图片内容。 解决 ：只是名字后缀乱（如一堆 .jpeg ），用重命名页的统一扩展名；真要把 JPEG 转成 PNG，用图片处理页的转格式。"}},{"@type":"Question","name":"图片处理输出到原目录，会覆盖我的原图吗？","acceptedAnswer":{"@type":"Answer","text":"原因 ：目标名和原图不一样时直接执行；同名目标会自动加编号；只有勾了【允许覆盖原图】并且真的同名，执行前才会再确认一次。 解决 ：想彻底不动原图，就把输出目录设成另一个文件夹，这是默认思路。"}},{"@type":"Question","name":"删掉的文件去哪了？还能找回来吗？","acceptedAnswer":{"@type":"Answer","text":"原因 ：软件里所有删除都进 Windows 回收站，不进回收站的删除没有。 解决 ：先在回收站还原；也可以按 Ctrl+Z 撤销上一次，点它右边的箭头挑更早的记录。撤销记录能保留多少条，取决于设置里的【撤销保留（条）】。"}},{"@type":"Question","name":"智能整理的预览里为什么看不到目标子目录？","acceptedAnswer":{"@type":"Answer","text":"原因 ：整理不改名，预览表的「新名称」列显示的是文件名；子目录是按整理依据在输出根目录下生成的。 解决 ：执行前确认【输出根目录】和「整理依据」选对了，执行后到根目录下按依据核对结果；先拿少量文件试一遍更稳妥。"}},{"@type":"Question","name":"正则替换写错了会改坏文件吗？","acceptedAnswer":{"@type":"Answer","text":"原因 ：正则写错时输入框会标红提示，预览也不会给出新名字，不会带着错误规则执行。 解决 ：按提示改对再执行；已经执行错了就按 Ctrl+Z 撤销。"}},{"@type":"Question","name":"一次加几千个文件，预览会不会很卡？","acceptedAnswer":{"@type":"Answer","text":"原因 ：预览是逐行算的，本机实测 300 个文件出预览约几十毫秒、执行不到 1 秒，几千个文件会慢一些但仍在可接受范围。 解决 ：文件特别多时先按扩展名筛一遍再处理，必要时分几批执行。"}}]}]}</script>
 <script>
 var _hmt = _hmt || [];
@@ -231,7 +231,9 @@ var _hmt = _hmt || [];
   </div>
   <div class="foot-cards">
     <figure class="contact contact-foot">
-      <img class="qr" src="../images/wechat-qr.png" alt="HRX 微信公众号二维码" width="258" height="258" loading="lazy">
+      <a class="qr-zoom" href="../images/wechat-qr.png" target="_blank" rel="noopener" aria-label="新窗口打开微信公众号二维码大图">
+        <img class="qr" src="../images/wechat-qr.png" alt="HRX 微信公众号二维码" width="258" height="258" loading="lazy">
+      </a>
       <figcaption>
         <b>微信公众号 · HRX 资源库</b>
         <span>扫码关注更新，需要定制开发也可以扫码聊。</span>
