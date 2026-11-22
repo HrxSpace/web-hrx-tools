@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import argparse
 import html
+import hashlib
 import json
 import re
 import subprocess
@@ -1230,17 +1231,29 @@ def build(args: argparse.Namespace) -> int:
     no_manual = [e["name"] for e in entries if not manuals[e["slug"]][0]]
     brand_fixes = sum(m.brand_fixes for m, _ in manuals.values() if m)
     wechat_fixes = sum(m.wechat_fixes for m, _ in manuals.values() if m)
+    css_text = (src / "style.css").read_text(encoding="utf-8")
+    js_text = (src / "app.js").read_text(encoding="utf-8")
+    # CSS/JS 引用带内容指纹：文件一变 URL 就变，浏览器缓存（style.css 缓存 1h）
+    # 就不会再把旧样式配给新 HTML——改版后访客看到错版的坑就是这么来的。
+    css_v = hashlib.sha1(css_text.encode("utf-8")).hexdigest()[:8]
+    js_v = hashlib.sha1(js_text.encode("utf-8")).hexdigest()[:8]
+    css_q = f"style.css?v={css_v}"
+    js_q = f"app.js?v={js_v}"
+    detail_tpl = (src / "detail.html").read_text(encoding="utf-8").replace(
+        "{{ROOT}}style.css", f"{{{{ROOT}}}}{css_q}"
+    )
     ctx = {
         "paths": paths,
         "manuals": manuals,
         "brand": brand,
         "wechat": wechat,
         "site_url": site_url,
-        "template": (src / "detail.html").read_text(encoding="utf-8"),
+        "template": detail_tpl,
         "entries": combined,
         "updated": updated,
     }
     template = (src / "template.html").read_text(encoding="utf-8")
+    template = template.replace("style.css", css_q).replace("app.js", js_q)
     verify_meta = [m for m in (site.get("verify_meta") or []) if isinstance(m, dict)]
     pages: dict[str, str] = {
         "index.html": (
@@ -1274,8 +1287,8 @@ def build(args: argparse.Namespace) -> int:
         target.write_text(content, encoding="utf-8")
     (out / "404.html").write_text(notfound_html(brand), encoding="utf-8")
 
-    (out / "style.css").write_text((src / "style.css").read_text(encoding="utf-8"), encoding="utf-8")
-    (out / "app.js").write_text((src / "app.js").read_text(encoding="utf-8"), encoding="utf-8")
+    (out / "style.css").write_text(css_text, encoding="utf-8")
+    (out / "app.js").write_text(js_text, encoding="utf-8")
     (out / "favicon.svg").write_text(
         '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="#1f4fd8"/>'
         '<path d="M18 20h9l7 12 7-12h9v24h-8V33l-6 10h-4l-6-10v11h-8z" fill="#fff"/></svg>\n',
