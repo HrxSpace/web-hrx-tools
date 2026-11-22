@@ -292,6 +292,18 @@ dialog#lightbox img {
 .contact-foot { padding: 10px 13px; }
 .contact-foot .qr { width: 96px; height: 96px; }
 
+/* 闲鱼推广名片：竖版图，缩略进页脚，点击放大（首页复用 lightbox，详情页直接开大图） */
+.contact-xianyu { align-items: flex-start; }
+.xy-thumb {
+  flex: none; display: block; padding: 0; margin: 0; cursor: zoom-in;
+  border: 1px solid var(--line); border-radius: 8px; background: #fff; overflow: hidden;
+}
+.xy-thumb img { width: 108px; height: auto; display: block; }
+.xy-thumb:hover { border-color: var(--brand); }
+.xy-thumb:focus-visible { outline: 2px solid var(--brand); outline-offset: 1px; }
+.contact-xianyu b { font-size: 13.5px; letter-spacing: .01em; }
+.contact-xianyu span { font-size: 12.5px; line-height: 1.55; color: var(--ink-2); }
+
 /* 详情页：一条资源一页，正文是主角，所以单栏、限宽、不吸顶 */
 .subpage .masthead-compact { padding-bottom: 16px; }
 .subpage .wordmark { color: var(--ink); text-decoration: none; }
@@ -376,6 +388,7 @@ hr { border: 0; border-top: 1px solid var(--line); margin: 14px 0; }
   .contact .qr { width: 96px; height: 96px; }
   .masthead .scan-hint { display: block; }
   .contact-inline { margin-top: 20px; max-width: none; }
+  .contact-xianyu { margin-top: 14px; }
 }
 @media (max-width: 620px) {
   .wordmark { font-size: 21px; }
@@ -384,6 +397,7 @@ hr { border: 0; border-top: 1px solid var(--line); margin: 14px 0; }
   .btn-copy { margin-left: 0; }
   .contact { gap: 11px; padding: 10px 12px; }
   .contact .qr, .contact-foot .qr { width: 72px; height: 72px; }
+  .xy-thumb img { width: 84px; }
   .contact b { font-size: 13px; }
   .contact span { font-size: 12px; }
   .sheet-head { padding: 14px 16px 12px; }

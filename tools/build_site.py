@@ -245,7 +245,7 @@ def write_verify_files(site: dict, out: Path) -> list[str]:
 
 
 def copy_brand_assets(src: Path, out: Path) -> None:
-    """公众号二维码不是条目封面，--no-images 时也要复制；顺带复制 Pages 的 _headers。"""
+    """公众号二维码与闲鱼名片不是条目封面，--no-images 时也要复制；顺带复制 Pages 的 _headers。"""
     img_dir = out / "images"
     img_dir.mkdir(parents=True, exist_ok=True)
     qr_src = src / "assets" / "qrcode_wc.png"
@@ -253,6 +253,11 @@ def copy_brand_assets(src: Path, out: Path) -> None:
         (img_dir / "wechat-qr.png").write_bytes(qr_src.read_bytes())
     else:
         print(f"警告：缺少二维码素材 {qr_src}，页面上的公众号二维码会显示为空白。")
+    xy_src = src / "assets" / "xianyu-qr.jpg"
+    if xy_src.is_file():
+        (img_dir / "xianyu-qr.jpg").write_bytes(xy_src.read_bytes())
+    else:
+        print(f"警告：缺少闲鱼名片素材 {xy_src}，页脚闲鱼推广图会显示为空白。")
     headers_src = src / "_headers"
     if headers_src.is_file():
         (out / "_headers").write_bytes(headers_src.read_bytes())
